@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}Company Settings{% endblock %}
+
+{% block content %}
+<style>
+.select-arrow-spacing {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg fill='gray' height='30' viewBox='0 0 24 24' width='30' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 38px;
+  background-size: 24px;
+}
+</style>
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<h2 class="mb-4 text-center">Company Settings</h2>
+
+{% if messages %}
+  <div class="messages mt-2">
+    {% for message in messages %}
+      <div class="alert {% if message.tags == 'error' %}alert-danger
+                       {% elif message.tags == 'success' %}alert-success
+                       {% elif message.tags == 'warning' %}alert-warning
+                       {% elif message.tags == 'info' %}alert-info
+                       {% else %}alert-secondary{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+<button type="button" class="close" data-dismiss="alert">&times;</button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+
+<form method="POST" enctype="multipart/form-data">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+
+  <div class="mb-3">
+    <label class="form-label">Company Name <span class="text-danger">*</span></label>
+    {{ form.name|add_class:"form-control" }}
+    {% for error in form.name.errors %}<div class="text-danger">{{ error }}</div>{% endfor %}
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Company Email <span class="text-danger">*</span></label>
+    {{ form.email|add_class:"form-control" }}
+    {% for error in form.email.errors %}<div class="text-danger">{{ error }}</div>{% endfor %}
+  </div>
+
+  <div class="row">
+    <div class="col-md-6 mb-3">
+      <label class="form-label">Phone Number <span class="text-danger">*</span></label>
+      {{ form.phone|add_class:"form-control" }}
+      {% for error in form.phone.errors %}<div class="text-danger">{{ error }}</div>{% endfor %}
+    </div>
+    <div class="col-md-6 mb-3">
+      <label class="form-label">Website</label>
+      {{ form.website|add_class:"form-control" }}
+      {% for error in form.website.errors %}<div class="text-danger">{{ error }}</div>{% endfor %}
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Address <span class="text-danger">*</span></label>
+    {{ form.address|add_class:"form-control" }}
+    {% for error in form.address.errors %}<div class="text-danger">{{ error }}</div>{% endfor %}
+  </div>
+
+  <div class="row">
+    <div class="col-md-6 mb-3">
+      <label class="form-label">Company Size <span class="text-danger">*</span></label>
+      {{ form.size|add_class:"form-control select-arrow-spacing" }}
+      {% if form.size.errors %}<div class="text-danger">{{ form.size.errors.0 }}</div>{% endif %}
+    </div>
+
+    <div class="col-md-6 mb-3">
+      <label class="form-label">Industry <span class="text-danger">*</span></label>
+      {{ form.industry|add_class:"form-control select-arrow-spacing" }}
+      {% if form.industry.errors %}<div class="text-danger">{{ form.industry.errors.0 }}</div>{% endif %}
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Logo <span class="text-danger">*</span></label>
+    {{ form.logo|add_class:"form-control" }}
+    {% for error in form.logo.errors %}<div class="text-danger">{{ error }}</div>{% endfor %}
+  </div>
+
+  <div class="text-center">
+    <button type="submit" class="btn btn-primary px-5">Save</button>
+  </div>
+</form>
+
+<!-- Validation Script -->
+<script>
+$(document).ready(function () {
+  function showError(el, msg) {
+    el.addClass("is-invalid");
+    el.after(`<div class="text-danger validation-error">${msg}</div>`);
+  }
+
+  function clearError(el) {
+    el.removeClass("is-invalid");
+    el.siblings(".validation-error").remove();
+  }
+
+  // Phone Validation
+  $("#id_phone").on("input", function () {
+    const val = $(this).val();
+    clearError($(this));
+    if (!/^\d{10}$/.test(val)) showError($(this), "Enter a valid 10-digit phone number.");
+  });
+
+  // Postal Code Validation
+  $("#id_postal_code").on("input", function () {
+    const val = $(this).val();
+    clearError($(this));
+    if (!/^\d{6}$/.test(val)) showError($(this), "Postal code must be exactly 6 digits.");
+  });
+
+  // Logo File Type Validation
+  $("#id_logo").on("change", function () {
+    const file = this.files[0];
+    clearError($(this));
+    if (file && !["image/jpeg", "image/png"].includes(file.type)) {
+      showError($(this), "Only JPEG and PNG formats are allowed.");
+      $(this).val("");
+    }
+  });
+
+  // Submit Validation
+  $("form").on("submit", function (e) {
+    let hasError = false;
+    const requiredFields = [
+      "#id_name", "#id_email", "#id_phone", "#id_address",
+       "#id_logo"
+    ];
+    requiredFields.forEach(selector => {
+      const el = $(selector);
+      clearError(el);
+      if (!el.val()) {
+        showError(el, "This field is required.");
+        hasError = true;
+      }
+    });
+
+    if (hasError) {
+      e.preventDefault();
+      $('html, body').animate({ scrollTop: $(".validation-error:first").offset().top - 100 }, 500);
+    }
+  });
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+{% endblock %}

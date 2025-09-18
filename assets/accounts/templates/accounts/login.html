@@ -1,0 +1,206 @@
+{% extends 'base_no_header_sidebar.html' %}
+{% load static %}
+{% block title %}Qubits HRMS | Login{% endblock %}
+{% load widget_tweaks %}
+{% block content %}
+
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+
+<style>
+  :root {
+    --q-blue: #2563eb;
+    --q-orange: #f97316;
+    --q-light: #f1f5f9;
+    --q-dark: #1e293b;
+  }
+
+  html, body {
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, var(--q-blue), var(--q-orange));
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    background-size: cover;
+  }
+
+  .login-wrapper {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+  }
+
+  .login-card {
+    background: white;
+    border-radius: 1.5rem;
+    padding: 3rem 2.5rem;
+    max-width: 450px;
+    width: 100%;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+    animation: fadeInUp 0.8s ease-out;
+  }
+
+  .login-icon {
+    font-size: 3rem;
+    color: var(--q-blue);
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+
+  .login-card h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--q-dark);
+    text-align: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .login-card p {
+    font-size: 0.95rem;
+    color: #666;
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .form-label {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--q-dark);
+  }
+
+  .form-control {
+    border-radius: 30px !important;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    border: 1px solid #ccc;
+  }
+
+  .btn-login {
+    background: var(--q-blue);
+    color: white;
+    border-radius: 30px;
+    padding: 0.7rem;
+    font-weight: 600;
+    width: 100%;
+    transition: background 0.3s ease;
+    border: none;
+  }
+
+  .btn-login:hover {
+    background: #1e40af;
+  }
+
+  .text-small {
+    font-size: 0.85rem;
+    color: #777;
+    text-align: center;
+  }
+
+  .text-small a {
+    color: var(--q-orange);
+    text-decoration: none;
+  }
+
+  .text-small a:hover {
+    text-decoration: underline;
+  }
+
+  .password-wrapper {
+    position: relative;
+  }
+
+  .toggle-password {
+    position: absolute;
+    right: 18px;
+    top: 75%;
+    transform: translateY(-50%);
+    color: #888;
+    cursor: pointer;
+    z-index: 10;
+  }
+
+  /* hide default eye icon for Edge/Chrome autocomplete */
+  input[type="password"]::-ms-reveal,
+  input[type="password"]::-ms-clear {
+    display: none;
+  }
+  input[type="password"]::-webkit-credentials-auto-fill-button {
+    visibility: hidden;
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 576px) {
+    .login-card {
+      padding: 2rem 1.5rem;
+    }
+  }
+</style>
+
+<div class="login-wrapper">
+  <div class="login-card" data-aos="zoom-in">
+    <div class="login-icon">
+      <i class="fas fa-user-circle"></i>
+    </div>
+    <h2>Qubits HRMS Login</h2>
+    <p>Enter your credentials to access your dashboard</p>
+
+    <!-- Error / Success Messages -->
+{% if messages %}
+  {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} text-center">
+      {{ message }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+    <form method="POST">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label">Email <span class="text-danger">*</span></label>
+        <input type="email" name="email" class="form-control" required>
+      </div>
+
+      <div class="mb-3 password-wrapper">
+        <label class="form-label">Password <span class="text-danger">*</span></label>
+        <input type="password" name="password" class="form-control" required>
+        <i class="fa fa-eye toggle-password" onclick="toggleVisibility(this)"></i>
+      </div>
+
+      <button type="submit" class="btn-login">Login</button>
+    </form>
+
+    <div class="text-center mt-3">
+      <small>Don't have an account? <a href="{% url 'company_signup' %}">Sign up</a></small>
+    </div>
+
+    
+  </div>
+</div>
+
+<script>
+  AOS.init({ duration: 800, once: true });
+
+  function toggleVisibility(icon) {
+    const input = icon.previousElementSibling;
+    if (input.type === 'password') {
+      input.type = 'text';
+      icon.classList.remove('fa-eye');
+      icon.classList.add('fa-eye-slash');
+    } else {
+      input.type = 'password';
+      icon.classList.remove('fa-eye-slash');
+      icon.classList.add('fa-eye');
+    }
+  }
+</script>
+
+{% endblock %}

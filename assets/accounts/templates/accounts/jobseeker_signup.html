@@ -1,0 +1,285 @@
+{% extends 'base_no_header_sidebar.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}Qubits HRMS | Jobseeker Registration{% endblock %}
+
+{% block content %}
+<!-- AOS and Font Awesome -->
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+
+<style>
+  :root {
+    --q-blue: #2563eb;
+    --q-orange: #f97316;
+    --q-light: #f9fafb;
+    --q-dark: #1e293b;
+    --q-border: #d1d5db;
+    --q-danger: #e11d48;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, var(--q-blue), var(--q-orange));
+    background-attachment: fixed;
+    background-size: cover;
+    min-height: 100vh;
+  }
+
+  .form-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 60px 20px;
+  }
+
+  .form-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 40px;
+    max-width: 600px;
+    width: 100%;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+    animation: fadeInUp 0.6s ease;
+  }
+
+  .form-card h2 {
+    text-align: center;
+    color: var(--q-dark);
+    margin-bottom: 10px;
+  }
+
+  .form-card p {
+    text-align: center;
+    color: #555;
+    margin-bottom: 30px;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-label {
+    display: block;
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 6px;
+    color: var(--q-dark);
+  }
+
+  .form-control {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 14px;
+    border: 1px solid var(--q-border);
+    border-radius: 6px;
+    background-color: var(--q-light);
+    transition: border 0.2s ease-in-out;
+  }
+
+  .form-control:focus {
+    border-color: var(--q-blue);
+    background: #fff;
+    outline: none;
+  }
+
+  .text-danger {
+    font-size: 13px;
+    color: var(--q-danger);
+    margin-top: 5px;
+  }
+
+  .text-success {
+    font-size: 13px;
+    color: green;
+    margin-top: 5px;
+  }
+
+  .btn-submit {
+    width: 100%;
+    padding: 12px;
+    background-color: var(--q-blue);
+    border: none;
+    color: white;
+    font-weight: 600;
+    font-size: 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+
+  .btn-submit:hover {
+    background-color: #1e40af;
+  }
+
+  .password-wrapper {
+    position: relative;
+  }
+
+  .password-wrapper .form-control {
+    padding-right: 40px;
+  }
+
+  .toggle-password {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #888;
+    z-index: 2;
+  }
+
+  .login-link {
+    text-align: center;
+    margin-top: 15px;
+  }
+
+  .login-link a {
+    color: var(--q-blue);
+    font-weight: 500;
+    text-decoration: none;
+  }
+
+  .login-link a:hover {
+    text-decoration: underline;
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+
+
+<div class="form-section">
+  <div class="form-card" data-aos="fade-up">
+    <h2>Jobseeker Registration</h2>
+    <p>Create your account to start your journey with Qubits HRMS</p>
+
+    <form method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+      {% for field in form %}
+        <div class="form-group">
+          <label class="form-label" for="{{ field.id_for_label }}">
+            {{ field.label }}
+          </label>
+
+          {% if field.name == "password1" %}
+            <div class="password-wrapper">
+  {% render_field field class="form-control" id="password1" type="password" %}
+  <i class="fas fa-eye toggle-password" onclick="togglePassword(this)"></i>
+</div>
+
+{% if password_help_texts %}
+  <ul class="text-muted small mt-2">
+    {% for help_text in password_help_texts %}
+      <li>{{ help_text }}</li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
+{% if form.password1.errors %}
+  <div class="text-danger">{{ form.password1.errors|striptags }}</div>
+{% endif %}
+
+          {% elif field.name == "password2" %}
+            <div class="password-wrapper">
+              {% render_field field class="form-control" id="password2" type="password" %}
+              <i class="fas fa-eye toggle-password" onclick="togglePassword(this)"></i>
+            </div>
+          {% else %}
+            {% render_field field class="form-control" %}
+          {% endif %}
+
+          {% if field.errors %}
+            <div class="text-danger">{{ field.errors|striptags }}</div>
+          {% endif %}
+        </div>
+      {% endfor %}
+
+      <button type="submit" class="btn-submit">Register</button>
+    </form>
+
+    <div class="login-link">
+      <small>Already have an account? <a href="{% url 'login' %}">Login here</a></small>
+    </div>
+  </div>
+</div>
+
+<script>
+  AOS.init({ duration: 800 });
+
+  function togglePassword(icon) {
+    const input = icon.previousElementSibling;
+    if (input.type === "password") {
+      input.type = "text";
+      icon.classList.remove("fa-eye");
+      icon.classList.add("fa-eye-slash");
+    } else {
+      input.type = "password";
+      icon.classList.remove("fa-eye-slash");
+      icon.classList.add("fa-eye");
+    }
+  }
+
+  // Live password rules validation
+  document.addEventListener("DOMContentLoaded", function() {
+    const passwordInput = document.getElementById("password1");
+    const rules = {
+      length: document.getElementById("rule-length"),
+      number: document.getElementById("rule-number"),
+      common: document.getElementById("rule-common"),
+      similar: document.getElementById("rule-similar")
+    };
+
+    const commonPasswords = ["password", "123456", "qwerty", "admin", "letmein"];
+
+    passwordInput.addEventListener("input", function() {
+      const value = passwordInput.value;
+
+      // Rule 1: Length
+      if (value.length >= 8) {
+        rules.length.className = "text-success";
+        rules.length.textContent = "✅ At least 8 characters";
+      } else {
+        rules.length.className = "text-danger";
+        rules.length.textContent = "❌ At least 8 characters";
+      }
+
+      // Rule 2: Not entirely numeric
+      if (!/^\d+$/.test(value)) {
+        rules.number.className = "text-success";
+        rules.number.textContent = "✅ Not entirely numeric";
+      } else {
+        rules.number.className = "text-danger";
+        rules.number.textContent = "❌ Cannot be entirely numeric";
+      }
+
+      // Rule 3: Common password check
+      if (!commonPasswords.includes(value.toLowerCase())) {
+        rules.common.className = "text-success";
+        rules.common.textContent = "✅ Not a commonly used password";
+      } else {
+        rules.common.className = "text-danger";
+        rules.common.textContent = "❌ Cannot be a commonly used password";
+      }
+
+      // Rule 4: Similarity (basic check: contains 'name', 'email', 'user')
+      const personalInfo = ["name", "email", "user"];
+      if (!personalInfo.some(info => value.toLowerCase().includes(info))) {
+        rules.similar.className = "text-success";
+        rules.similar.textContent = "✅ Not too similar to personal info";
+      } else {
+        rules.similar.className = "text-danger";
+        rules.similar.textContent = "❌ Cannot be too similar to personal info";
+      }
+    });
+  });
+</script>
+
+{% endblock %}

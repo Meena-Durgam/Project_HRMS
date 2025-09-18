@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}Qubits HRMS | Company Details{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<div class="page-header mb-4">
+  <div class="row align-items-center">
+    <div class="col-12 col-md">
+      <h3 class="page-title">Company Details</h3>
+      <ul class="breadcrumb">
+        <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+        <li class="breadcrumb-item active">Company Details</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+{% if messages %}
+  <div class="messages mt-2">
+    {% for message in messages %}
+      <div class="alert {% if message.tags == 'error' %}alert-danger
+                       {% elif message.tags == 'success' %}alert-success
+                       {% elif message.tags == 'warning' %}alert-warning
+                       {% elif message.tags == 'info' %}alert-info
+                       {% else %}alert-secondary{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+<button type="button" class="close" data-dismiss="alert">&times;</button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<!-- Edit Company Form -->
+<div class="card border-0 shadow rounded-4 mb-5">
+  <div class="card-body p-4">
+    <h4 class="mb-4 fw-bold text-primary"><i class="fas fa-pen me-2"></i>Edit Company Information</h4>
+    <form method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="row">
+        {% for field in form.visible_fields %}
+          {% if field.name in 'country state city' %}
+            {% if field.name == 'country' %}
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Country</label>
+              <select id="edit-country" name="country" class="form-control">
+                <option value="">Select Country</option>
+              </select>
+            </div>
+            {% elif field.name == 'state' %}
+            <div class="col-md-4 mb-3">
+              <label class="form-label">State</label>
+              <select id="edit-state" name="state" class="form-control">
+                <option value="">Select State</option>
+              </select>
+            </div>
+            {% elif field.name == 'city' %}
+            <div class="col-md-4 mb-3">
+              <label class="form-label">City</label>
+              <select id="edit-city" name="city" class="form-control">
+                <option value="">Select City</option>
+              </select>
+            </div>
+            {% endif %}
+          {% else %}
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">{{ field.label }}</label>
+              {{ field|add_class:"form-control" }}
+              {% for error in field.errors %}
+                <div class="text-danger small">{{ error }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+      <div class="text-end mt-3">
+        <button type="submit" class="btn btn-success px-4">
+          <i class="fas fa-save me-1"></i> Save Changes
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Employee List -->
+<div class="card shadow-sm mb-5 border-0">
+  <div class="card-header bg-gradient text-white bg-secondary">
+    <h5 class="mb-0"><i class="fas fa-users me-2"></i>Employee List</h5>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead class="table-light">
+        <tr><th>Name</th><th>Email</th><th>Designation</th><th>Department</th></tr>
+      </thead>
+      <tbody>
+        {% for employee in employee_list %}
+        <tr>
+          <td>{{ employee.first_name }} {{ employee.last_name }}</td>
+          <td>{{ employee.email }}</td>
+          <td>{{ employee.designation.name }}</td>
+          <td>{{ employee.department.name }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="text-center text-muted">No employees found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Dynamic Country/State/City Script -->
+<script>
+  $(document).ready(function () {
+    const countryApi = "https://countriesnow.space/api/v0.1/countries";
+
+    // Load countries
+    $.getJSON(countryApi, function (data) {
+      const countries = data.data;
+      countries.forEach(function (item) {
+        $('#edit-country').append(new Option(item.country, item.country));
+      });
+
+      const selectedCountry = "{{ form.country.value|escapejs }}";
+      if (selectedCountry) {
+        $('#edit-country').val(selectedCountry).trigger('change');
+      }
+    });
+
+    // Load states on country change
+    $('#edit-country').change(function () {
+      const selectedCountry = $(this).val();
+      $('#edit-state').empty().append('<option value="">Select State</option>');
+      $('#edit-city').empty().append('<option value="">Select City</option>');
+
+      if (!selectedCountry) return;
+
+      $.ajax({
+        url: "https://countriesnow.space/api/v0.1/countries/states",
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({ country: selectedCountry }),
+        success: function (res) {
+          res.data.states.forEach(function (state) {
+            $('#edit-state').append(new Option(state.name, state.name));
+          });
+
+          const selectedState = "{{ form.state.value|escapejs }}";
+          if (selectedState) {
+            $('#edit-state').val(selectedState).trigger('change');
+          }
+        }
+      });
+    });
+
+    // Load cities on state change
+    $('#edit-state').change(function () {
+      const selectedCountry = $('#edit-country').val();
+      const selectedState = $(this).val();
+      $('#edit-city').empty().append('<option value="">Select City</option>');
+
+      if (!selectedCountry || !selectedState) return;
+
+      $.ajax({
+        url: "https://countriesnow.space/api/v0.1/countries/state/cities",
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({ country: selectedCountry, state: selectedState }),
+        success: function (res) {
+          res.data.forEach(function (city) {
+            $('#edit-city').append(new Option(city, city));
+          });
+
+          const selectedCity = "{{ form.city.value|escapejs }}";
+          if (selectedCity) {
+            $('#edit-city').val(selectedCity);
+          }
+        }
+      });
+    });
+  });
+</script>
+{% endblock %}

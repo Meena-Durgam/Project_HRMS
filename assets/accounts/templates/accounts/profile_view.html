@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Company Profile{% endblock %}
+
+{% block content %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+
+<div class="container">
+  <div class="page-header">
+    <div class="row align-items-center">
+        <div class="col-12 col-md">
+            <h3 class="page-title">Profile</h3>
+            <ul class="breadcrumb">
+                <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+                <li class="breadcrumb-item active">Profile</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+  <!-- Profile Header -->
+  <div class="card shadow border-0 mb-4">
+    <div class="row g-0 align-items-center p-4">
+      <div class="col-md-2 text-center">
+        <img src="{{ company.logo.url }}" alt="Company Logo" class="img-fluid rounded-circle border" style="height: 100px; width: 100px;">
+      </div>
+      <div class="col-md-7">
+        <h4 class="fw-bold mb-1">{{ company.name }}</h4>
+        <p class="mb-0 text-muted"><i class="fas fa-industry me-2"></i>{{ company.get_industry_display }}</p>
+        <p class="mb-1"><i class="fas fa-users me-2"></i>Size: {{ company.get_size_display }}</p>
+        <span class="badge bg-success">{{ company.is_active|yesno:"Active,Inactive" }}</span>
+      </div>
+      <div class="col-md-3 text-end">
+        <a href="{% url 'company_details' %}" class="btn btn-outline-primary">
+          <i class="fa fa-edit me-1"></i>Edit Profile
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <ul class="nav nav-tabs mb-3" id="profileTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab">Profile</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="projects-tab" data-bs-toggle="tab" data-bs-target="#projects" type="button" role="tab">Projects</button>
+    </li>
+  </ul>
+
+  <!-- Tab Content -->
+  <div class="tab-content" id="profileTabsContent">
+    <!-- Profile Tab -->
+    <div class="tab-pane fade show active" id="profile" role="tabpanel">
+      <div class="row gy-4">
+        <div class="col-md-6">
+          <div class="card p-3 h-100">
+            <h6 class="fw-bold border-bottom pb-2 mb-3 text-primary"><i class="fa fa-building me-2"></i>Company Info</h6>
+            <p><strong>Email:</strong> {{ company.email }}</p>
+            <p><strong>Phone:</strong> {{ company.phone }}</p>
+            <p><strong>Website:</strong> 
+              {% if company.website %}
+                <a href="{{ company.website }}" target="_blank">{{ company.website }}</a>
+              {% else %}
+                <span class="text-muted">Not Provided</span>
+              {% endif %}
+            </p>
+            <p><strong>Postal Code:</strong> {{ company.postal_code }}</p>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="card p-3 h-100">
+            <h6 class="fw-bold border-bottom pb-2 mb-3 text-primary"><i class="fa fa-map-marker-alt me-2"></i>Location Info</h6>
+            <p><strong>Address:</strong> {{ company.address }}</p>
+            <p><strong>City:</strong> {{ company.city }}</p>
+            <p><strong>State:</strong> {{ company.state }}</p>
+            <p><strong>Country:</strong> {{ company.country }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Projects Tab -->
+    <div class="tab-pane fade" id="projects" role="tabpanel">
+      <div class="card p-3">
+        <h6 class="fw-bold border-bottom pb-2 mb-3 text-primary"><i class="fas fa-folder-open me-2"></i>Projects</h6>
+
+        {% if projects %}
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Project Name</th>
+                  <th>Client</th>
+                  <th>Team Leader </th>
+                  <th>Start Date</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for project in projects %}
+                <tr>
+                  <td>{{ project.name }}</td>
+                  <td>{{ project.client.name }}</td>
+                  <td>{{ project.team_leader }}</td>
+                  <td>{{ project.start_date }}</td>
+                  <td>
+                    {% if project.is_active %}
+                      <span class="badge bg-success">Ongoing</span>
+                    {% else %}
+                      <span class="badge bg-secondary">Completed</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-muted">No projects available for this company.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Styling -->
+<style>
+  .nav-tabs .nav-link {
+    font-weight: 500;
+    padding: 10px 20px;
+    border: none;
+  }
+
+  .nav-tabs .nav-link.active {
+    background-color: #f0f2f5;
+    border-radius: 5px;
+    color: #0d6efd;
+  }
+
+  .card {
+    border-radius: 12px;
+  }
+
+  .table th, .table td {
+    vertical-align: middle;
+  }
+</style>
+{% endblock %}
