@@ -1,0 +1,222 @@
+{% extends 'base_job.html' %}
+{% load static %}
+
+{% block content %}
+
+<!-- Page Header -->
+<div class="page-header mb-4">
+  <div class="row align-items-center">
+    <div class="col-12 col-md">
+      <h3 class="mb-0">Available Jobs</h3>
+      <ul class="breadcrumb">
+        <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+        <li class="breadcrumb-item active">Jobs</li>
+      </ul>
+    </div>
+  </div>
+</div> <!-- ✅ Closed properly -->
+
+<!-- Filter and View Toggle -->
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2 pt-2">
+
+  <!-- Filter Form -->
+  <form method="GET" action="{% url 'job_list_jobseeker' %}" class="flex-grow-1">
+    <div class="input-group rounded-pill shadow-sm overflow-hidden">
+      <!-- Job Type -->
+      <select class="form-select border-0 rounded-start" name="job_type" style="max-width: 160px;">
+        <option value="" selected>Select job type</option>
+        <option value="Internship" {% if request.GET.job_type == 'Internship' %}selected{% endif %}>Internship</option>
+        <option value="Job" {% if request.GET.job_type == 'Job' %}selected{% endif %}>Job</option>
+        <option value="Full time" {% if request.GET.job_type == 'Full time' %}selected{% endif %}>Full time</option>
+        <option value="Part time" {% if request.GET.job_type == 'Part time' %}selected{% endif %}>Part time</option>
+        <option value="Remote" {% if request.GET.job_type == 'Remote' %}selected{% endif %}>Remote</option>
+      </select>
+
+      <!-- Keyword -->
+      <input type="text" name="keyword" class="form-control border-0" placeholder="Enter keyword / designation / companies"
+             value="{{ request.GET.keyword|default:'' }}" style="min-width: 300px;">
+
+      <!-- Location -->
+      <input type="text" name="location" class="form-control border-0" placeholder="Enter location"
+             value="{{ request.GET.location|default:'' }}" style="min-width: 180px;">
+
+      <!-- Search -->
+       <button class="btn btn-primary px-4 rounded-end" type="submit">
+        <i class="fas fa-search"></i> Search
+      </button>
+    </div>
+  </form>
+
+  <!-- View Toggles -->
+  <div class="d-flex align-items-center gap-2">
+    <button id="showTable" class="btn btn-outline-primary btn-sm" data-bs-toggle="tooltip" title="Table View">
+     <i class="fa fa-bars"></i>
+    </button>
+    <button id="showCard" class="btn btn-outline-secondary btn-sm" data-bs-toggle="tooltip" title="Card View">
+      <i class="fa fa-th"></i>
+    </button>
+  </div>
+</div>
+ {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+<!-- Job Listings -->
+{% if jobs %}
+<!-- Table View -->
+<div id="tableView">
+  <div class="card shadow-sm rounded-4 border-0">
+    <div class="table-responsive">
+    <table class="table align-middle mb-0 bg-white">
+        <thead class="table-light">
+          <tr>
+            <th>Job Title</th>
+            <th>Company</th>
+            <th>Location</th>
+            <th class="text-center">Vacancies</th>
+            <th>Job Type</th>
+            <th>Status</th>
+            <th>Start Date</th>
+            <th>Last Date to Apply</th>
+            <th class="text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for job in jobs %}
+          <tr>
+            <td>{{ job.title }}</td>
+            <td class="fw-semibold">{{ job.company.name }}</td>
+            <td>{{ job.location }}</td>
+            <td class="text-center align-middle">{{ job.vacancies }}</td>
+            <td><span class="badge bg-light text-dark border px-3 py-1">{{ job.job_type }}</span></td>
+            <td>
+              {% if job.status == 'Open' %}
+                <span class="badge bg-success">Open</span>
+              {% elif job.status == 'Closed' %}
+                <span class="badge bg-secondary">Closed</span>
+              {% elif job.status == 'Cancelled' %}
+                <span class="badge bg-danger">Cancelled</span>
+              {% else %}
+                <span class="badge bg-warning text-dark">Unknown</span>
+              {% endif %}
+            </td>
+            <td>{{ job.start_date|date:"M d, Y" }}</td>
+            <td>{{ job.expired_date|date:"M d, Y" }}</td>
+           <td class="text-center">
+  <div class="d-flex justify-content-center align-items-center gap-2">
+    <form method="POST" action="{% url 'save_job' %}" class="m-0 p-0">
+      {% csrf_token %}
+      <input type="hidden" name="job" value="{{ job.id }}">
+      <button type="submit" class="btn btn-outline-primary btn-sm px-2 py-1 rounded-circle shadow-sm"
+              data-bs-toggle="tooltip" title="Save this job">
+        {% if job.id in saved_job_ids %}
+          <i class="bi bi-bookmark-fill"></i>
+        {% else %}
+          <i class="bi bi-bookmark"></i>
+        {% endif %}
+      </button>
+    </form>
+    
+{% if job.id in applied_job_ids %}
+  <!-- Applied -->
+  <button class="btn btn-success btn-sm px-2 py-1 rounded-circle shadow-sm" 
+          disabled
+          title="You have already applied to this job">
+    <i class="fas fa-paper-plane"></i>
+  </button>
+{% else %}
+  <!-- Not applied -->
+  <a href="{% url 'job_detail' job.id %}" 
+     class="btn btn-outline-success btn-sm px-2 py-1 rounded-circle shadow-sm"
+     data-bs-toggle="tooltip" title="Apply for this job">
+    <i class="far fa-paper-plane"></i>
+  </a>
+{% endif %}
+
+  </div>
+</td>
+
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Card View -->
+<div id="cardView" style="display: none;">
+  <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mt-4">
+    {% for job in jobs %}
+    <div class="col">
+      <div class="card h-100 border-0 shadow-sm rounded-4">
+        <div class="card-body">
+          <h5 class="card-title text-primary fw-bold">{{ job.title }}</h5>
+          <p class="mb-1"><strong>Company:</strong> {{ job.company.name }}</p>
+          <p class="mb-1"><strong>Location:</strong> {{ job.location }}</p>
+          <p class="mb-1"><strong>Job Type:</strong> <span class="badge bg-light text-dark border px-2">{{ job.job_type }}</span></p>
+          <p class="mb-3"><strong>Last date:</strong> {{ job.expired_date|date:"M d, Y" }}</p>
+        <div class="d-flex gap-2">
+  <form method="POST" action="{% url 'save_job' %}" class="m-0 p-0">
+    {% csrf_token %}
+    <input type="hidden" name="job" value="{{ job.id }}">
+    <button type="submit" class="btn btn-outline-primary btn-sm shadow-sm" data-bs-toggle="tooltip" title="Save this job">
+      {% if job.id in saved_job_ids %}
+        <i class="bi bi-bookmark-fill"></i>
+      {% else %}
+        <i class="bi bi-bookmark"></i>
+      {% endif %}
+    </button>
+  </form>
+  <a href="{% url 'job_detail' job.id %}" class="btn btn-outline-success btn-sm shadow-sm" data-bs-toggle="tooltip" title="Apply for this job">
+    <i class="fas fa-paper-plane"></i>
+  </a>
+</div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+{% else %}
+<div class="alert alert-warning text-center rounded-3 shadow-sm mt-5">
+  <i class="bi bi-exclamation-triangle-fill me-2"></i> No jobs available at the moment.
+</div>
+{% endif %}
+
+<!-- Tooltip & View Toggle Scripts -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(t => new bootstrap.Tooltip(t));
+
+    const tableView = document.getElementById("tableView");
+    const cardView = document.getElementById("cardView");
+    const showTable = document.getElementById("showTable");
+    const showCard = document.getElementById("showCard");
+
+    showTable.addEventListener("click", function () {
+      tableView.style.display = "block";
+      cardView.style.display = "none";
+      showTable.classList.replace("btn-outline-primary", "btn-primary");
+      showCard.classList.replace("btn-secondary", "btn-outline-secondary");
+    });
+
+    showCard.addEventListener("click", function () {
+      cardView.style.display = "block";
+      tableView.style.display = "none";
+      showCard.classList.replace("btn-outline-secondary", "btn-secondary");
+      showTable.classList.replace("btn-primary", "btn-outline-primary");
+    });
+  });
+</script>
+
+{% endblock %}

@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+  <div class="page-header d-sm-flex align-items-center justify-content-between mb-4">
+    <div class="page-title">
+      <h3 class="mb-0">Jobs</h3>
+      <ul class="breadcrumb">
+        <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+        <li class="breadcrumb-item active">Jobs</li>
+      </ul>
+    </div>
+  </div>
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+    
+<div class="container my-5">
+  <!-- Header & Back -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-primary"><i class="bi bi-chat-left-dots-fill me-2"></i> Interview Feedback Summary</h2>
+    <a href="{{ previous_url }}" class="btn btn-outline-primary rounded-pill px-4">
+      <i class="bi bi-arrow-left-circle me-1"></i> Back to Applicants
+    </a>
+  </div>
+
+  <!-- Applicant & Job Info Card -->
+  <div class="card shadow-lg border-0 rounded-4 mb-5 bg-white">
+    <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-md-center px-4 py-4">
+      <div class="text-start">
+        <h4 class="mb-1 fw-semibold text-dark">{{ application.applicant.name }}</h4>
+        <p class="mb-1 text-muted"><i class="bi bi-envelope-at me-2 text-primary"> </i>{{ application.applicant.email }}</p>
+        <p class="mb-0 text-muted"><i class="bi bi-briefcase-fill me-2 text-primary"> </i>{{ application.job.title }}</p>
+      </div>
+      <div class="text-md-end mt-4 mt-md-0">
+        <span class="badge bg-primary-subtle text-primary px-3 py-2 fs-6">
+          <i class="bi bi-award-fill me-1"></i> {{ application.status|capfirst }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rounds Loop -->
+  {% if rounds %}
+    {% for round in rounds %}
+      <div class="card shadow-sm border-0 rounded-4 mb-4">
+        <div class="card-header bg-primary text-white rounded-top-4 py-3 px-4">
+          <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+              <i class="bi bi-person-workspace me-2"></i> Round {{ round.round_number }} - {{ round.round_type }}
+            </h5>
+            <span class="badge bg-white text-dark px-3">
+              {{ round.get_status_display }}
+            </span>
+          </div>
+        </div>
+
+        <div class="card-body px-4 py-3 bg-light">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <p class="mb-1 fw-semibold text-muted">Interview Mode</p>
+              <p class="text-dark">{{ round.interview_mode|default:"—" }}</p>
+            </div>
+            <div class="col-md-4">
+              <p class="mb-1 fw-semibold text-muted">Interview Date</p>
+              <p class="text-dark">{{ round.interview_date|date:"d M Y"|default:"—" }}</p>
+            </div>
+            <div class="col-md-4">
+              <p class="mb-1 fw-semibold text-muted">Time</p>
+              <p class="text-dark">{{ round.interview_time|default:"—" }}</p>
+            </div>
+
+            <div class="col-md-4">
+              <p class="mb-1 fw-semibold text-muted">Interviewed By</p>
+              <p class="text-dark">{{ round.interviewed_by|default:"—" }}</p>
+            </div>
+            <div class="col-md-4">
+              <p class="mb-1 fw-semibold text-muted">Feedback Given At</p>
+              <p class="text-dark">
+                {{ round.feedback_given_at|date:"d M Y, h:i A"|default:"—" }}
+              </p>
+            </div>
+            <div class="col-12">
+              <p class="mb-1 fw-semibold text-muted">Feedback</p>
+              <div class="p-3 rounded bg-white shadow-sm border">
+                {{ round.feedback|default:"<span class='text-muted'>No feedback provided yet.</span>"|safe }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="alert alert-info shadow rounded-3 py-3">
+      <i class="bi bi-info-circle-fill me-2"></i> No interview rounds have been scheduled yet.
+    </div>
+  {% endif %}
+</div>
+
+<!-- Bootstrap Icons -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+{% endblock %}

@@ -1,0 +1,859 @@
+{% extends 'base_job.html' %}
+{% load static %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+
+
+{% block title %}Jobseeker Profile{% endblock %}
+
+{% block content %}
+<div class="container py-3">
+  <div class="row g-2">
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+    <!-- Left Column -->
+<div class="card shadow-sm rounded-4 p-4 mb-4">
+  <div class="row align-items-center">
+    <div class="col-md-2 text-center">
+      {% if profile.profile_picture %}
+        <img src="{{ profile.profile_picture.url }}" class="rounded-circle" style="width: 100px; height: 100px; object-fit: cover;" />
+      {% else %}
+        <div class="rounded-circle bg-danger text-white d-inline-flex justify-content-center align-items-center"
+             style="width: 100px; height: 100px; font-size: 32px;">
+          {{ profile.full_name|slice:":1" }}{{ profile.full_name|slice:"1:2" }}
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="col-md-6">
+      <h4 class="fw-bold mb-1">{{ profile.full_name }}</h4>
+      <p class="mb-1" style="font-size: 1rem;">
+  <strong>Preferred Location:</strong> {{ profile.preferred_location }}
+</p>
+<p class="mb-1" style="font-size: 1rem;">
+  <strong>Joined:</strong> {{ user.date_joined|date:"d M Y" }}
+</p>
+<p class="mb-0" style="font-size: 1rem;">
+  <strong>Your JobSeeker ID:</strong> {{ profile.jobseeker_id }}
+</p>
+
+    </div>
+
+    <div class="col-md-4 text-md-end">
+      <p class="mb-1"><strong>Email:</strong> {{ user.email }}</p>
+      <p class="mb-1"><strong>Date Of Birth:</strong> {{ profile.dob|date:"d M Y" }}</p>
+      <p class="mb-1"><strong>Mobile:</strong> {{ profile.contact_number }}</p>
+      <p class="mb-1"><strong>Gender:</strong> {{ profile.gender }}</p>
+
+      {% if profile.resume %}
+        <a href="{{ profile.resume.url }}" class="btn btn-sm btn-primary mt-2" download>
+          <i class="fas fa-download me-1"></i> Download Resume
+        </a>
+      {% else %}
+        <span class="text-muted d-block mt-2">No resume uploaded</span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+  
+    <!-- Left Column -->
+    <div class="col-md-6">
+      <!-- Personal Information -->
+<div class="card shadow-sm rounded-4 p-3 h-50 position-relative">
+  <!-- Edit Icon -->
+  <a href="#" class="position-absolute top-0 end-0 m-2 text-decoration-none"
+     onclick="new bootstrap.Modal(document.getElementById('editProfileModal')).show();">
+    <i class="fa fa-pencil text-primary"></i>
+  </a>
+
+  <!-- Card Content -->
+  <h6 class="fw-bold mb-3">Personal Information</h6>
+  <p><strong>Home Town:</strong> {{ profile.hometown }}</p>
+  <p><strong>Current Location:</strong> {{ profile.current_location }}</p>
+  <p><strong>Gender:</strong> {{ profile.gender }}</p>
+  <p><strong>Date of Birth:</strong> {{ profile.dob|date:"d M Y" }}</p>
+</div>
+
+      <!-- Education -->
+<div class="card shadow-sm rounded-4 p-3 h-50">
+  <div class="d-flex justify-content-between">
+    <h6 class="fw-bold mb-3">Education</h6>
+    <a href="#" onclick="new bootstrap.Modal(document.getElementById('educationModal')).show();">
+      <i class="fa fa-pencil"></i>
+    </a>
+  </div>
+
+  {% if educations %}
+    {% for edu in educations %}
+      <p>
+        <strong>{{ edu.degree }}</strong> - {{ edu.institution }}<br>
+        <small class="text-muted">
+          {{ edu.start_year }} - {{ edu.end_year|default:"Present" }}
+        </small>
+      </p>
+    {% endfor %}
+  {% else %}
+    <p class="text-muted">No education info added yet.</p>
+  {% endif %}
+</div>
+
+
+
+      <!-- Internships -->
+      <div class="card shadow-sm rounded-4 p-3 h-50">
+  <div class="d-flex justify-content-between">
+    <h6 class="fw-bold mb-3">Internships</h6>
+    <a href="#" onclick="new bootstrap.Modal(document.getElementById('internshipModal')).show();"><i class="fa fa-pencil"></i></a>
+  </div>
+  {% if internships %}
+    {% for intern in internships %}
+      <p><strong>{{ intern.job_title }}</strong> at {{ intern.company }} ({{ intern.start_date }} - {{ intern.end_date|default:"Present" }})</p>
+    {% endfor %}
+  {% else %}
+    <p class="text-muted">No internships added yet.</p>
+  {% endif %}
+</div>
+
+    </div>
+
+    <!-- Right Column -->
+    <div class="col-md-6">
+      <!-- Work Experience -->
+      <div class="card shadow-sm rounded-4 p-3 h-50">
+        <div class="d-flex justify-content-between">
+          <h6 class="fw-bold mb-3">Work Experience</h6>
+          <a href="#" onclick="new bootstrap.Modal(document.getElementById('experienceModal')).show();"><i class="fa fa-pencil"></i></a>
+        </div>
+        {% if experiences %}
+          {% for exp in experiences %}
+            <p><strong>{{ exp.job_title }}</strong> at {{ exp.company }} ({{ exp.start_date }} - {{ exp.end_date|default:"Present" }})</p>
+          {% endfor %}
+        {% else %}
+          <p class="text-muted">No work experience added yet.</p>
+        {% endif %}
+      </div>
+
+      <!-- Skills -->
+      <div class="card shadow-sm rounded-4 p-3 h-50">
+        <div class="d-flex justify-content-between">
+          <h6 class="fw-bold mb-3">Skills</h6>
+          <a href="#" onclick="new bootstrap.Modal(document.getElementById('editSkillsModal')).show();"><i class="fa fa-pencil"></i></a>
+        </div>
+        {% if profile.skills or profile.other_skill %}
+          {% for skill in profile.skills %}
+            <span class="badge bg-secondary me-1 mb-1">{{ skill }}</span>
+
+          {% endfor %}
+          {% if profile.other_skill %}
+            <span class="badge bg-info text-dark me-1">{{ profile.other_skill }}</span>
+          {% endif %}
+        {% else %}
+          <p class="text-muted">No skills added yet.</p>
+        {% endif %}
+      </div>
+
+      <!-- Certifications -->
+      <div class="card shadow-sm rounded-4 p-3 h-50">
+        <div class="d-flex justify-content-between">
+          <h6 class="fw-bold mb-3">Certifications</h6>
+          <a href="#" onclick="new bootstrap.Modal(document.getElementById('certificateModal')).show();"><i class="fa fa-pencil"></i></a>
+        </div>
+        {% if certificates %}
+          <ul class="list-unstyled">
+            {% for cert in certificates %}
+              <li class="d-flex justify-content-between align-items-center mb-2">
+                <span><strong>{{ cert.title }}</strong></span>
+                {% if cert.file %}
+                  <a href="{{ cert.file.url }}" class="btn btn-sm btn-outline-primary" download>Download</a>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-muted">No certificates uploaded yet.</p>
+        {% endif %}
+      </div>
+
+
+    </div>
+  </div>
+</div>
+
+<!-- ========== MODALS ========== -->
+ <!-- Experience Modal -->
+<div class="modal fade" id="experienceModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="bi bi-briefcase"></i> Experience Information
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="save_experiences">
+        {{ experience_formset.management_form }}
+
+        <div class="modal-body" id="experienceFormContainer">
+          {% for form in experience_formset %}
+          <div class="border rounded p-3 mb-4">
+            <h6 class="mb-3">Experience {{ forloop.counter }}</h6>
+            {{ form.id }}
+
+            <div class="row g-3">
+              <div class="col-md-6">
+               <label class="form-label">Company Name <span class="text-danger">*</span></label>
+{{ form.company|add_class:"form-control" }}
+{% if form.company.errors %}
+  <div class="text-danger small">{{ form.company.errors.0 }}</div>
+{% endif %}
+
+              </div>
+              <div class="col-md-6">
+               <label class="form-label">Job Position <span class="text-danger">*</span></label>
+{{ form.job_title|add_class:"form-control" }}
+{% if form.job_title.errors %}
+  <div class="text-danger small">{{ form.job_title.errors.0 }}</div>
+{% endif %}
+
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">From</label>
+                {{ form.start_date|add_class:"form-control" }}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">To</label>
+                {{ form.end_date|add_class:"form-control" }}
+              </div>
+
+              {% if form.instance.pk %}
+              <div class="col-12 form-check mt-2">
+                {{ form.DELETE|add_class:"form-check-input" }}
+                <label class="form-check-label">Delete This Entry</label>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+
+          <!-- Add More Button -->
+          <button type="button" class="btn btn-outline-primary" id="addExperience">
+            <i class="bi bi-plus-circle"></i> Add More
+          </button>
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success">Save</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden empty form template -->
+<div id="empty-form" class="d-none">
+  <div class="border rounded p-3 mb-4">
+    <h6 class="mb-3">Experience _num_</h6>
+    {{ experience_formset.empty_form.id }}
+
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">Company Name</label>
+        {{ experience_formset.empty_form.company|add_class:"form-control" }}
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Job Position</label>
+        {{ experience_formset.empty_form.job_title|add_class:"form-control" }}
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Period From</label>
+        {{ experience_formset.empty_form.start_date|add_class:"form-control" }}
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Period To</label>
+        {{ experience_formset.empty_form.end_date|add_class:"form-control" }}
+      </div>
+      <div class="col-12">
+        <label class="form-label">Description</label>
+        {{ experience_formset.empty_form.description|add_class:"form-control" }}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Internship Modal -->
+<div class="modal fade" id="internshipModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="bi bi-mortarboard"></i> Internship Information
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="save_internships">
+        {{ internship_formset.management_form }}
+
+        <div class="modal-body">
+          {% for form in internship_formset %}
+          <div class="border rounded p-3 mb-4">
+            <h6 class="mb-3">Internship {{ forloop.counter }}</h6>
+            {{ form.id }}
+
+            <div class="row g-3">
+              <div class="col-md-6">
+               <label class="form-label">Company Name <span class="text-danger">*</span></label>
+{{ form.company }}
+{% if form.company.errors %}
+  <div class="text-danger small">{{ form.company.errors.0 }}</div>
+{% endif %}
+
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Title <span class="text-danger">*</span></label>
+{{ form.title }}
+{% if form.title.errors %}
+  <div class="text-danger small">{{ form.title.errors.0 }}</div>
+{% endif %}
+
+              </div>
+              <div class="row">
+  <div class="col-md-6">
+    {{ form.start_date.label_tag }}  
+    {{ form.start_date }}
+  </div>
+  <div class="col-md-6">
+    {{ form.end_date.label_tag }}  
+    {{ form.end_date }}
+  </div>
+</div>
+
+              {% if form.instance.pk %}
+              <div class="col-12 form-check mt-2">
+                {{ form.DELETE }}
+                <label class="form-check-label">Delete This Entry</label>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+
+          <button type="button" class="btn btn-outline-primary" id="addInternship">
+            <i class="bi bi-plus-circle"></i> Add More
+          </button>
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success">Save</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<!-- Education Modal -->
+<div class="modal fade" id="educationModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="save_education" />
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-mortarboard-fill"></i> Education Information
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          {{ education_formset.management_form }}
+          <div id="educationFormContainer">
+            {% for form in education_formset %}
+              <div class="border rounded p-3 mb-3 education-form">
+                {{ form.id }}
+
+                <div class="mb-3">
+                  <label class="form-label">Degree <span class="text-danger">*</span></label>
+                  {{ form.degree|add_class:"form-select" }}
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">Institution <span class="text-danger">*</span></label>
+                  {{ form.institution|add_class:"form-control" }}
+                </div>
+
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">Start Year</label>
+                    {{ form.start_year|add_class:"form-control" }}
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">End Year</label>
+                    {{ form.end_year|add_class:"form-control" }}
+                  </div>
+                </div>
+
+                {% if form.instance.pk %}
+                  <div class="form-check">
+                    {{ form.DELETE|add_class:"form-check-input" }}
+                    <label class="form-check-label">Delete This Entry</label>
+                  </div>
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+
+          <button type="button" class="btn btn-outline-primary" id="addEducationForm">
+            <i class="bi bi-plus-circle"></i> Add More
+          </button>
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success">Save</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Certificate Modal -->
+<div class="modal fade" id="certificateModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="save_certificate" />
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Add / Edit Certificates</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body">
+          {{ certificate_formset.management_form }}
+
+          {% for form in certificate_formset %}
+            <div class="border rounded p-3 mb-3">
+              {% if form.instance.pk %}
+                <input type="hidden" name="{{ form.prefix }}-id" value="{{ form.instance.pk }}">
+              {% endif %}
+
+              <div class="mb-3">
+                <label for="{{ form.title.id_for_label }}" class="form-label">
+                  Title <span class="text-danger">*</span>
+                </label>
+                {{ form.title }}
+              </div>
+
+              <div class="mb-3">
+                <label for="{{ form.file.id_for_label }}" class="form-label">
+                  Certificate File <span class="text-danger">*</span>
+                </label>
+                {{ form.file }}
+              </div>
+
+              {% if certificate_formset.can_delete %}
+                <div class="form-check">
+                  {{ form.DELETE }}
+                  <label class="form-check-label" for="{{ form.DELETE.id_for_label }}">
+                    Delete
+                  </label>
+                </div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success">Save Certificates</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+
+
+<!-- Skills Modal -->
+<div class="modal fade" id="editSkillsModal" tabindex="-1" aria-labelledby="editSkillsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content rounded-4">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editSkillsModalLabel">Edit Skills</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="save_skills">
+                <div class="modal-body">
+                   <div class="mb-3">
+    {{ skills_form.skills.label_tag }}
+    {{ skills_form.skills }}
+    {{ skills_form.skills.errors }}
+</div>
+
+<div class="mb-3">
+    {{ skills_form.other_skill.label_tag }}
+    {{ skills_form.other_skill }}
+    {{ skills_form.other_skill.errors }}
+</div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Save Skills</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<!-- Edit Profile Modal -->
+<div class="modal fade" id="editProfileModal" tabindex="-1">
+<div class="modal-dialog modal-lg">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="save_profile" />
+      <div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title">Edit Profile</h5> <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+<div class="modal-body">
+  <div class="mb-3">
+    <label for="id_full_name" class="form-label">Full Name<span class="text-danger">*</span></label>
+    {{ profile_form.full_name }}
+  </div>
+
+  <div class="mb-3">
+    <label for="id_contact_number" class="form-label">
+        Contact Number<span class="text-danger">*</span>
+    </label>
+    {{ profile_form.contact_number }}
+</div>
+
+<div class="mb-3">
+    <label for="id_dob" class="form-label">
+        Date of Birth<span class="text-danger">*</span>
+    </label>
+    {{ profile_form.dob }}
+</div>
+
+
+  <div class="mb-3">
+    <label for="id_gender" class="form-label">Gender<span class="text-danger">*</span></label>
+    {{ profile_form.gender }}
+  </div>
+
+<div class="mb-3">
+    <label for="id_preferred_location" class="form-label">
+        Preferred Location<span class="text-danger">*</span>
+    </label>
+    {{ profile_form.preferred_location }}
+    <small class="text-muted">Hold Ctrl (Windows) or Command (Mac) to select multiple.</small>
+</div>
+
+<p><strong>Preferred Location:</strong> {{ profile.preferred_location|join:", " }}</p>
+
+
+  <!-- Add other fields below (optional) -->
+  <div class="mb-3">
+    <label for="id_hometown" class="form-label">Hometown</label>
+    {{ profile_form.hometown }}
+  </div>
+
+  <div class="mb-3">
+    <label for="id_current_location" class="form-label">Current Location</label>
+    {{ profile_form.current_location }}
+  </div>
+
+  
+<div class="mb-3">
+    <label for="id_resume" class="form-label">Resume<span class="text-danger">*</span></label>
+    {{ profile_form.resume }}
+</div>
+
+<div class="mb-3">
+    <label for="id_profile_picture" class="form-label">Profile Picture</label>
+    {{ profile_form.profile_picture }}
+</div>
+
+</div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+  {{ profile_form.media }}
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+document.getElementById('addInternship').addEventListener('click', function () {
+  const totalForms = document.getElementById('id_form-TOTAL_FORMS');
+  const currentFormCount = parseInt(totalForms.value);
+  const formCopyTarget = document.querySelector('#internshipModal .modal-body');
+  const newForm = formCopyTarget.querySelector('.border').cloneNode(true);
+
+  newForm.querySelectorAll('input, textarea').forEach(input => {
+    input.value = '';
+  });
+
+  newForm.innerHTML = newForm.innerHTML.replace(/form-(\d)-/g, form-${currentFormCount}-);
+  formCopyTarget.insertBefore(newForm, this);
+  totalForms.value = currentFormCount + 1;
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    let addBtn = document.getElementById("addExperience");
+    let totalForms = document.querySelector("#id_form-TOTAL_FORMS");
+    let formContainer = document.getElementById("experienceFormContainer");
+    let emptyFormTemplate = document.getElementById("empty-form").innerHTML;
+
+    addBtn.addEventListener("click", function () {
+        let formNum = parseInt(totalForms.value);
+        let newFormHtml = emptyFormTemplate
+            .replace(/_prefix_/g, formNum)
+            .replace(/_num_/g, formNum + 1);
+        formContainer.insertAdjacentHTML("beforeend", newFormHtml);
+        totalForms.value = formNum + 1;
+    });
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  function setupAddForm(buttonId, containerId, totalFormsId, formClass) {
+    const addBtn = document.getElementById(buttonId);
+    const container = document.getElementById(containerId);
+    const totalForms = document.getElementById(totalFormsId);
+
+    addBtn.addEventListener("click", function () {
+      const formCount = parseInt(totalForms.value);
+      const firstForm = container.querySelector("." + formClass);
+      const newForm = firstForm.cloneNode(true);
+
+      // Update names & IDs
+      newForm.querySelectorAll("input, select, textarea").forEach(function (el) {
+        if (el.name) {
+          el.name = el.name.replace(/-\d+-/, -${formCount}-);
+        }
+        if (el.id) {
+          el.id = el.id.replace(/-\d+-/, -${formCount}-);
+        }
+
+        // Clear only user-entered values
+        if (el.tagName === "SELECT") {
+          el.selectedIndex = 0; // reset dropdown to first option
+        } else if (el.type !== "hidden" && el.type !== "checkbox" && el.type !== "radio") {
+          el.value = "";
+        }
+        if (el.type === "checkbox" || el.type === "radio") {
+          el.checked = false;
+        }
+      });
+
+      // Remove delete checkbox if exists
+      const deleteCheck = newForm.querySelector(".form-check");
+      if (deleteCheck) deleteCheck.remove();
+
+      container.appendChild(newForm);
+      totalForms.value = formCount + 1;
+
+      // If using Select2, reinitialize it
+      if (typeof $ !== "undefined" && $.fn.select2) {
+        $(newForm).find("select").select2();
+      }
+    });
+  }
+
+  // Setup for Education
+  setupAddForm("addEducationForm", "educationFormContainer", "id_education-TOTAL_FORMS", "education-form");
+
+  // Setup for Experience (optional — only if you have an Experience formset)
+  setupAddForm("addExperienceForm", "experienceFormContainer", "id_experience-TOTAL_FORMS", "experience-form");
+});
+</script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        $('#id_preferred_location').select2({
+            placeholder: "Select preferred locations",
+            allowClear: true
+        });
+    });
+</script>
+
+
+
+    <style>
+    .card-title {
+      font-weight: 600;
+      font-size: 1rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: #dc3545;
+    }
+
+    .card {
+      border: 1px solid #dee2e6;
+      background-color: #ffffff;
+      transition: box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+      box-shadow: 0 0 20px rgba(220, 53, 69, 0.1);
+    }
+
+    .badge {
+      font-size: 0.75rem;
+      padding: 0.4em 0.6em;
+      border-radius: 20px;
+    }
+
+    .btn-primary, .btn-outline-primary {
+      border-radius: 6px;
+    }
+
+    .modal-header {
+      background-color: #dc3545;
+      color: white;
+      border-top-left-radius: 0.5rem;
+      border-top-right-radius: 0.5rem;
+    }
+
+    .modal-content {
+      border-radius: 0.5rem;
+    }
+
+    .form-label {
+      font-weight: 500;
+      font-size: 0.95rem;
+    }
+
+    .form-control, .form-select {
+      border-radius: 0.4rem;
+    }
+
+    .alert-dismissible .btn-close {
+      background: none;
+    }
+
+    .section-heading {
+      font-weight: 600;
+      font-size: 1.1rem;
+      color: #dc3545;
+      margin-bottom: 0.75rem;
+    }
+
+    .rounded-circle.bg-danger {
+      background: linear-gradient(135deg, #dc3545, #a71d2a);
+    }
+
+    .modal-footer .btn-success {
+      background-color: #dc3545;
+      border: none;
+    }
+
+    .modal-footer .btn-success:hover {
+      background-color: #c82333;
+    }
+
+    .btn-sm.btn-primary {
+      background-color: #dc3545;
+      border-color: #dc3545;
+    }
+
+    .btn-sm.btn-primary:hover {
+      background-color: #bb2d3b;
+      border-color: #b02a37;
+    }
+
+    .profile-card {
+      background: linear-gradient(90deg, #fff, #f8f9fa);
+      border-left: 6px solid #dc3545;
+      padding: 1.5rem;
+      border-radius: 1rem;
+    }
+
+    .modal-body label {
+      font-weight: 500;
+    }
+
+    .form-check-label {
+      font-size: 0.9rem;
+    }
+
+    .btn-outline-primary {
+      color: #dc3545;
+      border-color: #dc3545;
+    }
+
+    .btn-outline-primary:hover {
+      background-color: #dc3545;
+      color: white;
+    }
+
+    .list-unstyled li {
+      background-color: #f8f9fa;
+      padding: 0.6rem 1rem;
+      border-radius: 0.5rem;
+    }
+
+    .list-unstyled li:not(:last-child) {
+      margin-bottom: 0.5rem;
+    }
+
+    .modal-header i, .card-title i {
+      font-size: 1rem;
+    }
+
+    .modal-header .btn-close {
+      filter: invert(1);
+    }
+
+    .select2-container--default .select2-selection--multiple {
+      border: 1px solid #ced4da;
+      border-radius: 0.375rem;
+      padding: 0.375rem;
+      min-height: 42px;
+    }
+
+    .select2-container--default .select2-selection--multiple .select2-selection__choice {
+      background-color: #f8f9fa;
+      border: 1px solid #dee2e6;
+      padding: 2px 10px;
+      margin-top: 4px;
+      font-size: 0.85rem;
+    }
+  </style>
+  
+{% endblock %}

@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<div class="container my-4">
+    <!-- Profile Header -->
+    <div class="card shadow-sm mb-4 border-0">
+        <div class="card-body d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" class="rounded-circle me-3" width="90" height="90">
+                {% else %}
+                    <img src="{% static 'images/default-profile.png' %}" class="rounded-circle me-3" width="90" height="90">
+                {% endif %}
+                <div class="p-4">
+                    <h4 class="mb-0">{{ profile.full_name }}</h4>
+                    <p class="mb-1 text-muted">
+                        Preferred Location: {{ profile.preferred_location }} <br>
+                        Joined: {{ profile.created_at|date:"d M Y" }} <br>
+                        Your JobSeeker ID: {{ profile.jobseeker_id }}
+                    </p>
+                </div>
+            </div>
+            <div class="text-end">
+                <p class="mb-1"><strong>Email:</strong> {{ profile.user.email }}</p>
+                <p class="mb-1"><strong>Date Of Birth:</strong> {{ profile.dob }}</p>
+                <p class="mb-1"><strong>Mobile:</strong> {{ profile.contact_number }}</p>
+                <p class="mb-1"><strong>Gender:</strong> {{ profile.gender }}</p>
+                {% if profile.resume %}
+                    <a href="{{ profile.resume.url }}" class="btn btn-primary btn-sm mt-2" download>⬇ Download Resume</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Grid Layout for Sections -->
+    <div class="row g-3">
+        <!-- Personal Information -->
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="card-title">Personal Information</h6>
+                    <p><strong>Home Town:</strong> {{ profile.hometown }}</p>
+                    <p><strong>Current Location:</strong> {{ profile.current_location }}</p>
+                    <p><strong>Gender:</strong> {{ profile.gender }}</p>
+                    <p><strong>Date of Birth:</strong> {{ profile.dob }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Work Experience -->
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="card-title">Work Experience</h6>
+                    {% if profile.experiences.all %}
+                        {% for exp in profile.experiences.all %}
+                            <p><strong>{{ exp.job_title }}</strong> at {{ exp.company }} ({{ exp.start_date }} - {{ exp.end_date|default:"Present" }})</p>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted">No work experience</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Education -->
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="card-title">Education</h6>
+                    {% if profile.educations.all %}
+                        {% for edu in profile.educations.all %}
+                            <p><strong>{{ edu.degree }}</strong> - {{ edu.institution }} <br>
+                            {{ edu.start_year }} - {{ edu.end_year|default:"Present" }}</p>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted">No education details</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+<!-- Skills -->
+<div class="col-md-6">
+    <div class="card shadow-sm h-100">
+        <div class="card-body">
+            <h6 class="card-title">Skills</h6>
+            {% if profile.skills %}
+                <ul class="list-unstyled mb-0">
+                    {% for skill in profile.skills %}
+                        <li class="mb-2 p-2 bg-light rounded border">{{ skill }}</li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-muted">No skills listed</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+        <!-- Internships -->
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="card-title">Internships</h6>
+                    {% if profile.internships.all %}
+                        {% for intern in profile.internships.all %}
+                            <p>{{ intern.title }} at {{ intern.company }} ({{ intern.start_date }} - {{ intern.end_date|default:"Present" }})</p>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted">No internships</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Certifications -->
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="card-title">Certifications</h6>
+                    {% if profile.certificates.all %}
+                        {% for cert in profile.certificates.all %}
+                            <p><strong>{{ cert.title }}</strong> -
+                                <a href="{{ cert.file.url }}" target="_blank">View PDF</a>
+                            </p>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted">No certificates uploaded yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

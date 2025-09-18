@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+  {% if error %}
+    <div class="alert alert-danger text-center">{{ error }}</div>
+  {% else %}
+    <div class="card shadow-lg rounded-4">
+      <div class="card-header bg-primary text-white rounded-top-4 text-center">
+        <h4 class="mb-1">Application Status for {{ application.job.title }}</h4>
+      </div>
+      <div class="card-body">
+        <p><strong>Application Status: </strong>
+          {% if status == 'new' %}
+            <span class="badge bg-secondary">New</span>
+          {% elif status == 'under_review' %}
+            <span class="badge bg-warning">Under Review</span>
+          {% elif status == 'interview_scheduled' %}
+            <span class="badge bg-info">Interview Scheduled</span>
+          {% elif status == 'hired' %}
+            <span class="badge bg-success">Hired</span>
+          {% elif status == 'rejected' %}
+            <span class="badge bg-danger">Rejected</span>
+          {% endif %}
+        </p>
+
+        <p><strong>Applied On: </strong>{{ application.applied_on|date:"M d, Y" }}</p>
+        
+        {% if interview_rounds %}
+          <h5>Interview Rounds:</h5>
+          <table class="table table-bordered table-striped align-middle text-center">
+            <thead class="table-light">
+              <tr>
+                <th>Round</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for round in interview_rounds %}
+                <tr>
+                  <td>Round {{ round.round_number }}</td>
+                  <td>{{ round.interview_date|date:"M d, Y" }}</td>
+                  <td>{{ round.interview_time|time:"h:i A" }}</td>
+                  <td>
+                    {% if round.status == 'shortlisted' %}
+                      <span class="badge bg-success">Shortlisted</span>
+                    {% elif round.status == 'rejected' %}
+                      <span class="badge bg-danger">Rejected</span>
+                    {% elif round.status == 'hired' %}
+                      <span class="badge bg-primary">Hired</span>
+                    {% else %}
+                      <span class="badge bg-secondary">Pending</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p>No interview rounds scheduled yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

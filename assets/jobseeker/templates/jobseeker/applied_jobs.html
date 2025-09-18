@@ -1,0 +1,194 @@
+{% extends base_template %}
+
+{% block content %}
+  <div class="page-header d-sm-flex align-items-center justify-content-between mb-4">
+    <div class="page-title">
+      <h3 class="mb-0">My Applied Jobs</h3>
+      <ul class="breadcrumb">
+        <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+        <li class="breadcrumb-item active">Applied Jobs</li>
+      </ul>
+    </div>
+  </div>
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+    <!-- Filter Form -->
+<form method="GET" action="" class="mb-4">
+    <div class="input-group rounded-pill shadow-sm overflow-hidden">
+        <!-- Job Type Dropdown -->
+        <select class="form-select border-0 rounded-start" name="job_type" style="max-width: 160px;">
+            <option value="" selected>Select job type</option>
+            <option value="Internship" {% if request.GET.job_type == 'Internship' %}selected{% endif %}>Internship</option>
+            <option value="Job" {% if request.GET.job_type == 'Job' %}selected{% endif %}>Job</option>
+            <option value="Full time" {% if request.GET.job_type == 'Full time' %}selected{% endif %}>Full time</option>
+            <option value="Part time" {% if request.GET.job_type == 'Part time' %}selected{% endif %}>Part time</option>
+            <option value="Remote" {% if request.GET.job_type == 'Remote' %}selected{% endif %}>Remote</option>
+        </select>
+
+        <!-- Keyword Input -->
+        <input type="text" name="keyword" class="form-control border-0" placeholder="Enter keyword / designation / companies"
+               value="{{ request.GET.keyword|default:'' }}" style="min-width: 300px;">
+
+        <!-- Location Input -->
+        <input type="text" name="location" class="form-control border-0" placeholder="Enter location"
+               value="{{ request.GET.location|default:'' }}" style="min-width: 180px;">
+
+        <!-- Search Button -->
+        <button class="btn btn-primary px-4 rounded-end" type="submit">
+            <i class="fas fa-search"></i> Search
+        </button>
+    </div>
+</form>
+
+
+    <!-- LIST VIEW ONLY -->
+    <div id="jobs-list">
+        {% if applied_jobs %}<div class="table-responsive">
+    <table class="table align-middle mb-0 shadow-sm rounded-4" style="background-color: #ffffff;">
+    <thead class="table-light text-primary">
+        <tr class="text-center">
+        <th>Job Title</th>
+        <th>Company</th>
+        <th>Type</th>
+        <th>Experience</th>
+        <th>Vacancies</th>
+        <th>Location</th>
+        <th>Status</th>
+        <th>Interview</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for application in applied_jobs %}
+      <tr><tr class="text-center align-middle">
+        <td class="fw-semibold">{{ application.job.title }}</td>
+        <td>{{ application.job.company.name }}</td>
+        <td><span class="badge bg-light text-dark border px-3 py-1">{{ application.job.job_type }}</span></td>
+        <td>{{ application.job.experience }}</td>
+        <td>{{ application.job.vacancies }}</td>
+        <td>{{ application.job.location }}</td>
+        <td>
+          <span class="badge
+            {% if application.status == 'new' %} bg-primary
+            {% elif application.status == 'interview_scheduled' %} bg-warning text-dark
+            {% elif application.status == 'hired' %} bg-success
+            {% elif application.status == 'rejected' %} bg-danger
+            {% else %} bg-secondary
+            {% endif %}">
+            {{ application.status|title }}
+          </span>
+        </td>
+        <td class="text-center">
+          {% if application.status == 'interview_scheduled' and application.meeting_link %}
+            <a href="{{ application.meeting_link }}" class="btn btn-sm btn-outline-info rounded-pill px-3" target="_blank">Join</a>
+          {% else %}
+            —
+          {% endif %}
+        </td>
+        <td class="text-center">
+          <button class="btn btn-success btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#statusModal{{ application.id }}">
+            View
+          </button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+            {% for application in applied_jobs %}
+            <!-- Modal -->
+            <div class="modal fade" id="statusModal{{ application.id }}" tabindex="-1" aria-labelledby="statusModalLabel{{ application.id }}" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Application Details - {{ application.job.title }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p><strong>Company:</strong> {{ application.job.company.name }}</p>
+                            <p><strong>Status:</strong> 
+    <span class="badge 
+        {% if application.status == 'new' %} bg-primary
+        {% elif application.status == 'interview_scheduled' %} bg-warning text-dark
+        {% elif application.status == 'hired' %} bg-success
+        {% elif application.status == 'rejected' %} bg-danger
+        {% else %} bg-secondary
+        {% endif %}">
+        {{ application.status|title }}
+    </span>
+</p>
+
+{% if application.current_round %}
+    <p><strong>Current Round:</strong> {{ application.current_round }}</p>
+{% endif %}
+
+                            {% if application.status == 'interview_scheduled' %}
+                                {% with rounds=application.interviewround_set.all %}
+                                    {% if rounds %}
+                                        <p><strong>Interview Rounds:</strong></p>
+                                        <ul class="list-group">
+                                            {% for round in rounds %}
+                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                    Round {{ round.round_number }} - {{ round.round_name }}
+                                                    {% if round.meeting_link %}
+                                                    <a href="{{ round.meeting_link }}" target="_blank" class="btn btn-sm btn-outline-primary">Join</a>
+                                                    {% endif %}
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% endif %}
+                                {% endwith %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class=" text-center" role="alert">
+            No jobs applied yet.
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<!-- Pagination -->
+<div class="d-flex justify-content-center mt-4">
+    {% if page_obj.has_other_pages %}
+      <nav>
+        <ul class="pagination">
+          {% if page_obj.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+            </li>
+          {% endif %}
+
+          {% for page_num in page_obj.paginator.page_range %}
+            <li class="page-item {% if page_obj.number == page_num %}active{% endif %}">
+              <a class="page-link" href="?page={{ page_num }}">{{ page_num }}</a>
+            </li>
+          {% endfor %}
+
+          {% if page_obj.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+            </li>
+          {% endif %}
+        </ul>
+      </nav>
+    {% endif %}
+</div>
+
+{% endblock %}

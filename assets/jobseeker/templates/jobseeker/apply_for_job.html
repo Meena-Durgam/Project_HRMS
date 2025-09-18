@@ -1,0 +1,90 @@
+{% extends 'base_job.html' %}
+
+{% block content %}
+<style>
+  /* Full height container for vertical + horizontal centering */
+  .apply-job-wrapper {
+    min-height: 80vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  /* Form container */
+  .apply-job-form {
+    background: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    max-width: 600px;
+    width: 100%;
+  }
+
+  /* Two-column grid layout */
+  .apply-job-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px 20px;
+  }
+
+  /* Make file input and full-width fields span both columns */
+  .full-width {
+    grid-column: span 2;
+  }
+
+  /* Labels */
+  .apply-job-form label {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 5px;
+  }
+
+  /* Inputs */
+  .apply-job-form input,
+  .apply-job-form select {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+
+  /* Centered submit button */
+  .apply-job-form .btn-submit {
+    grid-column: span 2;
+    justify-self: center;
+    padding: 8px 25px;
+  }
+</style>
+
+<div class="apply-job-wrapper">
+  <div>
+    <h2 style="text-align:center;">Apply for {{ job.title }}</h2>
+
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} text-center">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+
+    {% if user.is_authenticated %}
+      <form method="POST" enctype="multipart/form-data" class="apply-job-form">
+        {% csrf_token %}
+        <div class="apply-job-grid">
+          {{ form.full_name.as_field_group }}
+          {{ form.email.as_field_group }}
+          {{ form.phone.as_field_group }}
+          <div class="full-width">{{ form.resume.as_field_group }}</div>
+          <button type="submit" class="btn btn-primary btn-submit">Submit Application</button>
+        </div>
+      </form>
+    {% else %}
+      <p class="text-center">You need to be logged in to apply for a job. <a href="{% url 'login' %}">Login here</a></p>
+    {% endif %}
+
+    <br>
+    <div style="text-align:center;">
+      <a href="{% url 'job_detail' job.id %}" class="btn btn-secondary">Back to Job Details</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

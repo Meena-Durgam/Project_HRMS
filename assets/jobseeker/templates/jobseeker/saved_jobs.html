@@ -1,0 +1,124 @@
+{% extends 'base_job.html' %}
+{% load tz %}
+
+{% block content %}
+<div class="page-header mb-4">
+    <div class="row align-items-center">
+        <div class="col-12 col-md">
+            <h3 class="breadcrumb-item">Saved Jobs</h3>
+            <ul class="breadcrumb">
+                <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+                <li class="breadcrumb-item active">Saved Jobs</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Filter Form -->
+<form method="GET" action="" class="mb-4">
+    <div class="input-group rounded-pill shadow-sm overflow-hidden">
+        <!-- Job Type Dropdown -->
+        <select class="form-select border-0 rounded-start" name="job_type" style="max-width: 160px;">
+            <option value="" selected>Select job type</option>
+            <option value="Internship" {% if request.GET.job_type == 'Internship' %}selected{% endif %}>Internship</option>
+            <option value="Job" {% if request.GET.job_type == 'Job' %}selected{% endif %}>Job</option>
+            <option value="Full time" {% if request.GET.job_type == 'Full time' %}selected{% endif %}>Full time</option>
+            <option value="Part time" {% if request.GET.job_type == 'Part time' %}selected{% endif %}>Part time</option>
+            <option value="Remote" {% if request.GET.job_type == 'Remote' %}selected{% endif %}>Remote</option>
+        </select>
+
+        <!-- Keyword Input -->
+        <input type="text" name="keyword" class="form-control border-0" placeholder="Enter keyword / designation / companies"
+               value="{{ request.GET.keyword|default:'' }}" style="min-width: 300px;">
+
+        <!-- Location Input -->
+        <input type="text" name="location" class="form-control border-0" placeholder="Enter location"
+               value="{{ request.GET.location|default:'' }}" style="min-width: 180px;">
+
+        <!-- Search Button -->
+        <button class="btn btn-primary px-4 rounded-end" type="submit">
+            <i class="fas fa-search"></i> Search
+        </button>
+    </div>
+</form>
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    {% endfor %}
+  {% endif %}
+<!-- cards view -->
+{% if saved_jobs %}
+<div class="row">
+    {% for saved in saved_jobs %}
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm border-0 rounded-4">
+            <div class="card-body">
+                <h5 class="card-title fw-bold mb-2 text-primary">{{ saved.job.title|default:"No title" }}</h5>
+                <p class="mb-1"><strong>Company:</strong> {{ saved.job.company.name|default:"No company" }}</p>
+                <p class="mb-1"><strong>Location:</strong> {{ saved.job.location|default:"Not specified" }}</p>
+                <p class="mb-1"><strong>Job Type:</strong>
+                    {% if saved.job.job_type %}
+                        <span class="badge bg-light text-dark border">{{ saved.job.job_type }}</span>
+                    {% else %}
+                        Not specified
+                    {% endif %}
+                </p>
+                <p class="mb-1"><strong>Last date to apply :</strong>
+                    {% timezone "Asia/Kolkata" %}
+                        {{ saved.job.expired_date|date:"M d, Y" }}
+
+                    {% endtimezone %}
+                </p>
+            </div>
+
+            <div class="card-footer bg-white border-0 d-flex justify-content-between align-items-center">
+                <div class="d-flex gap-2">
+                    <!-- Unsave Job Button -->
+                    <form method="post" action="{% url 'unsave_job' saved.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-primary btn-sm" data-bs-toggle="tooltip" title="Unsave job">
+                            <i class="bi bi-bookmark-dash-fill"></i>
+                        </button>
+                    </form>
+
+                    <!-- Apply Job Button -->
+                    <form method="post" action="{% url 'job_detail' saved.job.id %}">
+                       <a href="{% url 'job_detail' saved.job.id %}" class="btn btn-outline-success btn-sm" data-bs-toggle="tooltip" title="Apply to job">
+                        <i class="bi bi-send-fill"></i>
+                        </a>
+                    </form>
+                </div>
+
+
+                <small class="text-muted">
+                    {% timezone "Asia/Kolkata" %}
+                        Saved on: {{ saved.saved_at|date:"d M Y, H:i" }}
+                    {% endtimezone %}
+                </small>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class=" text-center rounded-3 ">
+    <p class="mb-0">No jobs saved yet.</p>
+</div>
+{% endif %}
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+        new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}
