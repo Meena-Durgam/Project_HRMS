@@ -1,0 +1,309 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block content %}
+<div class="page-header mb-4">
+  <h3 class="page-title">{% if is_update %}Update{% else %}Create{% endif %} Invoice</h3>
+  <ul class="breadcrumb">
+    <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+    <li class="breadcrumb-item active">{% if is_update %}Update{% else %}Create{% endif %} Invoice</li>
+  </ul>
+</div>
+
+{% if messages %}
+  <div class="messages mt-2">
+    {% for message in messages %}
+      <div class="alert {% if message.tags == 'error' %}alert-danger
+                       {% elif message.tags == 'success' %}alert-success
+                       {% elif message.tags == 'warning' %}alert-warning
+                       {% elif message.tags == 'denger' %}alert-info
+                       {% else %}alert-secondary{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+<button type="button" class="close" data-bs-dismiss="alert">&times;</button>      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<form method="POST">
+  {% csrf_token %}
+  {{ invoice_form.non_field_errors }}
+  {{ item_formset.non_form_errors }}
+
+  <!-- ================= INVOICE FORM FIELDS ================= -->
+  <div class="row g-3">
+{% for field in invoice_form.visible_fields %}
+  <div class="col-md-3 pt-2">
+    {% if field.name == "tax" %}
+      <label for="{{ field.id_for_label }}" class="form-label">
+        {{ field.label }}<span style="color:red;"> *</span>
+      </label>
+      <select name="{{ field.name }}" id="{{ field.id_for_label }}" class="form-control">
+        <option value="">Select Tax</option>
+        {% for tax in invoice_form.fields.tax.queryset %}
+          <option value="{{ tax.id }}" data-rate="{{ tax.percentage }}"
+  {% if invoice_form.instance.tax_id == tax.id %}selected{% endif %}>
+  {{ tax.name }} ({{ tax.percentage }}%)
+</option>
+
+        {% endfor %}
+      </select>
+      {% if field.errors %}
+        <div class="text-danger small">{{ field.errors|striptags }}</div>
+      {% endif %}
+    {% else %}
+      <label for="{{ field.id_for_label }}" class="form-label">
+        {{ field.label }}{% if field.field.required %}<span style="color:red;"> *</span>{% endif %}
+      </label>
+      {{ field|add_class:"form-control" }}
+      {% if field.errors %}
+        <div class="text-danger small">{{ field.errors|striptags }}</div>
+      {% endif %}
+    {% endif %}
+  </div>
+{% endfor %}
+
+  </div>
+
+  <hr class="my-4">
+
+  <!-- ================= INVOICE ITEMS TABLE ================= -->
+  <div class="table-responsive">
+    <table class="table table-bordered align-middle">
+      <thead class="bg-light text-center">
+        <tr>
+          <th style="width: 5%;">SL.No.</th>
+          <th>Item <span style="color:red">*</span></th>
+          <th>Description <span style="color:red">*</span></th>
+          <th style="width: 12%;">Unit Cost <span style="color:red">*</span></th>
+          <th style="width: 10%;">Qty <span style="color:red">*</span></th>
+          <th style="width: 12%;">Amount</th>
+          <th style="width: 5%;">Action</th>
+        </tr>
+      </thead>
+<tbody id="item-formset">
+  {{ item_formset.management_form }}
+  {% for form in item_formset %}
+  <tr>
+    <!-- Render hidden fields (very important for formset validation) -->
+    {% for hidden in form.hidden_fields %}
+      {{ hidden }}
+    {% endfor %}
+
+    <td class="text-center align-middle">{{ forloop.counter }}</td>
+    <td>{{ form.item_name|add_class:"form-control" }}</td>
+    <td>{{ form.description|add_class:"form-control" }}</td>
+    <td>{{ form.unit_cost|add_class:"form-control unit-cost" }}</td>
+    <td>{{ form.quantity|add_class:"form-control quantity" }}</td>
+    <td><input type="text" class="form-control amount text-end" readonly value="0.00"></td>
+    <td class="text-center align-middle">
+      {% if forloop.last %}
+        <a href="#" class="text-success add-item"><i class="fa fa-plus"></i></a>
+      {% else %}
+        <a href="#" class="text-danger remove-item"><i class="fa fa-trash"></i></a>
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</tbody>
+
+    </table>
+  </div>
+
+  <!-- ================= TOTALS ================= -->
+  <div class="card">
+    <div class="card-body p-0">
+      <table class="table mb-0">
+        <tr>
+          <th>Total</th>
+          <td class="text-end pe-4" id="invoice-total">0.00</td>
+        </tr>
+        <tr>
+<tr>
+                <td><strong>Tax</strong></td>
+                <td><input class="form-control text-end" id="tax-amount" readonly value="0.00" type="text"></td>
+              </tr>
+        <tr>
+          <th>Discount Amount</th>
+          <td><input type="text" id="discount-amount" class="form-control text-end" readonly value="0.00"></td>
+        </tr>
+        <tr class="fw-bold">
+          <th>Grand Total</th>
+          <td class="text-end pe-4" id="grand-total">Rs 0.00</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ================= BUTTONS ================= -->
+  <div class="text-center mt-3">
+    <button type="submit" name="submit_type" value="save_send" class="btn btn-primary px-4">Save</button>
+    <a href="{% url 'invoice_list' %}" class="btn btn-secondary">Cancel</a>
+  </div>
+</form>
+
+<!-- ================= SCRIPTS ================= -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+  function calculateInvoiceTotals() {
+    let subtotal = 0.00;
+
+    // Loop through each item row
+    document.querySelectorAll('#item-formset tr').forEach(row => {
+      const unitCost = parseFloat(row.querySelector('.unit-cost')?.value || 0);
+      const quantity = parseFloat(row.querySelector('.quantity')?.value || 0);
+      const amount = unitCost * quantity;
+
+      // Set amount field
+      const amountField = row.querySelector('.amount');
+      if (amountField) {
+        amountField.value = amount.toFixed(2);
+      }
+
+      subtotal += amount;
+    });
+
+    // Update subtotal
+    document.getElementById('invoice-total').textContent = subtotal.toFixed(2);
+
+    // Apply Discount
+    const discountPercent = parseFloat(document.getElementById('id_discount')?.value || 0);
+    const discountAmount = (discountPercent / 100) * subtotal;
+    const discountedTotal = subtotal - discountAmount;
+
+    // Get tax rate from dropdown
+    let taxRate = 0;
+    const taxSelect = document.getElementById('id_tax');
+    if (taxSelect && taxSelect.options[taxSelect.selectedIndex]) {
+      taxRate = parseFloat(taxSelect.options[taxSelect.selectedIndex].getAttribute('data-rate') || 0);
+    }
+
+    const taxAmount = discountedTotal * (taxRate / 100);
+    const grandTotal = discountedTotal + taxAmount;
+
+    // Update totals
+    document.getElementById('discount-amount').value = discountAmount.toFixed(2);
+
+    // Show tax as "rate% = Rs amount"
+    const taxAmountField = document.getElementById('tax-amount');
+if (taxAmountField) {
+  taxAmountField.value = taxAmount.toFixed(2);
+}
+
+    // Update grand total
+    document.getElementById('grand-total').textContent = `Rs ${grandTotal.toFixed(2)}`;
+  }
+
+  function bindInvoiceRowEvents(row) {
+    row.querySelector('.unit-cost')?.addEventListener('input', calculateInvoiceTotals);
+    row.querySelector('.quantity')?.addEventListener('input', calculateInvoiceTotals);
+  }
+
+  function setupInvoiceFormset() {
+    const formset = document.getElementById('item-formset');
+    const totalForms = document.getElementById('id_form-TOTAL_FORMS');
+
+    formset.addEventListener('click', function (e) {
+      const addBtn = e.target.closest('.add-item');
+      const removeBtn = e.target.closest('.remove-item');
+
+      // Add new row
+      if (addBtn) {
+        e.preventDefault();
+        const index = parseInt(totalForms.value);
+        const templateRow = formset.querySelector('tr');
+        const newRow = templateRow.cloneNode(true);
+
+        newRow.querySelectorAll('input, select, textarea').forEach(input => {
+          if (input.name) input.name = input.name.replace(/-\d+-/, `-${index}-`);
+          if (input.id) input.id = input.id.replace(/-\d+-/, `-${index}-`);
+          if (!input.classList.contains('amount')) input.value = '';
+        });
+
+        formset.appendChild(newRow);
+        totalForms.value = index + 1;
+
+        bindInvoiceRowEvents(newRow);
+        updateInvoiceActionButtons();
+        calculateInvoiceTotals();
+      }
+
+      // Remove row
+      if (removeBtn) {
+        e.preventDefault();
+        const row = removeBtn.closest('tr');
+        row.remove();
+
+        const remainingRows = formset.querySelectorAll('tr');
+        totalForms.value = remainingRows.length;
+
+        updateInvoiceActionButtons();
+        calculateInvoiceTotals();
+      }
+    });
+  }
+
+  function updateInvoiceActionButtons() {
+    const rows = document.querySelectorAll('#item-formset tr');
+    rows.forEach((row, idx) => {
+      const actionCell = row.querySelector('td:last-child');
+      if (actionCell) {
+        actionCell.innerHTML = idx === rows.length - 1
+          ? `<a href="#" class="text-success add-item"><i class="fa fa-plus"></i></a>`
+          : `<a href="#" class="text-danger remove-item"><i class="fa fa-trash"></i></a>`;
+      }
+
+      // Update SL.No.
+      const indexCell = row.querySelector('td:first-child');
+      if (indexCell) indexCell.textContent = idx + 1;
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('#item-formset tr').forEach(bindInvoiceRowEvents);
+
+    // Discount field
+    document.getElementById('id_discount')?.addEventListener('input', calculateInvoiceTotals);
+
+    // Tax dropdown
+    document.getElementById('id_tax')?.addEventListener('change', calculateInvoiceTotals);
+
+    setupInvoiceFormset();
+    calculateInvoiceTotals();  // Initial calculation
+  });
+</script>
+
+<script>
+  $(document).ready(function () {
+    $('#id_client').change(function () {
+      const clientId = $(this).val();
+      const projectSelect = $('#id_project');
+      const estimateSelect = $('#id_estimate');
+
+      if (clientId) {
+        $.ajax({
+          url: "{% url 'load_projects_estimates' %}",
+          data: { client_id: clientId },
+          success: function (data) {
+            projectSelect.empty().append('<option value="">Select a Project</option>');
+            data.projects.forEach(function (project) {
+              projectSelect.append(`<option value="${project.id}">${project.name}</option>`);
+            });
+
+            estimateSelect.empty().append('<option value="">Select an Estimate</option>');
+            data.estimates.forEach(function (estimate) {
+              estimateSelect.append(`<option value="${estimate.id}">${estimate.estimate_number}</option>`);
+            });
+          },
+          error: function () {
+            alert("Failed to load projects and estimates.");
+          }
+        });
+      } else {
+        projectSelect.empty().append('<option value="">Select a Project</option>');
+        estimateSelect.empty().append('<option value="">Select an Estimate</option>');
+      }
+    });
+  });
+</script>
+{% endblock %}

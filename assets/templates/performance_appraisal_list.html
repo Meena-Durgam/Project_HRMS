@@ -1,0 +1,342 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+{% load performance_filters %}
+{% block title %}Qubits HRMS | Performance Appraisals{% endblock %}
+
+{% block content %}
+<style>
+  .custom-select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    padding-right: 40px;
+    font-size: 16px;
+    background-image: url("data:image/svg+xml;utf8,<svg fill='gray' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 16px 16px;
+    cursor: pointer;
+  }
+</style>
+
+<div class="page-header">
+    <div class="row align-items-center">
+        <div class="col">
+            <h3 class="page-title">Performance Appraisals</h3>
+            <ul class="breadcrumb">
+                <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+                <li class="breadcrumb-item active">Performance Appraisals</li>
+            </ul>
+        </div>
+        <div class="col-auto float-right ml-auto">
+             <a href="#" class="btn add-btn text-white" data-toggle="modal" data-target="#addAppraisalModal">
+                <i class="fa fa-plus"></i> Add New
+            </a>
+        </div>
+    </div>
+</div>
+{% if messages %}
+  <div class="messages mt-2">
+    {% for message in messages %}
+      <div class="alert {% if message.tags == 'error' %}alert-danger
+                       {% elif message.tags == 'success' %}alert-success
+                       {% elif message.tags == 'warning' %}alert-warning
+                       {% elif message.tags == 'info' %}alert-info
+                       {% else %}alert-secondary{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+<button type="button" class="close" data-dismiss="alert">&times;</button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+  <!-- Appraisal Table -->
+  <div class="table-responsive">
+    <table class="table table-striped custom-table mb-0 datatable">
+    <thead>
+      <tr>
+        <th>SL. No.</th>
+        <th>Employee</th>
+        <th>Designation</th>
+        <th>Department</th>
+        <th>Appraisal Date</th>
+        <th>Status</th>
+        <th class="text-center">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for appraisal in appraisals %}
+        {% with appraisal_instance=appraisal.instance %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>
+  <div class="d-flex align-items-center">
+   
+    <span>{{ appraisal_instance.employee.first_name }} {{ appraisal_instance.employee.last_name }}</span>
+  </div>
+</td>
+
+            <td>{{ appraisal_instance.employee.designation }}</td>
+            <td>{{ appraisal_instance.employee.department }}</td>
+            <td>{{ appraisal_instance.date|date:"j M Y" }}</td>
+            <td>
+            <span class="btn btn-white btn-sm btn-rounded d-inline-flex align-items-center px-2 py-1 w-auto status-badge" title="
+                {% if appraisal_instance.status == 'active' %}Active{% else %}Inactive{% endif %}">
+                
+                {% if appraisal_instance.status == "active" %}
+                <i class="fa fa-dot-circle-o text-success me-2"></i>
+                <span class="badge-text p-1">Active</span>
+                {% else %}
+                <i class="fa fa-dot-circle-o text-danger me-2"></i>
+                <span class="badge-text">Inactive</span>
+                {% endif %}
+            </span>
+            </td>
+
+
+            <td class="text-center">
+            <div class="dropdown">
+                <a href="#" class="text-muted" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fa fa-ellipsis-v"></i> <!-- MoreVert icon -->
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end">
+                <!-- Edit Option -->
+                <li>
+                    <a class="dropdown-item" href="#" data-toggle="modal" data-target="#editModal{{ appraisal_instance.pk }}">
+                    <i class="fa fa-pencil me-2 "></i> Edit
+                    </a>
+                </li>
+
+          <!-- Delete Button (opens modal instead of confirm) -->
+<li>
+  <a 
+    class="dropdown-item text-danger" 
+    href="#" 
+    data-bs-toggle="modal" 
+    data-bs-target="#deleteAppraisalModal{{ appraisal_instance.pk }}">
+    <i class="fa fa-trash-o me-2"></i> Delete
+  </a>
+</li>
+                </ul>
+            </div>
+            </td>
+
+          </tr>
+        {% endwith %}
+      {% empty %}
+        <tr><td colspan="7" class="text-center">No appraisals found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+
+<!-- ========== MODALS OUTSIDE TABLE ========== -->
+
+{% for appraisal in appraisals %}
+  {% with appraisal_instance=appraisal.instance appraisal_form=appraisal.form %}
+<!-- Delete Modal -->
+<div class="modal custom-modal fade" id="deleteAppraisalModal{{ appraisal_instance.pk }}" tabindex="-1" role="dialog" aria-labelledby="deleteAppraisalModalLabel{{ appraisal_instance.pk }}" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="POST" action="{% url 'appraisal_delete' appraisal_instance.pk %}">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="form-header text-center">
+            <h3>Delete Appraisal</h3>
+            <p>Are you sure you want to delete this appraisal?</p>
+          </div>
+          <div class="modal-btn delete-action mt-4">
+            <div class="row">
+              <div class="col-6">
+                <button type="submit" class="btn btn-block continue-btn">Delete</button>
+              </div>
+              <div class="col-6">
+                <button type="button" class="btn btn-outline-secondary btn-block cancel-btn" data-bs-dismiss="modal">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+  <!-- Edit Appraisal Modal -->
+  <div  class="modal custom-modal fade" role="dialog" id="editModal{{ appraisal_instance.pk }}" aria-labelledby="editModalLabel{{ appraisal_instance.pk }}" aria-hidden="true">
+   <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+    <div class="modal-content">
+        <form method="post" action="{% url 'appraisal_update' appraisal_instance.pk %}">
+          {% csrf_token %}
+          <div class="modal-header">
+            <h5 class="modal-title w-100 text-center">Edit Performance Appraisal</h5>
+                             <button type="button" class="close" data-bs-dismiss="modal" onclick="location.reload();">
+    <span>&times;</span>
+</button>
+          </div>
+          <div class="modal-body">
+
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label><strong>Employee <span class="text-danger">*</span></strong></label>
+                {{ appraisal_form.employee|add_class:"form-control" }}
+              </div>
+              <div class="col-md-6">
+                <label><strong>Date <span class="text-danger">*</span></strong></label>
+                {{ appraisal_form.date|add_class:"form-control" }}
+              </div>
+            </div>
+
+            <!-- Tabs -->
+            <ul class="nav nav-tabs my-3" role="tablist">
+              <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#technical{{ appraisal_instance.pk }}">Technical</a></li>
+              <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#organizational{{ appraisal_instance.pk }}">Organizational</a></li>
+            </ul>
+
+            <div class="tab-content">
+              <!-- Technical Competencies -->
+              <div class="tab-pane fade show active" id="technical{{ appraisal_instance.pk }}">
+                <h6>Technical Competencies</h6>
+                <table class="table table-bordered">
+                  <thead><tr><th>Indicator</th><th>Expected</th><th>Set Value</th></tr></thead>
+                  <tbody>
+                    {% for item in technical_indicators %}
+                      {% with field=appraisal_form|get_field:item.field_name %}
+                        <tr>
+                          <td>{{ item.label }}</td>
+                          <td>{{ item.expected }}</td>
+                          <td>{{ field|add_class:"form-control" }}</td>
+                        </tr>
+                      {% endwith %}
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Organizational Competencies -->
+              <div class="tab-pane fade" id="organizational{{ appraisal_instance.pk }}">
+                <h6>Organizational Competencies</h6>
+                <table class="table table-bordered">
+                  <thead><tr><th>Indicator</th><th>Expected</th><th>Set Value</th></tr></thead>
+                  <tbody>
+                    {% for item in organizational_indicators %}
+                      {% with field=appraisal_form|get_field:item.field_name %}
+                        <tr>
+                          <td>{{ item.label }}</td>
+                          <td>{{ item.expected }}</td>
+                          <td>{{ field|add_class:"form-control" }}</td>
+                        </tr>
+                      {% endwith %}
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="row g-3 mt-3">
+              <div class="col-md-6">
+                <label><strong>Status</strong></label>
+                {{ appraisal_form.status|add_class:"form-control" }}
+              </div>
+            </div>
+
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endwith %}
+{% endfor %}
+
+<!-- Add Appraisal Modal -->
+<div class="modal custom-modal fade" role="dialog"id="addAppraisalModal">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <form method="post" action="{% url 'appraisal_create' %}">
+        {% csrf_token %}
+        <div class="modal-header position-relative">
+            <h5 class="modal-title w-100 text-center">Give Performance Appraisal</h5>
+                             <button type="button" class="close" data-bs-dismiss="modal" onclick="location.reload();">
+    <span>&times;</span>
+</button>
+        </div>
+        <div class="modal-body">
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label><strong>Employee <span class="text-danger">*</span></strong></label>
+              {{ form.employee|add_class:"form-control" }}
+            </div>
+            <div class="col-md-6">
+              <label><strong>Date <span class="text-danger">*</span></strong></label>
+              {{ form.date|add_class:"form-control" }}
+            </div>
+          </div>
+
+          <ul class="nav nav-tabs my-3" role="tablist">
+            <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#technicalAdd">Technical</a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#organizationalAdd">Organizational</a></li>
+          </ul>
+
+          <div class="tab-content">
+            <div class="tab-pane fade show active" id="technicalAdd">
+              <h6>Technical Competencies <span class="text-danger">*</span></h6>
+              <table class="table table-bordered table-auto">
+                <thead><tr><th>Indicator</th><th>Expected</th><th>Set Value</th></tr></thead>
+                <tbody>
+                  {% for item in technical_indicators %}
+                    {% with field=form|get_field:item.field_name %}
+                      <tr>
+                        <td>{{ item.label }}</td>
+                        <td>{{ item.expected }}</td>
+                        <td>{{ field|add_class:"form-control" }}</td>
+                      </tr>
+                    {% endwith %}
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+            <div class="tab-pane fade" id="organizationalAdd">
+              <h6>Organizational Competencies <span class="text-danger">*</span></h6>
+              <table class="table table-bordered table-auto">
+                <thead><tr><th>Indicator</th><th>Expected</th><th>Set Value</th></tr></thead>
+                <tbody>
+                  {% for item in organizational_indicators %}
+                    {% with field=form|get_field:item.field_name %}
+                      <tr>
+                        <td>{{ item.label }}</td>
+                        <td>{{ item.expected }}</td>
+                        <td>{{ field|add_class:"form-control" }}</td>
+                      </tr>
+                    {% endwith %}
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="row g-3 mt-3">
+            <div class="col-md-6">
+              <label><strong>Status <span class="text-danger">*</span></strong></label>
+              {{ form.status|add_class:"form-control" }}
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+{% endblock %}

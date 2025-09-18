@@ -1,0 +1,164 @@
+{% load static %}
+
+<!-- Header -->
+<div class="header">
+
+    <!-- Logo -->
+<div class="header-left">
+    <a href="{% url 'home' %}" class="logo">
+        {% if request.user.is_authenticated and request.user.company and request.user.company.logo %}
+            <img src="{{ request.user.company.logo.url }}" width="50" height="50" alt="Logo" class="rounded-circle">
+        {% else %}
+            <img src="{% static 'assets/img/logo.png' %}" width="40" height="40" alt="Logo" class="rounded-circle">
+        {% endif %}
+    </a>
+</div>
+
+
+    <!-- Sidebar Toggle Button for Desktop -->
+    <a id="toggle_btn" href="javascript:void(0);">
+        <span class="bar-icon">
+            <span></span><span></span><span></span>
+        </span>
+    </a>
+
+    <!-- Page Title -->
+    <div class="page-title-box">
+        <h3>Qubits HRMS</h3>
+    </div>
+
+    <!-- Mobile Menu Button -->
+    <a id="mobile_btn" class="mobile_btn d-lg-none" href="javascript:void(0);">
+        <i class="fa fa-bars"></i>
+    </a>
+
+    <!-- User Menu -->
+    <ul class="nav user-menu">
+
+        <!-- Search -->
+        <li class="nav-item">
+            <div class="top-nav-search">
+                <a href="javascript:void(0);" class="responsive-search">
+                    <i class="fa fa-search"></i>
+                </a>
+                <form action="#" method="get">
+                    <input class="form-control" type="text" name="q" placeholder="Search here">
+                    <button class="btn" type="submit"><i class="fa fa-search"></i></button>
+                </form>
+            </div>
+        </li>
+       
+        <!-- Profile -->
+      <li class="nav-item dropdown has-arrow main-drop">
+            <a href="#" class="dropdown-toggle nav-link" data-bs-toggle="dropdown">
+                <span class="user-img">
+                    {% if request.user.role == 'company_owner' and request.user.company and request.user.company.logo %}
+                        <img src="{{ request.user.company.logo.url }}" alt="Company Logo" class="rounded-circle" width="30" height="30">
+                    {% elif request.user.role == 'employee' and request.user.employee_account.profile.profile_picture %}
+                        <img src="{{ request.user.employee_account.profile.profile_picture.url }}" alt="Profile Image" class="rounded-circle" width="30" height="30">
+                    {% elif request.user.role == 'superadmin' %}
+                        <img src="{% static 'assets/img/profiles/avatar-22.jpg' %}" alt="Superadmin" class="rounded-circle" width="30" height="30">
+                        <span class="status online"></span>
+                    {% else %}
+                        <img src="{% static 'assets/img/profiles/avatar-21.jpg' %}" alt="Default" class="rounded-circle" width="30" height="30">
+                    {% endif %}
+                </span>
+                <span>{{ request.user.get_full_name|default:request.user.email }}</span>
+            </a>
+
+            <div class="dropdown-menu dropdown-menu-end">
+                {% if request.user.role == "company_owner" %}
+                    <a class="dropdown-item" href="{% url 'company_profile' %}">My Profile</a>
+                    <a class="dropdown-item" href="{% url 'company_details' %}">Settings</a>
+                {% elif request.user.role == "employee" %}
+                    <a class="dropdown-item" href="{% url 'employee_profile' %}">My Profile</a>
+                {% endif %}
+                <a class="dropdown-item" href="{% url 'logout' %}">Logout</a>
+            </div>
+        </li>     
+    </ul>
+
+    <!-- Mobile Profile Menu -->
+    <div class="dropdown mobile-user-menu d-md-none">
+        <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#"><i class="fa fa-ellipsis-v"></i></a>
+        <div class="dropdown-menu dropdown-menu-end">
+            <a class="dropdown-item" href="{% url 'employee_profile' %}">My Profile</a>            
+            <a class="dropdown-item" href="#">Settings</a>
+            <a class="dropdown-item" href="{% url 'logout' %}">Logout</a>
+        </div>
+    </div>
+</div>
+<!-- /Header -->
+<!-- Sidebar Overlay (Mobile Only) -->
+<div id="sidebarOverlay" class="d-lg-none"></div>
+
+<!-- Toggle Sidebar Scripts -->
+<script>
+    $(document).ready(function() {
+        // Toggle sidebar for desktop
+        $('#toggle_btn').on('click', function(e) {
+            e.preventDefault();
+            $('body').toggleClass('mini-sidebar');
+        });
+
+        // Toggle sidebar for mobile
+        $('#mobile_btn').on('click', function(e) {
+            e.preventDefault();
+            $('.sidebar').toggleClass('active');
+        });
+
+        // Close sidebar on mobile when clicking outside
+        $(document).mouseup(function(e) {
+            var container = $(".sidebar, #mobile_btn");
+            if (!container.is(e.target) && container.has(e.target).length === 0) {
+                $('.sidebar').removeClass('active');
+            }
+        });
+    });
+</script>
+<!-- Extra Responsive CSS for sidebar -->
+<style>
+    
+    /* Mini Sidebar */
+    .mini-sidebar .sidebar {
+        width: 60px;
+    }
+
+    /* Mobile Sidebar */
+    @media (max-width: 992px) {
+        .sidebar {
+            display: none;
+        }
+
+        .sidebar.active {
+            display: block;
+            width: 250px;
+            background: #1f2937;
+            z-index: 9999;
+            position: fixed;
+            top: 60px;
+            left: 0;
+            bottom: 0;
+            transition: 0.3s ease;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+            
+            /* Reset any custom scrollbar styling */
+            scrollbar-width: auto; /* For Firefox */
+            scrollbar-color: auto auto;
+        }
+
+        /* For WebKit browsers (Chrome, Edge, Safari) */
+        .sidebar.active::-webkit-scrollbar {
+            width: auto;
+        }
+
+        .sidebar.active::-webkit-scrollbar-track {
+            background: auto;
+        }
+
+        .sidebar.active::-webkit-scrollbar-thumb {
+            background: auto;
+        }
+    }
+</style>

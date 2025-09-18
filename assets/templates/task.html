@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="container mt-4">
+        <h2>Create a New Task</h2>
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-success">Create Task</button>
+        </form>
+    </div>
+    <div class="container mt-4">
+        <h2>Kanban Board: {{ board.title }}</h2>
+        <p>{{ board.description }}</p>
+
+        <div class="row">
+            <div class="col-md-4">
+                <h4>To Do</h4>
+                {% for task in board.tasks.filter(status='pending') %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ task.title }}</h5>
+                            <p>{{ task.description }}</p>
+                            <p>Status: {{ task.get_status_display }}</p>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p>No tasks in this status.</p>
+                {% endfor %}
+            </div>
+
+            <div class="col-md-4">
+                <h4>In Progress</h4>
+                {% for task in board.tasks.filter(status='in_progress') %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ task.title }}</h5>
+                            <p>{{ task.description }}</p>
+                            <p>Status: {{ task.get_status_display }}</p>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p>No tasks in this status.</p>
+                {% endfor %}
+            </div>
+
+            <div class="col-md-4">
+                <h4>Completed</h4>
+                {% for task in board.tasks.filter(status='completed') %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ task.title }}</h5>
+                            <p>{{ task.description }}</p>
+                            <p>Status: {{ task.get_status_display }}</p>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p>No tasks in this status.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="container mt-4">
+        <h2>Create a New Kanban Board</h2>
+        
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-success">Create Kanban Board</button>
+        </form>
+    </div>
+{% endblock %}

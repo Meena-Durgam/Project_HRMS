@@ -1,0 +1,16 @@
+{% extends 'base_job.html' %}
+
+{% block content %}
+  <h2>Manage Application for {{ application.job.title }}</h2>
+
+  <form method="POST">
+    {% csrf_token %}
+    
+    {{ form.as_p }}
+    
+    <button type="submit" class="btn btn-primary">Schedule Interview</button>
+  </form>
+
+  <br>
+  <a href="{% url 'job_detail' application.job.id %}" class="btn btn-secondary">Back to Job Details</a>
+{% endblock %}

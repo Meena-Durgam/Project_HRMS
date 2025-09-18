@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<style>
+  .icon-circle {
+    width: 50px;
+    height: 50px;
+    background-color: rgba(0, 123, 255, 0.1);
+    color: #6366f1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 20px;
+    min-width: 50px;
+  }
+
+  .chart-large {
+    width: 100%;
+    height: 400px;
+  }
+
+  @media (max-width: 576px) {
+    .icon-circle {
+      width: 40px;
+      height: 40px;
+      font-size: 16px;
+    }
+    .card-body h4 {
+      font-size: 18px;
+    }
+  }
+</style>
+<div class="container mt-4">
+  <h4>Welcome, {{ user.get_full_name }}</h4>
+<p class="text-muted">{{ today_date }}</p>
+
+{% if not is_profile_complete %}
+  <div class="alert alert-warning d-flex justify-content-between align-items-center mt-3" role="alert">
+    <div>
+      <i class="fa fa-exclamation-triangle me-2"></i>
+      Your profile is incomplete. Please complete it to unlock full features.
+    </div>
+    <a href="{% url 'employee_profile' %}" class="btn btn-sm btn-primary">Complete Profile</a>
+  </div>
+{% endif %}
+{% if messages %}
+  <div class="messages mt-2">
+    {% for message in messages %}
+      <div class="alert {% if message.tags == 'error' %}alert-danger
+                       {% elif message.tags == 'success' %}alert-success
+                       {% elif message.tags == 'warning' %}alert-warning
+                       {% elif message.tags == 'info' %}alert-info
+                       {% else %}alert-secondary{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+<button type="button" class="close" data-dismiss="alert">&times;</button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+  <div class="row mt-4">
+    <!-- Left Column -->
+    <div class="col-md-8">
+      <div class="card mb-3">
+        <div class="card-body">
+          <h5 class="mb-3">Today</h5>
+          <ul class="list-unstyled">
+            {% for item in today_status %}
+              <li><i class="fa fa-user-times text-danger"></i> {{ item }}</li>
+            {% empty %}
+              <li>No updates for today.</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+
+      <div class="card mb-3">
+        <div class="card-body">
+          <h5 class="mb-3">Tomorrow</h5>
+          <p><i class="fa fa-suitcase"></i> {{ tomorrow_status }}</p>
+        </div>
+      </div>
+
+      <div class="card mb-3">
+        <div class="card-body">
+          <h5 class="mb-3">Next Seven Days</h5>
+          <ul class="list-unstyled">
+            {% for note in next_7_days %}
+              <li><i class="fa fa-calendar"></i> {{ note }}</li>
+            {% empty %}
+              <li>No upcoming events.</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column -->
+    <div class="col-md-4">
+      <!-- Projects -->
+      <div class="card mb-3">
+        <div class="card-body text-center">
+          <h6 class="text-uppercase">Projects</h6>
+          <div class="row">
+            <div class="col-6">
+              <h4>{{ total_tasks }}</h4>
+              <p class="mb-0 text-muted">Total Tasks</p>
+            </div>
+            <div class="col-6">
+              <h4>{{ pending_tasks }}</h4>
+              <p class="mb-0 text-muted">Pending Tasks</p>
+            </div>
+          </div>
+          <hr>
+          <p class="mb-0">Total Projects: <strong>{{ total_projects }}</strong></p>
+        </div>
+      </div>
+
+      <!-- Leave Summary -->
+      <div class="card mb-3">
+        <div class="card-body text-center">
+          <h6 class="text-uppercase">Leave Summary</h6>
+          <div class="row">
+            <div class="col-6">
+              <h4>{{ leave_taken }}</h4>
+              <p class="mb-0 text-muted">Leave Taken</p>
+            </div>
+            <div class="col-6">
+              <h4>{{ leave_remaining }}</h4>
+              <p class="mb-0 text-muted">Remaining</p>
+            </div>
+          </div>
+          <a href="{% url 'employee_leave' %}" class="btn btn-sm btn-primary mt-2">Apply Leave</a>
+        </div>
+      </div>
+
+      <!-- Time Off -->
+      <div class="card mb-3">
+        <div class="card-body text-center">
+          <h6 class="text-uppercase">Your Time Off Allowance</h6>
+          <div class="row">
+            <div class="col-6">
+              <h4>{{ timeoff_approved }}</h4>
+              <p class="mb-0 text-muted">Approved</p>
+            </div>
+            <div class="col-6">
+              <h4>{{ timeoff_remaining }}</h4>
+              <p class="mb-0 text-muted">Remaining</p>
+            </div>
+          </div>
+          <a href="#" class="btn btn-sm btn-info mt-2">Apply Time Off</a>
+        </div>
+      </div>
+
+      <!-- Upcoming Holiday -->
+      <div class="card">
+        <div class="card-body text-center">
+          <h6 class="text-uppercase">Upcoming Holiday</h6>
+          <p>{{ upcoming_holiday }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

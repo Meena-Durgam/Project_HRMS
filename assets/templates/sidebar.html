@@ -1,0 +1,220 @@
+{% load static %}
+
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+    <div id="sidebar-menu" class="sidebar-menu">
+        <ul>
+            <!-- Main -->
+            <li class="menu-title"><span>Main</span></li>
+
+            <li class="submenu">
+                <a href="#"><i class="la la-dashboard"></i> <span> Dashboard</span> <span class="menu-arrow"></span></a>
+                <ul style="display: none;">
+                    {% if request.user.role == "company_owner" %}
+                    <li><a href="{% url 'company_owner_dashboard' %}">Admin Dashboard</a></li>
+                    {% elif request.user.role == "employee" %}
+                    <li><a href="{% url 'employee_dashboard' %}">Employee Dashboard</a></li>
+                    {% endif %}
+                </ul>
+            </li>
+
+            <!-- Apps -->
+            <li class="submenu">
+                <a href="#"><i class="la la-cube"></i> <span> Apps</span> <span class="menu-arrow"></span></a>
+                <ul style="display: none;">
+                    
+                    <a href="{% url 'calendar_view' %}">Calendar</a>
+                    <li><a href="{% url 'contact_list' %}">Contacts</a></li>
+                    
+                </ul>
+            </li>
+
+<!-- Employees -->
+<li class="menu-title"><span>Employees</span></li>
+<li class="submenu">
+    <a href="#"><i class="la la-user"></i> <span> Employees</span> <span class="menu-arrow"></span></a>
+    <ul style="display: none;">
+        {% if request.user.role == 'company_owner' %}
+            <!-- Company Owner Menu -->
+            <li><a href="{% url 'employee_manage_modal' %}">Employees</a></li>
+            <li><a href="{% url 'attendance_matrix' %}">Attendance</a></li>
+            <li><a href="{% url 'all_timesheets' %}">Timesheet</a></li>
+            <li><a href="{% url 'review_all_leave_requests' %}">Leaves</a></li>
+            <li><a href="{% url 'create_leave_type' %}">Leaves Settings</a></li>
+            <li><a href="{% url 'holiday_list' %}">Holidays</a></li>
+            <li><a href="{% url 'manage_departments' %}">Departments</a></li>
+            <li><a href="{% url 'manage_designations' %}">Designations</a></li>
+            <li><a href="{% url 'overtime_list' %}">Overtime</a></li>
+        {% elif request.user.role == 'employee' %}
+            <!-- Employee Menu -->
+            <li><a href="{% url 'employee_leave' %}">Leaves</a></li>
+            <li><a href="{% url 'mark_attendance' %}">Attendance</a></li>
+            <li><a href="{% url 'submit_timesheet' %}">Timesheet</a></li>
+        {% endif %}
+    </ul>
+</li>
+
+<!-- Clients -->
+{% if request.user.role == 'company_owner' %}
+<li>
+    <a href="{% url 'clients_page' %}"><i class="la la-users"></i> <span>Clients</span></a>
+</li>
+{% endif %}
+
+<!-- Projects -->
+<li class="submenu">
+    <a href="#"><i class="la la-rocket"></i> <span> Projects</span> <span class="menu-arrow"></span></a>
+    <ul style="display: none;">
+        {% if request.user.role == 'company_owner' %}
+            <li><a href="{% url 'project_list' %}">Projects</a></li>
+            <li><a href="{% url 'task_board' %}">Tasks Board</a></li>
+        {% elif request.user.role == 'employee' %}
+            <li><a href="{% url 'my_projects' %}">Projects</a></li>
+             <li><a href="{% url 'task_list' %}">Task</a></li>
+        <li><a href="{% url 'task_board' %}">Tasks Board</a></li>
+
+        {% endif %}
+    </ul>
+</li>
+
+<!-- Tickets
+<li>
+    <a href="{% url 'ticket_list' %}"><i class="la la-ticket"></i> <span>Tickets</span></a>
+</li>
+-->
+
+<!-- HR -->
+<li class="menu-title"><span>HR</span></li>
+
+{% if request.user.role == 'company_owner' %}
+<li class="submenu">
+    <a href="#"><i class="la la-files-o"></i> <span>Accounts</span> <span class="menu-arrow"></span></a>
+    <ul>
+        <li><a href="{% url 'estimate_list' %}">Estimates</a></li>
+        <li><a href="{% url 'invoice_list' %}">Invoices</a></li>
+        <li><a href="{% url 'invoice_payments' %}">Payments</a></li>
+        <li><a href="{% url 'expense_list' %}">Expenses</a></li>
+        <li><a href="{% url 'tax_list' %}">Tax</a></li>
+    </ul>
+</li>
+{% endif %}
+
+<li class="submenu">
+    <a href="#"><i class="la la-money"></i> <span>Payroll</span> <span class="menu-arrow"></span></a>
+    <ul>
+        {% if request.user.role == 'employee' %}
+            <li><a href="">Payslip</a></li>
+        {% elif request.user.role == 'company_owner' %}
+            <li><a href="{% url 'manage_payroll' %}">Employee Salary</a></li>
+            <li><a href="{% url 'manage_payitems' %}">Payroll Items</a></li>
+        {% endif %}
+    </ul>
+</li>
+
+{% if request.user.role == 'company_owner' %}
+<li>
+    <a href="{% url 'manage_policies' %}"><i class="la la-file-pdf-o"></i> <span>Policies</span></a>
+</li>
+<li class="submenu">
+    <a href="#"><i class="la la-pie-chart"></i> <span>Reports</span> <span class="menu-arrow"></span></a>
+    <ul>
+        
+        <li><a href="{% url 'invoice_report_view' %}">Invoice Report</a></li>
+    </ul>
+</li>
+{% endif %}
+
+<!-- Performance -->
+{% if request.user.role == 'company_owner' %}
+<li class="menu-title"><span>Performance</span></li>
+<li class="submenu">
+    <a href="#"><i class="la la-graduation-cap"></i> <span> Performance </span> <span class="menu-arrow"></span></a>
+    <ul style="display: none;">
+        <li><a href="{% url 'performance_indicator_list' %}">Performance Indicator</a></li>
+        <li><a href="{% url 'performance_list' %}">Performance Review</a></li>
+        <li><a href="{% url 'appraisal_list' %}">Performance Appraisal</a></li>
+    </ul>
+</li>
+{% endif %}
+
+<!-- Goal
+<li class="submenu">
+    <a href="#"><i class="la la-crosshairs"></i> <span> Goals </span> <span class="menu-arrow"></span></a>
+    <ul style="display: none;">
+        <li><a href="{% url 'goal_list' %}">Goal List</a></li>
+        <li><a href="{% url 'goal_type_list' %}">Goal Type</a></li>
+    </ul>
+</li>
+-->
+
+<!-- Training -->
+<li class="submenu">
+    <a href="#"><i class="la la-edit"></i> <span> Training </span> <span class="menu-arrow"></span></a>
+    <ul style="display: none;">
+        {% if request.user.role == 'employee' %}
+            <li><a href="{% url 'training_list' %}">Training List</a></li>
+        {% elif request.user.role == 'company_owner' %}
+            <li><a href="{% url 'training_list' %}">Training List</a></li>
+            <li><a href="{% url 'trainer_list' %}">Trainers</a></li>
+            <li><a href="{% url 'training_type_list' %}">Training Type</a></li>
+        {% endif %}
+    </ul>
+</li>
+
+{% if request.user.role == 'employee' %}
+<li>
+    <a href="{% url 'resignation_list' %}"><i class="la la-external-link-square"></i> <span>Resignation</span></a>
+</li>
+{% endif %}
+
+{% if request.user.role == 'company_owner' %}
+<li>
+    <a href="{% url 'promotion_list' %}"><i class="la la-bullhorn"></i> <span>Promotion</span></a>
+</li>
+{% if request.user.role == 'company_owner' %}
+<li class="menu-item {% if request.path == '/company-resignations/' %}active{% endif %}">
+    <a href="{% url 'company_resignation_list' %}">
+        <i class="la la-external-link-square"></i>
+        <span>Resignations</span>
+    </a>
+</li>
+{% endif %}
+{% if request.user.role == 'employee' %}
+<li>
+    <a href="{% url 'resignation_list' %}"><i class="la la-external-link-square"></i> <span>Resignation</span></a>
+</li>
+{% endif %}
+<li>
+    <a href="{% url 'termination_list' %}"><i class="la la-user-times"></i> <span>Termination</span></a>
+</li>
+{% endif %}
+
+{% if request.user.role == 'company_owner' %}
+<!-- Administration -->
+<li class="menu-title"><span>Administration</span></li>
+<li>
+    <a href="{% url 'asset_list' %}"><i class="la la-object-ungroup"></i><span>Assets</span></a>
+</li>
+<li>
+    <a href="{% url 'company_subscription_page' %}"><i class="la la-object-ungroup"></i><span>Subscription</span></a>
+</li>
+<li class="submenu">
+    <a href="#"><i class="la la-briefcase"></i> <span> Jobs</span> <span class="menu-arrow"></span></a>
+    <ul style="display: none;">
+        <li><a href="{% url 'job_list' %}">Manage Jobs</a></li>
+        <li><a href="{% url 'job_applications_list' %}">Hired Candidates</a></li>
+    </ul>
+</li>
+<li>
+    <a href="#"><i class="la la-bell"></i> <span>Activities</span></a>
+</li>
+<li>
+    <a href="{% url 'company_details' %}"><i class="la la-cog"></i> <span>Settings</span></a>
+</li>
+{% endif %}
+
+            <!-- Pages -->
+           
+    </div>
+</div>
+<!-- /Sidebar -->

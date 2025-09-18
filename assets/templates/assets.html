@@ -1,0 +1,332 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Qubits HRMS | Assets {% endblock %}
+
+{% block content %}
+<style>
+/* Hide default arrow */
+
+.select-arrow-spacing {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+
+  background-image: url("data:image/svg+xml;utf8,<svg fill='gray' height='30' viewBox='0 0 24 24' width='30' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+  background-repeat: no-repeat;
+
+  /* 👇 Arrow spacing from the right */
+  background-position: right 14px center;
+
+  /* 👇 Add right padding so text doesn't collide with the arrow */
+  padding-right: 38px;
+
+  background-size: 24px;
+}
+</style>
+
+<div class="page-header">
+  <div class="row align-items-center">
+    <div class="col">
+      <h3 class="page-title">Assets</h3>
+      <ul class="breadcrumb">
+        <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+        <li class="breadcrumb-item active">Assets</li>
+      </ul>
+    </div>
+    {% if request.user.role == 'company_owner' %}
+      <button class="btn btn-primary rounded-pill px-4 py-2" data-toggle="modal" data-target="#addAssetModal">
+        <i class="fa fa-plus"></i> Add Asset
+      </button>
+    {% endif %}
+  </div>
+</div>
+
+{% if messages %}
+  <div class="messages mt-2">
+    {% for message in messages %}
+      <div class="alert
+        {% if message.tags == 'error' %}alert-danger
+        {% elif message.tags == 'success' %}alert-success
+        {% elif message.tags == 'warning' %}alert-warning
+        {% elif message.tags == 'info' %}alert-info
+        {% else %}alert-secondary
+        {% endif %}
+        alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<!-- Filter/search bar -->
+<form method="get" class="row mb-4 align-items-center">
+  <div class="col-xl-3 col-12">
+    <select name="employee" class="form-control custom-select-padding select-arrow-spacing floating">
+      <option value=""> Employee Name </option>
+      {% for emp in employees %}
+        <option value="{{ emp.id }}" {% if request.GET.employee == emp.id|stringformat:"s" %}selected{% endif %}>
+          {{ emp.first_name }} {{ emp.last_name }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-xl-3 col-12">
+    <select name="status" class="form-control custom-select-padding select-arrow-spacing floating">
+      <option value=""> Status </option>
+      <option value="Pending" {% if request.GET.status == 'Pending' %}selected{% endif %}>Pending</option>
+      <option value="Approved" {% if request.GET.status == 'Approved' %}selected{% endif %}>Approved</option>
+      <option value="Returned" {% if request.GET.status == 'Returned' %}selected{% endif %}>Returned</option>
+    </select>
+  </div>
+  <div class="col-xl-2 col-12">
+    <input type="date" name="start_date" class="form-control text-uppercase" value="{{ request.GET.start_date }}">
+  </div>
+  <div class="col-xl-2 col-12">
+    <input type="date" name="end_date" class="form-control text-uppercase" value="{{ request.GET.end_date }}">
+  </div>
+  <div class="col-xl-2 col-12">
+    <button type="submit" class="btn btn-primary w-100" style="height: 42px;">SEARCH</button>
+  </div>
+</form>
+
+<!-- Assets Table -->
+<div class="table-responsive">
+  <table class="table table-striped custom-table datatable">
+    <thead>
+      <tr>
+        <th>Asset User</th>
+        <th>Asset Name</th>
+        <th>Asset ID</th>
+        <th>Purchase Date</th>
+        <th>Warranty</th>
+        <th>Warranty End</th>
+        <th>Amount</th>
+        <th class="text-center">Status</th>
+        <th class="text-center">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for asset in assets %}
+      <tr>
+        <td>{{ asset.employee }}</td>
+        <td><strong>{{ asset.name }}</strong></td>
+        <td>{{ asset.asset_id }}</td>
+        <td>{{ asset.purchase_date|date:"d M Y" }}</td>
+        <td>{{ asset.warranty }} Months</td>
+        <td>{{ asset.warranty_end|date:"d M Y" }}</td>
+        <td>₹{{ asset.value }}</td>
+        <td class="text-center">
+          <div class="dropdown action-label">
+            <a class="btn btn-white btn-sm btn-rounded dropdown-toggle" href="#" data-toggle="dropdown" aria-expanded="false">
+              {% if asset.status == 'Pending' %}
+                <i class="fa fa-dot-circle-o text-danger"></i> Pending
+              {% elif asset.status == 'Approved' %}
+                <i class="fa fa-dot-circle-o text-success"></i> Approved
+              {% else %}
+                <i class="fa fa-dot-circle-o text-info"></i> Returned
+              {% endif %}
+            </a>
+            <div class="dropdown-menu dropdown-menu-right">
+              <a class="dropdown-item" href="#"><i class="fa fa-dot-circle-o text-danger"></i> Pending</a>
+              <a class="dropdown-item" href="#"><i class="fa fa-dot-circle-o text-success"></i> Approved</a>
+              <a class="dropdown-item" href="#"><i class="fa fa-dot-circle-o text-info"></i> Returned</a>
+            </div>
+          </div>
+        </td>
+
+        <td class="text-center">
+          {% if request.user.role == 'company_owner' %}
+          <div class="dropdown dropdown-action">
+            <a class="action-icon dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <i class="material-icons">more_vert</i>
+            </a>
+            <div class="dropdown-menu dropdown-menu-right">
+              <a class="dropdown-item" data-toggle="modal" data-target="#editAssetModal{{ asset.id }}">
+                <i class="fa fa-pencil me-2"></i> Edit
+              </a>
+              <a class="dropdown-item text-danger" data-toggle="modal" data-target="#deleteAssetModal{{ asset.id }}">
+                <i class="fa fa-trash-o me-2"></i> Delete
+              </a>
+            </div>
+          </div>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Add Asset Modal -->
+<div class="modal custom-modal fade" id="addAssetModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-md modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <form method="post" action="{% url 'add_asset' %}">
+        {% csrf_token %}
+        <div class="modal-header border-0">
+          <h5 class="modal-title mx-auto mt-2">Add Asset</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span>&times;</span></button>
+        </div>
+        <div class="modal-body">
+          <div class="container-fluid">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label for="name" class="form-label">Asset Name <span style="color: red;">*</span></label>
+                <input type="text" name="name" class="form-control" id="name" required>
+              </div>
+              <div class="col-md-6">
+                <label for="asset_id" class="form-label">Asset ID <span style="color: red;">*</span></label>
+                <input type="text" name="asset_id" class="form-control" id="asset_id" readonly placeholder="Auto-generated after submission">
+              </div>
+              <div class="col-md-6 mt-3">
+                <label for="employee" class="form-label">Employee <span style="color: red;">*</span></label>
+                <select name="employee" class="form-control" id="employee" required>
+                  <option value="">Select Employee</option>
+                  {% for emp in employees %}
+                    <option value="{{ emp.id }}">
+                      {{ emp.first_name }} {{ emp.last_name }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-6 mt-3">
+                <label for="purchase_date" class="form-label">Purchase Date <span style="color: red;">*</span></label>
+                <input type="date" name="purchase_date" class="form-control" id="purchase_date" required>
+              </div>
+              <div class="col-md-6 mt-3">
+                <label for="warranty" class="form-label">Warranty (Months) <span style="color: red;">*</span></label>
+                <input type="number" name="warranty" class="form-control" id="warranty" required>
+              </div>
+              <div class="col-md-6 mt-3">
+                <label for="warranty_end" class="form-label">Warranty End <span style="color: red;">*</span></label>
+                <input type="date" name="warranty_end" class="form-control" id="warranty_end" required>
+              </div>
+              <div class="col-md-6 mt-3">
+                <label for="value" class="form-label">Amount <span style="color: red;">*</span></label>
+                <input type="number" name="value" class="form-control" id="value" required>
+              </div>
+              <div class="col-md-6 mt-3">
+                <label for="status" class="form-label">Status <span style="color: red;">*</span></label>
+                <select name="status" class="form-control" id="status" required>
+                  <option value="Pending">Pending</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Returned">Returned</option>
+                </select>
+              </div>
+            </div>
+            <div class="modal-footer justify-content-center mt-4 border-0">
+              <button type="submit" class="btn btn-primary ">Save</button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT & DELETE MODALS: Placed OUTSIDE the table -->
+
+{% for asset in assets %}
+<!-- Edit Modal -->
+<div class="modal custom-modal fade" id="editAssetModal{{ asset.id }}" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <form method="post" action="{% url 'edit_asset' asset.id %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title">Edit Asset</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span>&times;</span></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label>Asset Name  <span style="color: red;">*</span></label>
+            <input type="text" name="name" value="{{ asset.name }}" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label>Asset ID</label>
+            <input type="text" name="asset_id" class="form-control" readonly placeholder="Auto-generated after submission" value="{{ asset.asset_id }}">
+          </div>
+          <div class="mb-3">
+            <label>Employee  <span style="color: red;">*</span></label>
+            <select name="employee" class="form-control" required>
+              {% for emp in employees %}
+                <option value="{{ emp.id }}" {% if asset.employee.id == emp.id %}selected{% endif %}>{{ emp.first_name }} {{ emp.last_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+  <label>Purchase Date <span style="color: red;">*</span></label>
+  <input type="date" name="purchase_date" value="{{ asset.purchase_date|date:'Y-m-d' }}" class="form-control" required>
+</div>
+
+
+          <div class="mb-3">
+            <label>Warranty (Months)  <span style="color: red;">*</span></label>
+            <input type="number" name="warranty" value="{{ asset.warranty }}" class="form-control" required>
+          </div>
+       <div class="mb-3">
+  <label>Warranty End <span style="color: red;">*</span></label>
+  <input type="date" name="warranty_end" value="{{ asset.warranty_end|date:'Y-m-d' }}" class="form-control" required>
+</div>
+          <div class="mb-3">
+            <label>Amount  <span style="color: red;">*</span></label>
+            <input type="number" name="value" value="{{ asset.value }}" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label>Status  <span style="color: red;">*</span></label>
+            <select name="status" class="form-control" required>
+              <option value="Pending" {% if asset.status == 'Pending' %}selected{% endif %}>Pending</option>
+              <option value="Approved" {% if asset.status == 'Approved' %}selected{% endif %}>Approved</option>
+              <option value="Returned" {% if asset.status == 'Returned' %}selected{% endif %}>Returned</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal custom-modal fade" id="deleteAssetModal{{ asset.id }}" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content text-center p-4 rounded-4">
+      <div class="modal-body">
+        <h3 class="mb-2 fw-semibold">Delete Asset</h3>
+        <p class="text-muted mb-4" style="font-size: 14px;">Are you sure want to delete this asset?</p>
+        <form method="post" action="{% url 'delete_asset' asset.id %}">
+          {% csrf_token %}
+          <div class="modal-btn delete-action mt-4">
+                        <div class="row">
+                            <div class="col-6">
+                                <button type="submit" class="btn btn-outline-primary btn-block continue-btn">Delete</button>
+                            </div>
+                            <div class="col-6">
+                                <button type="button" class="btn btn-outline-secondary btn-block cancel-btn" data-dismiss="modal">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  $(document).ready(function () {
+    $('#addAssetModal').on('hidden.bs.modal', function () {
+      console.log('Resetting Add Asset form');
+      // Reset form fields to empty manually
+      $(this).find('input, select, textarea').val('');
+    });
+  });
+</script>
+
+{% endblock %}

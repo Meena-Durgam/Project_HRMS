@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Project Details | {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4">
+    <div class="row align-items-center">
+        <div class="col">
+            <h3 class="page-title">{{ project.name }}</h3>
+            <ul class="breadcrumb">
+                <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'project_list' %}">Projects</a></li>
+                <li class="breadcrumb-item active">{{ project.name }}</li>
+            </ul>
+        </div>
+       
+    </div>
+</div>
+
+<div class="row">
+    <!-- Left content -->
+    <div class="col-lg-8">
+        <!-- Project Overview -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h4 class="card-title mb-1">{{ project.name }}</h4>
+                <p class="text-muted">{{ open_tasks }} open tasks, {{ completed_tasks }} tasks completed</p>
+                <p>{{ project.description|safe }}</p>
+            </div>
+        </div>
+
+        <!-- Uploaded File -->
+        {% if project.file_upload %}
+        <div class="card mb-4">
+            <div class="card-header"><h5 class="card-title">Uploaded File</h5></div>
+            <div class="card-body">
+                {% if ".pdf" in project.file_upload.url|lower %}
+                    <a href="{{ project.file_upload.url }}" target="_blank" class="btn btn-outline-primary">View PDF</a>
+                {% else %}
+                    <img src="{{ project.file_upload.url }}" class="img-thumbnail" width="200">
+                {% endif %}
+                <p class="mt-2 small text-muted">{{ project.file_upload.name|slice:"10:" }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Attachments -->
+        <div class="card mb-4">
+            <div class="card-header"><h5 class="card-title">Task Attachments</h5></div>
+            <div class="card-body">
+                {% for task in tasks %}
+                    {% if task.attachment %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <i class="fa fa-file text-muted mr-2"></i> {{ task.attachment.name|slice:"10:" }}<br>
+                                <small class="text-muted">{{ task.assigned_to }} · {{ task.created_at|date:"M d, Y H:i" }}</small>
+                            </div>
+                            <a href="{{ task.attachment.url }}" class="btn btn-sm btn-outline-primary">Download</a>
+                        </div>
+                    {% endif %}
+                {% empty %}
+                    <p class="text-muted">No attachments.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Sidebar -->
+    <div class="col-lg-4">
+        <!-- Project Details -->
+        <div class="card mb-4">
+            <div class="card-header"><h5 class="card-title">Project Details</h5></div>
+            <div class="card-body">
+                <p><strong>Client:</strong> {{ project.client.client_name }}</p>
+                <p><strong>Start Date:</strong> {{ project.start_date|date:"d M, Y" }}</p>
+                <p><strong>Deadline:</strong> {{ project.end_date|date:"d M, Y" }}</p>
+                <p><strong>Priority:</strong> <span class="badge badge-{{ project.priority|lower }}">{{ project.priority|title }}</span></p>
+                <p><strong>Status:</strong> {{ project.status }}</p>
+                <div class="progress">
+                    <div class="progress-bar bg-success" style="width: {{ progress }}%">{{ progress }}%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Team Leader -->
+      <!-- Team Leader -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="card-title">Team Leader</h5></div>
+    <div class="card-body d-flex align-items-center">
+        {% if project.team_leader.profile and project.team_leader.profile.profile_picture %}
+            <img src="{{ project.team_leader.profile.profile_picture.url }}" class="rounded-circle me-2" width="40" height="40">
+        {% else %}
+            <img src="{% static 'default-user.png' %}" class="rounded-circle me-2" width="40" height="40">
+        {% endif %}
+        <div>
+            <strong class="p-2">{{ project.team_leader.first_name }} {{ project.team_leader.last_name }}</strong><br>
+            <small class="text-muted p-2">Team Leader</small>
+        </div>
+    </div>
+</div>
+
+<!-- Team Members -->
+<div class="card">
+    <div class="card-header"><h5 class="card-title">Team Members</h5></div>
+    <div class="card-body">
+        {% for member in project.team_members.all %}
+            <div class="d-flex align-items-center mb-2">
+                {% if member.profile and member.profile.profile_picture %}
+                    <img src="{{ member.profile.profile_picture.url }}" class="rounded-circle me-2" width="35" height="35">
+                {% else %}
+                    <img src="{% static 'default-user.png' %}" class="rounded-circle me-2" width="35" height="35">
+                {% endif %}
+                <div>
+                    <strong class="p-2">{{ member.first_name }} {{ member.last_name }}</strong><br>
+                    <small class="text-muted p-2">{{ member.designation.name|default:"Member" }}</small>
+                </div>
+            </div>
+        {% empty %}
+            <p class="text-muted">No users assigned.</p>
+        {% endfor %}
+    </div>
+</div>
+
+    </div>
+</div>
+{% endblock %}

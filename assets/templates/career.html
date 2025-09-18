@@ -1,0 +1,82 @@
+{% extends 'base_no_header_sidebar.html' %}
+{% load static %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="py-5" style="background: linear-gradient(to right, #4e54c8, #8f94fb); color: white;">
+    <div class="container text-center">
+        <h1 class="mb-3">Explore Career Opportunities</h1>
+        <p class="lead mb-4">Find the perfect role and take the next step in your career</p>
+        <a href="{% url 'jobseeker_signup' %}" class="btn btn-light btn-lg rounded-pill">Register to Apply</a>
+    </div>
+</section>
+
+<!-- Jobs Listing -->
+<section class="py-5" style="background-color: #f8f9fa;">
+    <div class="container">
+        <h2 class="text-center mb-5">Available Job Openings</h2>
+        <div class="row g-4">
+            {% for job in jobs %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 shadow-lg border-0 rounded-4">
+                    <div class="card-body">
+                        <h5 class="card-title text-primary">{{ job.title }}</h5>
+                        <p class="mb-1"><strong>Company:</strong> {{ job.company.name }}</p>
+                        <p class="mb-1"><strong>Department:</strong> {{ job.department.name }}</p>
+                        <p class="mb-1"><strong>Location:</strong> {{ job.location }}</p>
+                        <p class="mb-1"><strong>Type:</strong> {{ job.job_type }}</p>
+                        <p class="mb-1"><strong>Vacancies:</strong> {{ job.vacancies }}</p>
+                        <p class="mb-1"><strong>Experience:</strong> {{ job.experience }}</p>
+                        <p class="mb-2"><strong>Salary:</strong> ₹{{ job.salary_from }} - ₹{{ job.salary_to }}</p>
+                        <p class="text-muted small"><strong>Expires:</strong> {{ job.expired_date }}</p>
+                        <a href="{% url 'jobseeker_signup' %}" class="btn btn-outline-primary w-100 mt-2">Apply Now</a>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="alert alert-warning text-center">
+                    No job openings available at the moment.
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- How It Works -->
+<section class="py-5 bg-white">
+    <div class="container">
+        <h2 class="text-center mb-5">How It Works</h2>
+        <div class="row g-4 text-center">
+            <div class="col-md-4">
+                <div class="p-4 bg-light rounded-4 shadow-sm h-100">
+                    <div class="mb-3 text-primary fs-1">
+                        <i class="bi bi-search"></i>
+                    </div>
+                    <h5>Search Your Job</h5>
+                    <p class="text-muted">Find jobs that match your skills and interest</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-4 bg-light rounded-4 shadow-sm h-100">
+                    <div class="mb-3 text-success fs-1">
+                        <i class="bi bi-send-check"></i>
+                    </div>
+                    <h5>Apply Easily</h5>
+                    <p class="text-muted">Submit your application in just a few clicks</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-4 bg-light rounded-4 shadow-sm h-100">
+                    <div class="mb-3 text-warning fs-1">
+                        <i class="bi bi-file-earmark-person"></i>
+                    </div>
+                    <h5>Submit Resume</h5>
+                    <p class="text-muted">Upload your CV and get noticed by recruiters</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load resignation_tag %}
+{% load widget_tweaks %}
+
+{% block title %}Qubits HRMS | Resignations{% endblock %}
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div class="row align-items-center">
+        <div class="col">
+            <h3 class="page-title">Resignations</h3>
+            <ul class="breadcrumb">
+                <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+                <li class="breadcrumb-item active">Resignation</li>
+            </ul>
+        </div>
+        {% if request.user.role == 'employee' %}
+        <div class="col-auto float-right ml-auto">
+            <a href="#" class="btn add-btn" data-toggle="modal" data-target="#add_resignation">
+                <i class="fa fa-plus"></i> Add Resignation
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if messages %}
+  <div class="messages mt-2">
+    {% for message in messages %}
+      <div class="alert
+        {% if message.tags == 'error' %}alert-danger
+        {% elif message.tags == 'success' %}alert-success
+        {% elif message.tags == 'warning' %}alert-warning
+        {% elif message.tags == 'info' %}alert-info
+        {% else %}alert-secondary
+        {% endif %}
+        alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<!-- Resignation Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="table-responsive">
+            <table class="table table-striped custom-table mb-0 datatable">
+                <thead>
+                    <tr>
+                        <th>SL.No</th>
+                        <th>Employee</th>
+                        <th>Department</th>
+                        <th>Reason</th>
+                        
+                        <th>Resignation Date</th>
+                        <th>Status</th>
+                        <th class="text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for res in resignations %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ res.employee }}</td>
+                        <td>{% if res.employee.department %}
+        {{ res.employee.department.name }}
+    {% else %}
+        <span class="text-muted">No department</span>
+    {% endif %}</td>
+                        <td>{{ res.reason|linebreaksbr }}</td>
+                        
+                        <td>{{ res.resignation_date }}</td>
+                        <td>
+    <form method="POST" action="{% url 'update_resignation_status' res.id %}" class="d-inline">
+        {% csrf_token %}
+        <select name="status" class="form-select form-select-sm rounded-pill fw-semibold px-3 py-1 text-center status-select"
+                onchange="this.form.submit()">
+            <option value="pending" class="text-warning"
+                {% if res.status == 'pending' %}selected{% endif %}>
+                ⭘ Pending
+            </option>
+            <option value="approved" class="text-success"
+                {% if res.status == 'approved' %}selected{% endif %}>
+                🟢 Approved
+            </option>
+            <option value="rejected" class="text-danger"
+                {% if res.status == 'rejected' %}selected{% endif %}>
+                🔴 Rejected
+            </option>
+        </select>
+    </form>
+</td>
+
+
+
+                        <td class="text-right">
+    <div class="dropdown dropdown-action">
+        <a href="#" class="action-icon dropdown-toggle" data-bs-toggle="dropdown">
+            <i class="material-icons">more_vert</i>
+        </a>
+        <div class="dropdown-menu dropdown-menu-right">
+
+            {# 1. Edit/Delete - Only for employee who submitted it, and status is 'pending' #}
+            {% if request.user.role == 'employee' and res.employee.user.id == request.user.id and res.status == 'pending' %}
+                
+
+            {# 2. Approve/Reject - Only for company owner and if status is 'pending' #}
+            {% elif request.user.role == 'company_owner' and res.status == 'pending' %}
+                <a class="dropdown-item" href="{% url 'approve_resignation' res.id %}">
+                    <i class="fa fa-check m-r-5"></i> Approve
+                </a>
+                <a class="dropdown-item" href="{% url 'reject_resignation' res.id %}">
+                    <i class="fa fa-times m-r-5"></i> Reject
+                </a>
+
+            {# 3. No actions available to this user #}
+            {% else %}
+                <span class="dropdown-item text-muted">No actions</span>
+            {% endif %}
+
+        </div>
+    </div>
+</td>
+
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+</div>
+
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+
+{% endblock %}

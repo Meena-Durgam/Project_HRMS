@@ -1,0 +1,69 @@
+{% load static %}
+<style>
+/* Sidebar */
+.sidebar {
+    position: fixed;
+    top: 60px; /* header height */
+    left: 0;
+    width: 250px;
+    height: calc(100vh - 60px);
+    background-color: #1f2937; /* Match header background */
+    overflow-y: auto;
+    transition: width 0.3s ease, left 0.3s ease;
+    z-index: 1030;
+}
+
+/* Sidebar text and icons */
+.sidebar a,
+.sidebar a span,
+.sidebar a i,
+.sidebar li a,
+.sidebar li i,
+.sidebar .menu-title,
+.sidebar .menu-title span {
+    color: #fff !important; /* force white text & icons */
+}
+
+/* Optional: active state styling */
+.sidebar .active > a {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-left: 3px solid #fff;
+}
+</style>
+
+
+</style>
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-inner slimscroll">
+        <div id="sidebar-menu" class="sidebar-menu">
+            <ul>
+                <li class="menu-title">
+                    <span>Superadmin</span>
+                </li>
+
+                <li class="{% if request.path == '/superadmin/dashboard/' %}active{% endif %}">
+                    <a href="{% url 'superadmin_dashboard' %}"><i class="la la-dashboard"></i> <span> Dashboard</span></a>
+                </li>
+
+                <li class="{% if '/superadmin/companies' in request.path %}active{% endif %}">
+                    <a href="{% url 'company_list' %}"><i class="la la-building"></i> <span> Companies</span></a>
+                </li>
+                <li class="{% if request.path == '/superadmin/subscribed-companies/' %}active{% endif %}">
+                    <a href="{% url 'subscribed_companies_list' %}"><i class="la la-users"></i> <span>Subscribed Companies</span></a>
+                </li>
+
+                <li class="{% if '/superadmin/subscription' in request.path %}active{% endif %}">
+                    <a href="{% url 'package_list' %}"><i class="la la-cube"></i> <span> Packages</span></a>
+                </li>
+
+                <li class="{% if '/superadmin/domain-purchase' in request.path %}active{% endif %}">
+                    <a href="{% url 'domain_purchases' %}"><i class="la la-globe"></i> <span> Domain Purchases</span></a>
+                </li>
+
+                <li class="{% if '/superadmin/transactions' in request.path %}active{% endif %}">
+                    <a href="{% url 'transactions' %}"><i class="la la-credit-card"></i> <span> Purchase Transactions</span></a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>

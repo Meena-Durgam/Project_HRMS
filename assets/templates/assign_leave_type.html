@@ -1,0 +1,40 @@
+<form method="post" action="">
+  {% csrf_token %}
+  <div class="modal-header bg-primary text-white">
+    <h5 class="modal-title">Assign Leave Type: {{ leave_type.name }}</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+  </div>
+
+  <div class="modal-body">
+    <div class="mb-3">
+      <label for="id_assign_to">Assign To</label>
+      {{ form.assign_to }}
+    </div>
+
+    <div class="mb-3" id="custom-employee-section" style="display:none;">
+      <label for="id_custom_employees">Custom Employees</label>
+      {{ form.custom_employees }}
+    </div>
+  </div>
+
+  <div class="modal-footer">
+    <button type="submit" class="btn btn-success">Assign</button>
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+  </div>
+</form>
+
+<script>
+  const assignSelect = document.getElementById('id_assign_to');
+  const customSection = document.getElementById('custom-employee-section');
+
+  function toggleCustom() {
+    if (assignSelect.value === 'custom') {
+      customSection.style.display = 'block';
+    } else {
+      customSection.style.display = 'none';
+    }
+  }
+
+  assignSelect.addEventListener('change', toggleCustom);
+  toggleCustom();
+</script>

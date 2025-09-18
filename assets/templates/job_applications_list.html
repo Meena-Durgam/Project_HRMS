@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+<div class="page-header d-sm-flex align-items-center justify-content-between mb-4">
+  <div class="page-title">
+    <h3 class="mb-0">Jobs</h3>
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+      <li class="breadcrumb-item active">Hired Candidates</li>
+    </ul>
+  </div>
+</div>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+
+<form method="get" class="d-flex align-items-center gap-2 mb-3">
+  <input type="text" name="job_title" class="form-control" placeholder="Search by Job Title" value="{{ request.GET.job_title }}">
+  <input type="text" name="applicant_name" class="form-control" placeholder="Search by Name of Candidate" value="{{ request.GET.applicant_name }}">
+  <button type="submit" class="btn btn-primary px-4">
+    <i class="bi bi-funnel-fill me-1"></i> Search
+  </button>
+</form>
+
+<table class="table table-bordered table-striped">
+  <thead>
+    <tr>
+      <th>Applicant Name</th>
+      <th>Job Title</th>
+      <th>Offer Date</th>  <!-- ✅ This is your offer generation date column -->
+      <th>Status</th>
+      <th>Offer Letter</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for application in applications %}
+    <tr>
+      <td>
+        {% if application.employee %}
+          {{ application.employee.first_name }} {{ application.employee.last_name }}
+        {% elif application.applicant %}
+          {{ application.applicant.name }}
+        {% else %}
+          Unknown
+        {% endif %}
+      </td>
+      <td>{{ application.job.title }}</td>
+
+      <!-- ✅ OFFER DATE COLUMN -->
+      <td>
+        {% if application.status == 'hired' and application.offer_letter %}
+          {{ application.offer_letter.created_at|date:"M d, Y h:i A" }}
+        {% else %}
+          <span class="text-muted">N/A</span>
+        {% endif %}
+      </td>
+
+      <!-- ✅ STATUS COLUMN -->
+      <td>{{ application.status|title }}</td>
+
+      <!-- ✅ OFFER LETTER COLUMN -->
+      <td>
+        {% if application.status == 'hired' %}
+          {% if application.offer_letter and application.offer_letter.pdf %}
+            <a href="{{ application.offer_letter.pdf.url }}" target="_blank" class="btn btn-sm btn-outline-danger">
+              <i class="bi bi-file-earmark-pdf-fill me-1"></i> Download Offer
+            </a>
+          {% else %}
+            <span class="text-muted">Generating...</span>
+          {% endif %}
+        {% else %}
+          <span class="text-muted">Not Hired</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+
+
+{% endblock %}

@@ -1,0 +1,225 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load attendance_extras %}
+{% block title %}Qubits HRMS | Attendance{% endblock %}
+
+{% block content %}
+<style>.select-arrow-spacing {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+
+  background-image: url("data:image/svg+xml;utf8,<svg fill='gray' height='30' viewBox='0 0 24 24' width='30' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+  background-repeat: no-repeat;
+
+  /* 👇 Arrow spacing from the right */
+  background-position: right 14px center;
+
+  /* 👇 Add right padding so text doesn't collide with the arrow */
+  padding-right: 38px;
+
+  background-size: 24px;
+}  </style>
+<!-- Page Header -->
+<div class="page-header">
+  <div class="row align-items-center">
+    <div class="col">
+      <h3 class="page-title">Attendance</h3>
+      <ul class="breadcrumb">
+        <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+        <li class="breadcrumb-item active">Attendance</li>
+      </ul>
+    </div>
+    
+    <!-- Export Dropdown -->
+    <div class="dropdown">
+      <button class="btn btn-light border dropdown-toggle rounded-pill" type="button" data-bs-toggle="dropdown">
+        <i class="fas fa-file-export me-1"></i> Export
+      </button>
+      <ul class="dropdown-menu">
+        <li><a class="dropdown-item" href="{% url 'export_attendance_csv' %}">Export as CSV</a></li>
+        <li><a class="dropdown-item" href="{% url 'export_attendance_pdf' %}">Export as PDF</a></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Messages -->
+{% if messages %}
+  <div class="messages mt-2">
+    {% for message in messages %}
+      <div class="alert {% if message.tags == 'error' %}alert-danger
+                       {% elif message.tags == 'success' %}alert-success
+                       {% elif message.tags == 'warning' %}alert-warning
+                       {% elif message.tags == 'info' %}alert-info
+                       {% else %}alert-secondary{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+<button type="button" class="close" data-dismiss="alert">&times;</button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<!-- Filters -->
+<form method="get" class="row g-2 mb-4 align-items-end">
+  <div class="col-md-4">
+    <input type="text" name="employee_name" class="form-control" placeholder="Employee Name" value="{{ request.GET.employee_name }}">
+  </div>
+  <div class="col-md-3">
+    <select name="month" class="form-control custom-select-padding select-arrow-spacing filter-input">
+      <option value="">Select Month</option>
+      {% for m in 1|to_months %}
+        <option value="{{ m.0 }}" {% if m.0 == selected_month %}selected{% endif %}>{{ m.1 }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3">
+    <select name="year" class="form-control custom-select-padding select-arrow-spacing filter-input">
+      <option value="">Select Year</option>
+      {% for y in years %}
+        <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-2">
+    <button class="btn btn-primary w-100" style="height: 45px;">SEARCH</button>
+  </div>
+</form>
+
+<!-- Attendance Table -->
+<div class="table-responsive">
+  <table class="table text-center align-middle">
+    <thead class="table-light">
+      <tr>
+        <th>Employee</th>
+        {% get_days_in_month selected_month selected_year as days_in_month %}
+        {% for day in days_in_month %}
+          <th>{{ day }}</th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for employee in employees %}
+        <tr>
+          <td class="text-start">
+            <div class="d-flex align-items-center gap-2">
+              <!-- Profile Image -->
+              <img src="{% if employee.profile.profile_picture %}{{ employee.profile.profile_picture.url }}{% else %}/static/img/user.jpg{% endif %}"
+                   class="rounded-circle"
+                   width="35"
+                   height="35"
+                   style="margin-right: 12px;">
+
+              <!-- Clickable Employee Name -->
+              <div>
+                <a href="javascript:void(0);" 
+                   class="btn btn-link text-primary show-emp-report" 
+                   data-emp-id="{{ employee.id }}">
+                   {{ employee.first_name }} {{ employee.last_name }}
+                </a>
+              </div>
+            </div>
+          </td>
+
+          {% for day in days_in_month %}
+            {% with attendance=employee.attendance|get_attendance:day leave=employee.leave|get_leave:day %}
+              <td>
+                {% if attendance == 'Present' %}
+                  <span style="color: #28a745; font-size: 16px;">✔</span>
+                {% elif attendance == 'Half' %}
+                  <span>
+                    <span style="color: #28a745; font-size: 16px;">✔</span>
+                    <span style="color: #dc3545; font-size: 16px;">✖</span>
+                  </span>
+                {% elif leave == 'Leave' %}
+                  <span style="color: #ffc107; font-size: 16px;">●</span>
+                {% elif attendance == 'Absent' %}
+                  <span style="color: #dc3545; font-size: 16px;">✖</span>
+                {% else %}
+                  <span style="color: #ccc; font-size: 16px;">–</span>
+                {% endif %}
+              </td>
+            {% endwith %}
+          {% endfor %}
+          
+</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Reusable Modal with Iframe (Wide Rectangle) -->
+<div class="modal custom-modalade" id="sharedReportModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width: 1000px;"> <!-- Wider width -->
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Employee Report</h5>
+        <button type="button" class="close" data-bs-dismiss="modal"><span>&times;</span></button>
+      </div>
+      <div class="modal-body p-0" style="height: 270px;"> <!-- Short height -->
+        <iframe id="reportFrame" src="" width="100%" height="100%" frameborder="0" style="border: none;"></iframe>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal custom-modale" id="employeeDetailsModal" tabindex="-1" aria-labelledby="employeeDetailsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="employeeDetailsModalLabel">Employee Attendance Details</h5>
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+      </div>
+      <div class="modal-body" id="employeeDetailsContent">
+        <!-- Loaded by AJAX -->
+        <div class="text-center">
+          <span class="spinner-border text-primary"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Custom Styling -->
+<style>
+  .table th, .table td {
+    vertical-align: middle;
+    font-size: 14px;
+    padding: 6px;
+  }
+</style>
+
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Modal Trigger Script -->
+<script>
+$(document).on("click", ".show-emp-report", function () {
+    var empId = $(this).data("emp-id");
+    var reportUrl = "{% url 'admin_employee_report' %}?emp_id=" + empId;
+    $("#reportFrame").attr("src", reportUrl);
+    $("#sharedReportModal").modal("show");
+});
+$(document).ready(function() {
+  $('.view-emp-details').click(function() {
+    const empId = $(this).data('emp-id');
+    $('#employeeDetailsContent').html('<div class="text-center"><span class="spinner-border text-primary"></span></div>');
+
+    $.ajax({
+      url: "{% url 'employee_attendance_detail' %}",  // make sure this is the right name in urls.py
+      data: {
+        emp_id: empId
+      },
+      success: function(data) {
+        $('#employeeDetailsContent').html(data);
+      },
+      error: function(xhr, status, error) {
+        $('#employeeDetailsContent').html('<div class="alert alert-danger">Failed to load details</div>');
+        console.error("Error loading employee details:", error);
+      }
+    });
+  });
+});
+</script>
+{% endblock %}

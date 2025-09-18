@@ -1,0 +1,390 @@
+{% extends "base.html" %}
+{% load static %}
+{% load project_filters %}
+{% load widget_tweaks %}
+{% load dict_extras %}
+
+{% block title %}Qubits HRMS | Task{% endblock %}
+
+{% block extra_head %}
+<style>
+    .search-input {
+        height: 40px;
+        min-width: 400px;
+        padding: 5px 10px;
+        border-radius: 4px;
+    }
+
+    .custom-select {
+        height: 40px;
+        border-radius: 0.375rem;
+        padding: 0.5rem 0.75rem;
+        font-size: 1rem;
+    }
+
+    @media (max-width: 768px) {
+        .search-input {
+            min-width: 120px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div class="row align-items-center">
+        <div class="col">
+            <h3 class="page-title">Task Management</h3>
+            <ul class="breadcrumb">
+                <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+                <li class="breadcrumb-item active">Tasks</li>
+            </ul>
+        </div>
+     
+        
+        <div class="col-auto float-right ml-auto">
+            <a href="#" class="btn add-btn" data-toggle="modal" data-target="#addTaskModal">
+                <i class="fa fa-plus"></i> Add Task
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+<!-- Flash Messages -->
+{% if messages %}
+  <div class="messages mt-2">
+    {% for message in messages %}
+      <div class="alert {% if message.tags == 'error' %}alert-danger
+                       {% elif message.tags == 'success' %}alert-success
+                       {% elif message.tags == 'warning' %}alert-warning
+                       {% elif message.tags == 'info' %}alert-info
+                       {% else %}alert-secondary{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+<button type="button" class="close" data-dismiss="alert">&times;</button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+
+<div class="row">
+    <!-- Project Details Section -->
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">All Projects</h5>
+            </div>
+            <div class="card-body">
+                {% if projects %}
+                    <ul class="list-unstyled">
+                        {% for project in projects %}
+                            <li>
+                                <div class="card border rounded mb-3 shadow-sm">
+                                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0">{{ project.name }}</h5>
+                                        <span class="badge bg-secondary">{{ project.status }}</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6 mb-2">
+                                                <strong>Deadline:</strong> {{ project.end_date }}
+                                            </div>
+                                            <div class="col-md-6 mb-2">
+                                                <strong>Total Tasks:</strong> 
+                                                <span class="badge bg-info">
+                                                    {{ project.total_tasks }}
+                                                </span>
+                                            </div>
+                                           <div class="col-md-12 mb-2">
+    <strong>Team Leader:</strong>
+    {% if project.team_leader.profile.profile_picture %}
+        <img src="{{ project.team_leader.profile.profile_picture.url }}"
+             title="{{ project.team_leader.first_name }} {{ project.team_leader.last_name }}"
+             alt="Profile Picture"
+             width="30" height="30"
+             class="rounded-circle me-2">
+    {% else %}
+        <img src="{% static 'img/default_profile.png' %}"
+             title="{{ project.team_leader.first_name }} {{ project.team_leader.last_name }}"
+             alt="Default Picture"
+             width="30" height="30"
+             class="rounded-circle me-2">
+    {% endif %}
+    {{ project.team_leader.first_name }} {{ project.team_leader.last_name }}
+</div>
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-muted">No projects available.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+
+    <!-- Task List Section -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-warning text-white">
+                <h5>Task List</h5>
+            </div>
+            <div class="card-body">
+
+                <!-- Tasks Table -->
+                <div class="table-responsive">
+                    <table class="table table-striped custom-table datatable">
+    <thead>
+        <tr>
+            <th>Task</th>
+            <th>Project</th>
+            <th>Assigned To</th>
+            <th>Deadline</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for task in tasks %}
+        <tr>
+            <!-- Task -->
+            <td>{{ task.title }}</td>
+
+            <!-- Project -->
+            <td>{{ task.project.name }}</td>
+
+            <!-- Assigned To -->
+            <td>
+                <div class="d-flex align-items-center">
+                    {% if task.assigned_to.profile.profile_picture %}
+                        <img src="{{ task.assigned_to.profile.profile_picture.url }}" 
+                             title="{{ task.assigned_to.get_full_name }}" 
+                             alt="Photo" 
+                             class="rounded-circle" width="40" height="40">
+                    {% else %}
+                        <img src="{% static 'default-user.png' %}" 
+                             title="{{ task.assigned_to.get_full_name }}" 
+                             alt="Default Photo" 
+                             class="rounded-circle" width="40" height="40">
+                    {% endif %}
+                    <div class="ms-2">
+                        <strong>{{ task.assigned_to.first_name }} {{ task.assigned_to.last_name }}</strong>
+                    </div>
+                </div>
+            </td>
+
+            <!-- Deadline -->
+            <td>{{ task.due_date }}</td>
+            <td>
+                <div class="dropdown action-label">
+                    <a class="btn btn-white btn-sm btn-rounded {% if request.user.employee_account == task.project.team_leader %}dropdown-toggle{% endif %}"
+                       href="#"
+                       {% if request.user.employee_account == task.project.team_leader %}data-toggle="dropdown"{% endif %}>
+                        <i class="fa fa-dot-circle-o 
+                            {% if task.priority == 'low' %}text-success
+                            {% elif task.priority == 'medium' %}text-warning
+                            {% else %}text-danger{% endif %}"></i>
+                        {{ task.get_priority_display }}
+                    </a>
+                    {% if request.user.employee_account == task.project.team_leader %}
+                    <div class="dropdown-menu dropdown-menu-right">
+                        {% csrf_token %}
+                        <button class="dropdown-item" name="priority" value="low">
+                            <i class="fa fa-dot-circle-o text-success"></i> Low
+                        </button>
+                        <button class="dropdown-item" name="priority" value="medium">
+                            <i class="fa fa-dot-circle-o text-warning"></i> Medium
+                        </button>
+                        <button class="dropdown-item" name="priority" value="high">
+                            <i class="fa fa-dot-circle-o text-danger"></i> High
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </td>
+            <!-- Status -->
+            <td class="text-center">
+                <div class="dropdown action-label">
+                    <a class="btn btn-white btn-sm btn-rounded {% if request.user.employee_account in task.project.team_members.all %}dropdown-toggle{% endif %}"
+                       href="#"
+                       {% if request.user.employee_account in task.project.team_members.all %}data-toggle="dropdown"{% endif %}>
+                        <i class="fa fa-dot-circle-o 
+                            {% if task.status == 'Completed' %}text-success
+                            {% elif task.status == 'In_Progress' %}text-warning
+                            {% elif task.status == 'Review' %}text-primary
+                            {% else %}text-danger{% endif %}"></i>
+                        {{ task.get_status_display }}
+                    </a>
+                    {% if request.user.employee_account in task.project.team_members.all %}
+                    <div class="dropdown-menu dropdown-menu-right">
+                        <button class="dropdown-item" name="status" value="To_Do">
+                            <i class="fa fa-dot-circle-o text-danger"></i> To Do
+                        </button>
+                        <button class="dropdown-item" name="status" value="In_Progress">
+                            <i class="fa fa-dot-circle-o text-warning"></i> In Progress
+                        </button>
+                        <button class="dropdown-item" name="status" value="Review">
+                            <i class="fa fa-dot-circle-o text-primary"></i> Review
+                        </button>
+                        <button class="dropdown-item" name="status" value="Completed">
+                            <i class="fa fa-dot-circle-o text-success"></i> Completed
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </td>
+
+            <!-- Action -->
+            <td class="text-center">
+                {% if request.user.employee_account == task.project.team_leader %}
+                    <div class="dropdown dropdown-action">
+                        <a href="#" class="action-icon dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="material-icons">more_vert</i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right">
+                            <a class="dropdown-item" href="{% url 'task_view' task.id %}">
+                                <i class="fa fa-eye m-r-5"></i> View
+                            </a>
+                            
+                        </div>
+                    </div>
+                {% elif request.user.employee_account in task.project.team_members.all %}
+                    <div class="dropdown dropdown-action">
+                        <a href="#" class="action-icon dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="material-icons">more_vert</i>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a class="dropdown-item" href="{% url 'task_view' task.id %}">
+                                <i class="fa fa-eye m-r-5"></i> View
+                            </a>
+                            <a class="dropdown-item" href="{% url 'add_task_progress' task.id %}">
+                                <i class="fa fa-plus m-r-5"></i> Add Progress
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
+            </td>
+        </tr>
+        <!-- Edit Task Modal -->
+<div class="modal fade" id="editTaskModal{{ task.id }}" tabindex="-1" aria-labelledby="editTaskModalLabel{{ task.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="POST" action="{% url 'edit_task' task.id %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editTaskModalLabel{{ task.id }}">
+                        Edit Task - {{ task.title }}
+                    </h5>
+                    <button type="button" class="close" data-bs-dismiss="modal" onclick="location.reload();">
+    <span>&times;</span>
+</button> 
+                </div>
+                <div class="modal-body">
+                    <!-- Render the specific form for this task -->
+                    {% with task_forms|dict_get:task.id as form %}
+    {{ form.as_p }}
+{% endwith %}
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+        {% endfor %}
+    </tbody>
+</table>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Add Task Modal -->
+<div id="addTaskModal" class="modal custom-modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+   <form method="POST" enctype="multipart/form-data" action="{% url 'create_task' %}">
+    {% csrf_token %}
+    <div class="modal-header">
+        <h5 class="modal-title">Add New Task</h5>
+        <button type="button" class="close" data-bs-dismiss="modal" onclick="location.reload();">
+    <span>&times;</span>
+</button> 
+    </div>
+    <div class="modal-body">
+        {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">
+                    {{ field.label }}
+                    {% if field.field.required %}
+                        <span class="text-danger">*</span>
+                    {% endif %}
+                </label>
+                {{ field }}
+                {% if field.help_text %}
+                    <small class="form-text text-muted">{{ field.help_text }}</small>
+                {% endif %}
+                {% if field.errors %}
+                    <div class="text-danger">
+                        {% for error in field.errors %}
+                            {{ error }}<br>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+    <div class="modal-footer">
+        <button type="submit" class="btn btn-success">Create Task</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+    </div>
+</form>
+
+        </div>
+    </div>
+</div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Ensure jQuery is included -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    $('#id_project').change(function() {
+        var projectId = $(this).val();
+        if (projectId) {
+            $.ajax({
+                url: '{% url "get_project_team_members" %}',
+                data: {
+                    'project_id': projectId
+                },
+                success: function(data) {
+                    var assignedToSelect = $('#id_assigned_to');
+                    assignedToSelect.empty(); // Clear previous options
+                    assignedToSelect.append('<option value="">---------</option>');
+                    $.each(data.members, function(index, member) {
+                        assignedToSelect.append('<option value="' + member.id + '">' + member.name + '</option>');
+                    });
+                }
+            });
+        } else {
+            $('#id_assigned_to').empty().append('<option value="">---------</option>');
+        }
+    });
+});
+</script>
+
+
+{% endblock %}    

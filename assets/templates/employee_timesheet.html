@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Qubits HRMS | Timesheet {% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div class="row align-items-center">
+        <div class="col">
+            <h3 class="page-title">Timesheet</h3>
+            <ul class="breadcrumb">
+                <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+                <li class="breadcrumb-item active">Timesheet</li>
+            </ul>
+        </div>
+         <div>
+            <a href="{% url 'clock_in' %}" class="btn btn-success mr-2">Clock In</a>
+            <a href="{% url 'clock_out' %}" class="btn btn-danger">Clock Out</a>
+        </div>
+        <div class="col-auto ml-auto">
+            <a href="#" class="btn add-btn" data-toggle="modal" data-target="#submitTimesheetModal">
+                <i class="fa fa-plus"></i> Add Today Work
+            </a>
+        </div>
+    </div>
+</div>
+<!-- /Page Header -->
+<!-- Messages -->
+{% if messages %}
+  <div class="messages mt-2">
+    {% for message in messages %}
+      <div class="alert {% if message.tags == 'error' %}alert-danger
+                       {% elif message.tags == 'success' %}alert-success
+                       {% elif message.tags == 'warning' %}alert-warning
+                       {% elif message.tags == 'info' %}alert-info
+                       {% else %}alert-secondary{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+<button type="button" class="close" data-dismiss="alert">&times;</button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+
+<!-- Timesheet Table -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="table-responsive">
+            <table class="table table-striped custom-table mb-0 datatable">
+                <thead>
+                    <tr>
+                        <th>Project</th>
+                        <th>Date</th>
+                        <th>Task Description</th>
+                        <th>Task File</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in timesheets %}
+                    <tr>
+                        <td>{{ t.project.name }}</td>  <!-- assuming 'name' field in Project model -->
+                        <td>{{ t.date }}</td>
+                        <td>{{ t.task_description }}</td>
+                        <td>
+                            {% if t.task_file %}
+                                <a href="{{ t.task_file.url }}" target="_blank">View Task </a>
+                            {% else %}
+                                <span class="text-muted">No file</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge 
+                                {% if t.status == 'Approved' %}bg-success
+                                {% elif t.status == 'Rejected' %}bg-danger
+                                {% else %}bg-warning text-dark{% endif %}">
+                                {{ t.status }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted">No timesheet entries yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<!-- /Timesheet Table -->
+
+<!-- Submit Timesheet Modal -->
+<div id="submitTimesheetModal" class="modal custom-modal fade" role="dialog">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Submit Timesheet</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    {{ form.as_p }}
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary submit-btn" type="submit">Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<!-- /Submit Timesheet Modal -->
+
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+{% endblock %}

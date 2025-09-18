@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+
+  <!-- Task Header -->
+  <div class="card shadow mb-4">
+    <div class="card-body d-flex justify-content-between align-items-center">
+      <div>
+        <h3 class="mb-1">Task Name :{{ task.title }}</h3>
+        <p class="text-muted mb-0"><i class="fa fa-folder-open text-primary"></i> {{ task.project.name }}</p>
+      </div>
+      <span class="badge bg-{{ task.status|lower|yesno:'success,warning,secondary' }}">{{ task.get_status_display }}</span>
+    </div>
+  </div>
+
+  <!-- Metadata Grid -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-6">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">Task Details</h5>
+          <p><strong>Project:</strong> {{ task.project.name }}</p>
+          <p><strong>Client:</strong> {{ task.project.client.client_name }}</p>
+          <p><strong>Assigned To:</strong> 
+            {% if task.assigned_to.profile.profile_picture %}
+              <img src="{{ task.assigned_to.profile.profile_picture.url }}" class="rounded-circle me-1" width="30" height="30">
+            {% endif %}
+            {{ task.assigned_to }}
+          </p>
+          <p><strong>Priority:</strong> 
+            <span class="badge bg-{{ task.priority|lower|yesno:'danger,warning,secondary' }}">{{ task.get_priority_display }}</span>
+          </p>
+          {% if task.attachment %}
+          <p><strong>Attachment:</strong> 
+            <a href="{{ task.attachment.url }}" class="btn btn-sm btn-outline-primary" download>
+              <i class="fa fa-download"></i> Download File
+            </a>
+          </p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">Schedule & Leadership</h5>
+          <p><strong>Start Date:</strong> {{ task.start_date|date:"d M Y" }}</p>
+          <p><strong>Due Date:</strong> {{ task.due_date|date:"d M Y" }}</p>
+          <p><strong>Team Leader:</strong> 
+            {% if task.project.team_leader.profile.profile_picture %}
+              <img src="{{ task.project.team_leader.profile.profile_picture.url }}" class="rounded-circle me-1" width="30" height="30">
+            {% endif %}
+            {{ task.project.team_leader }}
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Description -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-light"><strong>Description</strong></div>
+    <div class="card-body">
+      <p class="mb-0">{{ task.description|linebreaks }}</p>
+    </div>
+  </div>
+
+  <!-- Progress Updates -->
+  <div class="card shadow-sm mb-5">
+    <div class="card-header bg-light"><strong>Progress Updates</strong></div>
+    <div class="card-body">
+      {% if task.progress_updates.all %}
+        <ul class="list-group list-group-flush">
+          {% for update in task.progress_updates.all %}
+            <li class="list-group-item">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <p class="mb-1">
+                    <strong>
+                      {% if update.employee.profile.profile_picture %}
+                        <img src="{{ update.employee.profile.profile_picture.url }}" class="rounded-circle me-1" width="30" height="30">
+                      {% endif %}
+                      {{ update.employee }}
+                    </strong> <span class="text-muted">({{ update.date|date:"d M Y" }})</span>
+                  </p>
+                  <p>{{ update.progress_description|linebreaks }}</p>
+                </div>
+                <div class="text-end">
+                  <span class="badge bg-success mb-2">Completed: {{ update.percentage_complete }}%</span><br>
+                  {% if update.attachment %}
+                    <a href="{{ update.attachment.url }}" class="btn btn-sm btn-outline-secondary" download>
+                      <i class="fa fa-download"></i> Attachment
+                    </a>
+                  {% endif %}
+                </div>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-muted">No progress updates available.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Back -->
+  <div class="text-end">
+    <a href="{% url 'task_list' %}" class="btn btn-outline-secondary">
+      <i class="fa fa-arrow-left"></i> Back to Task List
+    </a>
+  </div>
+
+</div>
+{% endblock %}

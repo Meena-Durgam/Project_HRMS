@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Qubits HRMS | Invoice Reports {% endblock %}
+
+{% block content %}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div class="row align-items-center">
+        <div class="col">
+            <h3 class="page-title">Invoice Reports</h3>
+            <ul class="breadcrumb">
+                <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+                <li class="breadcrumb-item active">Invoice Reports</li>
+            </ul>
+        </div>
+    </div>
+</div>
+<!-- /Page Header -->
+{% if messages %}
+  <div class="messages mt-2">
+    {% for message in messages %}
+      <div class="alert {% if message.tags == 'error' %}alert-danger
+                       {% elif message.tags == 'success' %}alert-success
+                       {% elif message.tags == 'warning' %}alert-warning
+                       {% elif message.tags == 'info' %}alert-info
+                       {% else %}alert-secondary{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+<button type="button" class="close" data-dismiss="alert">&times;</button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+
+
+<!-- Table -->
+<div class="table-responsive">
+    <table class="table table-hover table-nowrap mb-0">
+        <thead >
+            <tr>
+                <th>Invoice </th>
+                <th>Client</th>
+                <th>Project</th>
+                <th>Invoice Date</th>
+                <th>Due Date</th>
+                <th>Tax (%)</th>
+                <th>Tax Amount</th>
+                <th>Total</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for invoice in invoices %}
+            <tr>
+                <td>{{ invoice.invoice_number }}</td>
+                <td>{{ invoice.client.client_name }}</td>
+                <td>{{ invoice.project.name }}</td>
+                <td>{{ invoice.invoice_date|date:"j M Y" }}</td>
+                <td>{{ invoice.due_date|date:"j M Y" }}</td>
+                <td>{{ invoice.tax }}</td>
+                <td>₹{{ invoice.tax_amount }}</td>
+                <td>₹{{ invoice.total_amount }}</td>
+                <td>
+                    {% if invoice.status == 'Paid' %}
+                        <span class="badge badge-success">Paid</span>
+                    {% elif invoice.status == 'Overdue' %}
+                        <span class="badge badge-danger">Overdue</span>
+                    {% elif invoice.status == 'Draft' %}
+                        <span class="badge badge-warning">Draft</span>
+                    {% elif invoice.status == 'Sent' %}
+                        <span class="badge badge-info">Sent</span>
+                    {% else %}
+                        <span class="badge badge-secondary">{{ invoice.status }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            {% if not invoices %}
+            <tr>
+                <td colspan="9" class="text-center text-muted">No invoices found.</td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Styles and Scripts -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<style>
+    .badge {
+        font-size: 0.85rem;
+        border-radius: 30px;
+    }
+    .table th,
+    .table td {
+        vertical-align: middle;
+    }
+</style>
+
+{% endblock %}

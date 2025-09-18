@@ -1,0 +1,681 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Client Profile{% endblock %}
+
+{% block content %}
+<div class="content container-fluid">
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="row">
+            <div class="col-sm-12">
+                <h3 class="page-title">Client Profile</h3>
+                <ul class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+                    <li class="breadcrumb-item active">Profile</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <!-- /Page Header -->
+{% if messages %}
+  <div class="messages mt-2">
+    {% for message in messages %}
+      <div class="alert {% if message.tags == 'error' %}alert-danger
+                       {% elif message.tags == 'success' %}alert-success
+                       {% elif message.tags == 'warning' %}alert-warning
+                       {% elif message.tags == 'danger' %}alert-danger
+                       {% else %}alert-secondary{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+<button type="button" class="close" data-bs-dismiss="alert">&times;</button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+<!-- Filter Form -->
+
+    <!-- Profile Overview -->
+    <div class="card mb-0">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="profile-view">
+                        <div class="profile-img-wrap">
+                            <div class="profile-img">
+                                <a href="#"><img src="{% static 'assets/img/user.jpg' %}" alt=""></a>
+                            </div>
+                        </div>
+                        <div class="profile-basic">
+                            <div class="row">
+                                <div class="col-md-5">
+                                    <div class="profile-info-left">
+                                        <h3 class="user-name m-t-0">{{ client.client_name }}</h3>
+                                        <h5 class="company-role m-t-0 mb-0">{{ client.company_name }}</h5>
+                                        <div class="staff-id">Client ID : {{ client.client_id }}</div>
+                                        
+                                    </div>
+                                </div>
+                                <div class="col-md-7">
+                                    <ul class="personal-info">
+                                        <li><span class="title">Phone:</span>
+                                            <span class="text"><a href="tel:{{ client.phone }}">{{ client.phone }}</a></span>
+                                        </li>
+                                        <li><span class="title">Email:</span>
+                                            <span class="text"><a href="mailto:{{ client.email }}">{{ client.email }}</a></span>
+                                        </li>
+                                        <li><span class="title">Status:</span>
+                                            <span class="text">{{ client.status }}</span>
+                                        </li>
+                                        <li><span class="title">Address:</span>
+                                            <span class="text">{{ client.address }}</span>
+                                        </li>
+                                        <li><span class="title">Created At:</span>
+                                            <span class="text">{{ client.created_at|date:"d M, Y" }}</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs for Projects & Tasks -->
+    <div class="profile-tabs mt-4">
+        <ul class="nav nav-tabs nav-tabs-bottom">
+            <li class="nav-item">
+                <a class="nav-link active" href="#client_projects" data-toggle="tab">Projects</a>
+            </li>
+            <li class="nav-item">
+            <a class="nav-link" href="#client_agreement" data-bs-toggle="tab">Agreement</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="#client_documents" data-bs-toggle="tab">Document</a>
+        </li>
+
+        </ul>
+
+        <div class="tab-content">
+
+            <!-- Projects Tab -->
+            <div class="tab-pane show active" id="client_projects">
+  <div class="row mt-3">
+    {% for project in projects %}
+    <div class="col-lg-4 col-sm-6 col-md-4 col-xl-3">
+      <div class="card p-3 mb-4 shadow-sm rounded border">
+
+
+        <!-- Project Title -->
+        <h4 class="project-title">
+          <a href="{% url 'project_view' project.id %}">{{ project.name }}</a>
+        </h4>
+
+        <!-- Client Name -->
+        <p class="text-muted mb-1">
+          <strong>Client:</strong> {{ project.client.client_name }}
+        </p>
+
+        <!-- Task Stats -->
+        <!-- Task Stats -->
+<small class="block text-ellipsis mb-2">
+  <span class="text-xs">{{ project.to_do_tasks_count }}</span>
+  <span class="text-muted">to do,</span>
+  <span class="text-xs">{{ project.in_progress_tasks_count }}</span>
+  <span class="text-muted">in progress,</span>
+  <span class="text-xs">{{ project.completed_tasks_count }}</span>
+  <span class="text-muted">completed</span>
+</small>
+
+
+        <!-- Description -->
+        <p class="text-muted">{{ project.description|safe|truncatewords:20 }}</p>
+
+        <!-- Deadline -->
+        <div class="pro-deadline mb-2">
+          <div class="sub-title">Deadline:</div>
+          <div class="text-muted">{{ project.end_date }}</div>
+        </div>
+
+        <!-- Project Leader -->
+        <div class="project-members mb-2">
+          <div>Project Leader:</div>
+          <ul class="team-members">
+            <li>
+              <a href="#" data-toggle="tooltip" title="{{ project.team_leader.first_name }} {{ project.team_leader.last_name }}">
+                <img alt="" src="{{ project.team_leader.profile.profile_picture.url|default:'assets/img/profiles/default.jpg' }}">
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Team Members -->
+        <div class="project-members mb-2">
+          <div>Team:</div>
+          <ul class="team-members">
+            {% for member in project.team_members.all|slice:":4" %}
+            <li>
+              <a href="#" data-toggle="tooltip" title="{{ member.first_name }} {{ member.last_name }}">
+                <img alt="" src="{{ member.profile.profile_picture.url|default:'assets/img/profiles/default.jpg' }}">
+              </a>
+            </li>
+            {% endfor %}
+            {% if project.team_members.count > 4 %}
+            <li class="dropdown avatar-dropdown">
+              <a href="#" class="all-users dropdown-toggle" data-toggle="dropdown">+{{ project.team_members.count|add:"-4" }}</a>
+              <div class="dropdown-menu dropdown-menu-right">
+                <div class="avatar-group">
+                  {% for member in project.team_members.all|slice:"4:" %}
+                  <a class="avatar avatar-xs" href="#" data-toggle="tooltip" title="{{ member.first_name }} {{ member.last_name }}">
+                    <img alt="" src="{{ member.profile.profile_picture.url|default:'assets/img/profiles/default.jpg' }}">
+                  </a>
+                  {% endfor %}
+                </div>
+              </div>
+            </li>
+            {% endif %}
+          </ul>
+        </div>
+
+        <!-- Progress -->
+        <p class="mb-1">
+          Progress
+          <span class="text-success float-end">
+            {{ project.progress_percent|default:"0" }}%
+          </span>
+        </p>
+        <div class="progress progress-xs mb-0">
+          <div class="progress-bar bg-success"
+               role="progressbar"
+               style="width: {{ project.progress_percent|default:"0" }}%"
+               title="{{ project.progress_percent|default:"0" }}%">
+          </div>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <p class="text-muted text-center">No projects found.</p>
+    {% endfor %}
+  </div>
+</div>
+
+            <!-- Tasks Tab -->
+            
+           <!-- Agreement Tab -->
+<div class="tab-pane fade" id="client_agreement">
+    <div class="card mt-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="card-title mb-0">Agreement Details</h4>
+            <a href="#" data-bs-toggle="modal" data-bs-target="#editAgreementModal">
+                <i class="fa fa-pencil-alt text-primary"></i>
+            </a>
+        </div>
+        <div class="card-body">
+            {% if agreement %}
+                <div class="row">
+                    <div class="col-md-6 mb-2">
+                        <strong>Agreement Start Date</strong><br>
+                        <span class="text-muted">{{ agreement.start_date|date:"M. d, Y" }}</span>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <strong>Agreement End Date</strong><br>
+                        <span class="text-muted">{{ agreement.end_date|date:"M. d, Y" }}</span>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <strong>Contract Type</strong><br>
+                        <span class="text-muted">{{ agreement.contract_type }}</span>
+                    </div>
+                    
+                    
+                    <div class="col-md-6 mb-2">
+                        <strong>Payment Term</strong><br>
+                        <span class="text-muted">{{ agreement.payment_term }}</span>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <strong>Contract Value</strong><br>
+                        <span class="text-muted">{{ agreement.contract_value }}</span>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <strong>Agreement File</strong><br>
+                        {% if agreement.agreement_file %}
+                            <a href="{{ agreement.agreement_file.url }}" target="_blank" class="text-primary">View File</a>
+                        {% else %}
+                            <span class="text-muted">No file uploaded</span>
+                        {% endif %}
+                    </div>
+                </div>
+            {% else %}
+                <p class="text-muted">No agreement details found.</p>
+            {% endif %}
+        </div>
+    </div>
+<!-- Edit/Add Modal -->
+<div class="modal custom-modal fade" id="editAgreementModal" tabindex="-1" role="dialog" aria-labelledby="editAgreementLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="post" enctype="multipart/form-data" action="{% url 'client_agreement_save' client.id %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editAgreementLabel">
+                        {% if agreement %}Edit Agreement{% else %}Add Agreement{% endif %}
+                    </h5>
+                    <button type="button" class="close" data-bs-dismiss="modal"><span>&times;</span></button>
+                </div>
+
+                <div class="modal-body">
+                    {% for field in form.visible_fields %}
+                        {% if field.name != "agreement_file" %}
+                            <div class="form-group mb-3">
+                                <label for="{{ field.id_for_label }}">
+                                    {{ field.label }} <span class="text-danger">*</span>
+                                    {% if field.field.required %}
+                                        <span class="text-danger">*</span>
+                                    {% endif %}
+                                </label>
+                                {{ field }}
+                                {% if field.help_text %}
+                                    <small class="form-text text-muted">{{ field.help_text }}</small>
+                                {% endif %}
+                                {% for error in field.errors %}
+                                    <small class="text-danger d-block">{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+
+                    <!-- File Upload (always visible) -->
+                    <div class="form-group mb-3">
+                        <label for="id_agreement_file">
+                            {{ form.agreement_file.label }} <span class="text-danger">*</span>
+                            {% if form.agreement_file.field.required %}
+                                <span class="text-danger">*</span>
+                            {% endif %}
+                        </label>
+                        {{ form.agreement_file }}
+                        <!-- JS validation placeholder -->
+                        <small id="fileError" class="text-danger d-block"></small>
+                        <!-- Django form errors -->
+                        {% for error in form.agreement_file.errors %}
+                            <small class="text-danger d-block">{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="modal-footer justify-content-center">
+                    {% if agreement %}
+                        <button type="submit" class="btn btn-primary">Update</button>
+                    {% else %}
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const fileInput = document.getElementById("id_agreement_file");
+    const errorMsg = document.getElementById("fileError");
+
+    if (!fileInput) return;
+
+    fileInput.addEventListener("change", function () {
+        errorMsg.textContent = ""; // clear old JS error
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        const allowedTypes = ["application/pdf", "image/jpeg", "image/png"];
+        const maxSize = 5 * 1024 * 1024; // 5MB
+
+        if (!allowedTypes.includes(file.type)) {
+            errorMsg.textContent = "Only PDF, JPG, JPEG, and PNG files are allowed.";
+            fileInput.value = "";
+            return;
+        }
+
+        if (file.size > maxSize) {
+            errorMsg.textContent = "File size must be under 5MB.";
+            fileInput.value = "";
+        }
+    });
+});
+</script>
+
+</div>
+<!-- Client Documents Tab -->
+<div class="tab-pane fade" id="client_documents">
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fa fa-file-alt me-1"></i> Client Documents</h5>
+            <button class="btn btn-outline-primary"
+                onclick="new bootstrap.Modal(document.getElementById('clientDocumentModal')).show();">
+                <i class="fa fa-upload me-1"></i> Upload
+            </button>
+        </div>
+        <div class="card-body">
+            {% if client_documents %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">SL.No.</th>
+                                <th scope="col">Document Type</th>
+                                <th scope="col">Uploaded On</th>
+                                <th scope="col" class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for doc in client_documents %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>
+                                        {% if doc.document_type == "Other" %}
+                                            {{ doc.other_document_type }}
+                                        {% else %}
+                                            {{ doc.document_type }}
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ doc.uploaded_at|date:"Y-m-d H:i" }}</td>
+                                    <td class="text-center">
+  <div class="dropdown">
+    <a href="#" class="text-muted" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="fa fa-ellipsis-v"></i>
+    </a>
+
+    <ul class="dropdown-menu dropdown-menu-end">
+      <!-- View document -->
+      <li>
+        <a class="dropdown-item" href="{{ doc.document_file.url }}" target="_blank">
+          <i class="fa fa-eye me-2"></i> View
+        </a>
+      </li>
+
+      <!-- Edit document -->
+      <li>
+        <a href="#" 
+           class="dropdown-item" 
+           data-bs-toggle="modal" 
+           data-bs-target="#clientDocumentModal"
+           data-id="{{ doc.id }}"
+           data-type="{{ doc.document_type }}"
+           data-other="{{ doc.other_document_type }}"
+           data-file-url="{{ doc.document_file.url }}">
+          <i class="fa fa-pencil me-2"></i> Edit
+        </a>
+      </li>
+
+      <!-- Delete document -->
+      <li>
+        <a href="#" 
+           class="dropdown-item text-danger" 
+           data-bs-toggle="modal" 
+           data-bs-target="#deleteClientDocModal"
+           data-docid="{{ doc.id }}">
+          <i class="fa fa-trash me-2"></i> Delete
+        </a>
+      </li>
+    </ul>
+  </div>
+</td>
+
+                                </tr>
+                                 
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted mb-0">No client documents uploaded yet.</p>
+               
+
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Upload / Edit Modal -->
+    <div class="modal custom-modal fade" id="clientDocumentModal" tabindex="-1" aria-labelledby="clientDocumentModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+<form method="post" enctype="multipart/form-data" id="clientDocumentForm" action="{% url 'client_documents' client.id %}">
+        {% csrf_token %}
+        <input type="hidden" name="submit_type" value="save_clientdocument">
+        <input type="hidden" name="document_id" id="doc_id">
+
+        <div class="modal-header">
+          <h5 class="modal-title" id="clientDocumentModalLabel">Upload Client Document</h5>
+          <button type="button" class="close" data-bs-dismiss="modal"><span>&times;</span></button>
+
+        </div>
+
+        <div class="modal-body">
+          <div class="mb-3">
+            {{ document_form.document_type.label_tag }}
+            {{ document_form.document_type }}
+            {% if document_form.document_type.errors %}
+              <div class="text-danger">{{ document_form.document_type.errors }}</div>
+            {% endif %}
+          </div>
+
+          <div class="mb-3" id="other_type_group" style="display: none;">
+            {{ document_form.other_document_type.label_tag }}
+            {{ document_form.other_document_type }}
+            {% if document_form.other_document_type.errors %}
+              <div class="text-danger">{{ document_form.other_document_type.errors }}</div>
+            {% endif %}
+          </div>
+
+          <div class="mb-3">
+            {{ document_form.document_file.label_tag }}
+            {{ document_form.document_file }}
+            {% if document_form.document_file.errors %}
+              <div class="text-danger">{{ document_form.document_file.errors }}</div>
+            {% endif %}
+            <small id="current_file" class="text-muted"></small>
+          </div>
+        </div>
+
+        <div class="modal-footer justify-content-center">
+          <button type="submit" class="btn btn-primary">Save Document</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const fileInput = document.getElementById("id_document_file");
+    if (!fileInput) return;
+
+    const errorMsg = document.createElement("small");
+    errorMsg.classList.add("text-danger", "d-block");
+    fileInput.parentNode.appendChild(errorMsg);
+
+    fileInput.addEventListener("change", function () {
+        errorMsg.textContent = ""; // clear old error
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        const allowedType = "application/pdf";
+        const maxSize = 5 * 1024 * 1024; // optional: 5MB limit
+
+        if (file.type !== allowedType) {
+            errorMsg.textContent = "Only PDF files are allowed.";
+            fileInput.value = ""; // reset input
+            return;
+        }
+
+        if (file.size > maxSize) {
+            errorMsg.textContent = "File size must be under 5MB.";
+            fileInput.value = "";
+        }
+    });
+});
+</script>
+
+</div>
+<div class="modal custom-modal fade" id="deleteClientDocModal" tabindex="-1" role="dialog" aria-labelledby="deleteClientDocModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" action="{% url 'client_documents' client.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="submit_type" value="delete_clientdocument">
+                <input type="hidden" name="document_id" id="deleteDocumentId" value="">
+
+                <div class="modal-body">
+                    <div class="form-header text-center">
+                        <h3>Delete Document</h3>
+                        <p>Are you sure you want to delete this document?</p>
+                    </div>
+
+                    <div class="modal-btn delete-action mt-4">
+                        <div class="row">
+                            <div class="col-6">
+                                <button type="submit" class="btn btn-outline-primary btn-block continue-btn">Delete</button>
+                            </div>
+                            <div class="col-6">
+                                <button type="button" class="btn btn-outline-secondary btn-block cancel-btn" data-bs-dismiss="modal">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    var deleteModal = document.getElementById('deleteClientDocModal');
+    deleteModal.addEventListener('show.bs.modal', function (event) {
+        var button = event.relatedTarget; // The button that opened the modal
+        var docId = button.getAttribute('data-docid');
+        var input = deleteModal.querySelector('#deleteDocumentId');
+        input.value = docId;
+    });
+});
+</script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var clientDocumentModal = document.getElementById('clientDocumentModal');
+    clientDocumentModal.addEventListener('show.bs.modal', function (event) {
+      var button = event.relatedTarget; // Button that triggered the modal
+      
+      var docId = button.getAttribute('data-id');
+      var docType = button.getAttribute('data-type');
+      var otherType = button.getAttribute('data-other');
+      var fileUrl = button.getAttribute('data-file-url');
+
+      // Get form elements
+      var modalTitle = clientDocumentModal.querySelector('.modal-title');
+      var inputDocId = clientDocumentModal.querySelector('#doc_id');
+      var selectDocType = clientDocumentModal.querySelector('select[name="document_type"]');
+      var inputOtherType = clientDocumentModal.querySelector('input[name="other_document_type"]');
+      var currentFileText = clientDocumentModal.querySelector('#current_file');
+      var fileInput = clientDocumentModal.querySelector('input[name="document_file"]');
+
+      if (docId) {
+        modalTitle.textContent = 'Edit Client Document';
+        inputDocId.value = docId;
+
+        // Set document type select
+        selectDocType.value = docType || '';
+
+        // Show/hide "other type" field
+        if (docType === 'Other') {
+          document.getElementById('other_type_group').style.display = 'block';
+          inputOtherType.value = otherType || '';
+        } else {
+          document.getElementById('other_type_group').style.display = 'none';
+          inputOtherType.value = '';
+        }
+
+        // Show existing file link or name
+        if (fileUrl) {
+          var filename = fileUrl.split('/').pop();
+          currentFileText.innerHTML = 'Current file: <a href="' + fileUrl + '" target="_blank">' + filename + '</a>';
+        } else {
+          currentFileText.textContent = '';
+        }
+
+        // Clear file input (so user can choose new file if they want)
+        fileInput.value = '';
+
+      } else {
+        modalTitle.textContent = 'Upload Client Document';
+        inputDocId.value = '';
+        selectDocType.value = '';
+        inputOtherType.value = '';
+        document.getElementById('other_type_group').style.display = 'none';
+        currentFileText.textContent = '';
+        fileInput.value = '';
+      }
+    });
+
+    // Also add event listener to toggle "other_type_group" when user changes document_type
+    var selectDocType = document.querySelector('select[name="document_type"]');
+    selectDocType.addEventListener('change', function () {
+      if (this.value === 'Other') {
+        document.getElementById('other_type_group').style.display = 'block';
+      } else {
+        document.getElementById('other_type_group').style.display = 'none';
+      }
+    });
+  });
+  $('#deleteClientDocModal').on('show.bs.modal', function (event) {
+    var button = $(event.relatedTarget);
+    var docId = button.data('docid');
+    $(this).find('#delete-document-id').val(docId);
+});
+
+</script>
+
+<script>
+    // Show "Other" input if "Other" is selected
+    document.addEventListener('DOMContentLoaded', function () {
+        const docTypeSelect = document.getElementById('doc_type');
+        const otherTypeGroup = document.getElementById('other_type_group');
+        
+        docTypeSelect.addEventListener('change', function () {
+            if (this.value === 'Other') {
+                otherTypeGroup.style.display = 'block';
+            } else {
+                otherTypeGroup.style.display = 'none';
+            }
+        });
+
+        // Fill modal fields when editing
+        const modal = document.getElementById('clientDocumentModal');
+        modal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            if (button && button.getAttribute('data-id')) {
+                document.getElementById('doc_id').value = button.getAttribute('data-id');
+                document.getElementById('doc_type').value = button.getAttribute('data-type');
+                document.getElementById('other_doc_type').value = button.getAttribute('data-other');
+                document.getElementById('current_file').innerHTML = Current file: <a href="${button.getAttribute('data-file-url')}" target="_blank">View</a>;
+                if (button.getAttribute('data-type') === 'Other') {
+                    otherTypeGroup.style.display = 'block';
+                } else {
+                    otherTypeGroup.style.display = 'none';
+                }
+            } else {
+                // Reset form for new upload
+                document.getElementById('doc_id').value = '';
+                document.getElementById('doc_type').value = '';
+                document.getElementById('other_doc_type').value = '';
+                document.getElementById('current_file').innerHTML = '';
+                otherTypeGroup.style.display = 'none';
+            }
+        });
+    });
+</script>
+
+    
+
+        </div>
+    </div>
+</div>
+{% endblock %}

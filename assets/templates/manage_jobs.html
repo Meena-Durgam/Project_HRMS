@@ -1,0 +1,590 @@
+{% extends 'base.html' %}
+{% load static %}
+
+
+{% block content %}
+
+  <!-- Page Header -->
+  <div class="page-header d-sm-flex align-items-center justify-content-between mb-4">
+    <div class="page-title">
+      <h3 class="mb-0">Jobs</h3>
+      <ul class="breadcrumb">
+        <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+        <li class="breadcrumb-item active">Jobs</li>
+      </ul>
+    </div>
+    {% if user.role != 'employee' %}
+    <div class="col-auto float-right ml-auto pt-2">
+      <button type="button" class="btn btn-primary rounded-pill px-4 py-2" data-bs-toggle="modal" data-bs-target="#addJobModal">
+        <i class="fa fa-plus"></i> Add Job
+      </button>
+    </div>
+    {% endif %}
+  </div>
+
+<style>
+  .modal-body {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+</style> 
+<form method="get" class="row g-3 mb-4">
+  <div class="col-md-4">
+    <input type="text" name="title" class="form-control" placeholder="Search by Job Title" value="{{ request.GET.title }}">
+  </div>
+
+  <div class="col-md-3">
+    <select name="job_type" class="form-control custom-select-padding custom-dropdown">
+      <option value="">All Job Types</option>
+      <option value="Full Time" {% if request.GET.job_type == 'Full Time' %}selected{% endif %}>Full Time</option>
+      <option value="Part Time" {% if request.GET.job_type == 'Part Time' %}selected{% endif %}>Part Time</option>
+      <option value="Internship" {% if request.GET.job_type == 'Internship' %}selected{% endif %}>Internship</option>
+    </select>
+  </div>
+
+  <div class="col-md-3">
+    <select name="status" class="form-control custom-select-padding custom-dropdown">
+      <option value="">All Status</option>
+      <option value="Open" {% if request.GET.status == 'Open' %}selected{% endif %}>Open</option>
+      <option value="Closed" {% if request.GET.status == 'Closed' %}selected{% endif %}>Closed</option>
+      <option value="Cancelled" {% if request.GET.status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+    </select>
+  </div>
+
+  <div class="col-md-2 d-grid">
+    <button type="submit" class="btn btn-primary w-100">Search</button>
+  </div>
+</form>
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    {% endfor %}
+  {% endif %}
+  <!-- Jobs Table -->
+  <div class="table-responsive">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+    <form method="get" class="d-flex align-items-center">
+      <!-- Keep existing filters in query params -->
+      <input type="hidden" name="title" value="{{ request.GET.title }}">
+      <input type="hidden" name="job_type" value="{{ request.GET.job_type }}">
+      <input type="hidden" name="status" value="{{ request.GET.status }}">
+      <input type="hidden" name="salary_sort" value="{{ request.GET.salary_sort }}">
+    <label for="page_size">Show
+        <select id="page_size" name="page_size" onchange="this.form.submit()" class="form-select form-select-sm d-inline w-auto mx-1">
+        <option value="5" {% if page_size == 5 %}selected{% endif %}>5</option>
+        <option value="10" {% if page_size == 10 %}selected{% endif %}>10</option>
+        <option value="15" {% if page_size == 15 %}selected{% endif %}>15</option>
+        <option value="20" {% if page_size == 20 %}selected{% endif %}>20</option>
+      </select>      
+      entries
+      </label>
+    </form>
+  </div>
+    <table class="table table-hover align-middle">
+  <thead class="table-light">
+    <tr>
+      <th>SL.No</th>
+      <th>Job Title</th>
+      <th>Start Date</th>
+      <th>Last Date to Apply</th>
+      <th>Job Type</th>
+      <th>Status</th>
+      {% if user.role != 'employee' %}
+      <th>Applicants</th>
+      <th>Actions</th>
+      {% endif %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for job in page_obj %}
+    <tr>
+      <th scope="row">{{ forloop.counter }}</th>
+      <td>
+        <span class="text-truncate d-inline-block" style="max-width: 150px;">{{ job.title }}</span>
+      </td>
+      <td>{{ job.start_date|date:"M d, Y" }}</td>
+      <td>{{ job.expired_date|date:"M d, Y" }}</td>
+      <td>
+        <span class="badge badge-light border px-3 py-1">
+          <i class="fa fa-dot-circle-o text-{{ job.job_type|yesno:'primary,success,info' }} me-1"></i>
+          {{ job.job_type }}
+        </span>
+      </td>
+      <td>
+        {% if job.status == 'Open' %}
+        <span class="badge badge-light border px-3 py-1">
+          <i class="fa fa-dot-circle-o text-success me-1"></i> Open
+        </span>
+        {% elif job.status == 'Closed' %}
+        <span class="badge badge-light border px-3 py-1">
+          <i class="fa fa-dot-circle-o text-danger me-1"></i> Closed
+        </span>
+        {% elif job.status == 'Cancelled' %}
+        <span class="badge badge-light border px-3 py-1">
+          <i class="fa fa-dot-circle-o text-warning me-1"></i> Cancelled
+        </span>
+        {% endif %}
+      </td>
+
+      {% if user.role != 'employee' %}
+      <td>
+        <a href="{% url 'applicant_list' %}?job_id={{ job.id }}" class="btn btn-sm btn-outline-primary">
+          {{ job.applicants.count }} Candidates
+        </a>
+      </td>
+      <td class="text-end">
+        <div class="dropdown dropdown-action">
+          <button class="btn btn-light btn-sm" type="button" data-bs-toggle="dropdown">
+            <i class="material-icons">more_vert</i>
+          </button>
+          <ul class="dropdown-menu">
+            <li>
+              <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#editJobModal{{ job.id }}">
+                <i class="fa fa-pencil me-2"></i> Edit
+              </button>
+            </li>
+            <li>
+              <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#viewJobModal{{ job.id }}">
+                <i class="fa fa-eye me-2"></i> View
+              </button>
+            </li>
+            <li>
+              <button class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#deleteJobModal{{ job.id }}">
+                <i class="fa fa-trash me-2"></i> Delete
+              </button>
+            </li>
+          </ul>
+        </div>
+      </td>
+      {% endif %}
+    </tr>
+
+    <!-- View Job Modal -->
+    <div class="modal fade" id="viewJobModal{{ job.id }}" tabindex="-1" aria-labelledby="viewJobModalLabel{{ job.id }}" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title mx-auto" id="viewJobModalLabel{{ job.id }}">Job Details - {{ job.title }}</h4>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-md-6"><strong>Department:</strong> {{ job.department.name }}</div>
+              <div class="col-md-6"><strong>Location:</strong> {{ job.location }}</div>
+              <div class="col-md-6"><strong>Vacancies:</strong> {{ job.vacancies }}</div>
+              <div class="col-md-6"><strong>Experience:</strong> {{ job.experience }} years</div>
+              <div class="col-md-6"><strong>Opportunity:</strong> {{ job.opportunity }}</div>
+              <div class="col-md-6"><strong>Salary:</strong> ₹{{ job.salary_from }} - ₹{{ job.salary_to }}</div>
+              <div class="col-md-6"><strong>Job Type:</strong> {{ job.job_type }}</div>
+              <div class="col-md-6"><strong>Status:</strong> {{ job.status }}</div>
+              <div class="col-md-6"><strong>Start Date:</strong> {{ job.start_date|date:"d M Y" }}</div>
+              <div class="col-md-6"><strong>Expired Date:</strong> {{ job.expired_date|date:"d M Y" }}</div>
+              <div class="col-12 mt-3">
+                <strong>Description:</strong>
+                <div class="job-description">{{ job.description|safe }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer justify-content-center">
+            <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Job Modal -->
+    <div class="modal fade" id="deleteJobModal{{ job.id }}" tabindex="-1" aria-labelledby="deleteJobModalLabel{{ job.id }}" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content text-center p-4" style="border-radius: 12px;">
+      <form method="POST" action="{% url 'delete_job' job.id %}">
+        {% csrf_token %}
+        <h4 class="mb-3 fw-bold text-primary">Delete Job</h4>
+        <p class="text-muted">
+          Are you sure you want to delete <strong>"{{ job.title }}"</strong>?
+        </p>
+
+         <div class="modal-btn delete-action mt-4">
+                        <div class="row">
+                            <div class="col-6">
+                                <button type="submit" class="btn btn-outline-primary btn-block continue-btn">Delete</button>
+                            </div>
+                            <div class="col-6">
+                                <button type="button" class="btn btn-outline-secondary btn-block cancel-btn" data-bs-dismiss="modal">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+    <!-- Edit Job Modal -->
+    {% include 'edit_job_modal.html' with job=job departments=departments %}
+
+    {% endfor %}
+  </tbody>
+</table>
+
+    <!-- Pagination Controls -->
+<!-- ✅ DataTables-like Pagination -->
+<div class="d-flex justify-content-between align-items-center mt-3">
+  
+  <!-- Left side: entries info -->
+  <div>
+    Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} entries
+  </div>
+
+  <!-- Right side: pagination controls -->
+  <nav>
+    <ul class="pagination pagination-sm mb-0">
+      {% if page_obj.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if salary_sort %}&salary_sort={{ salary_sort }}{% endif %}">Previous</a>
+        </li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">Previous</span></li>
+      {% endif %}
+
+      {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+          <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+        {% elif num > page_obj.number|add:'-2' and num < page_obj.number|add:'2' %}
+          <li class="page-item"><a class="page-link" href="?page={{ num }}{% if salary_sort %}&salary_sort={{ salary_sort }}{% endif %}">{{ num }}</a></li>
+        {% endif %}
+      {% endfor %}
+
+      {% if page_obj.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if salary_sort %}&salary_sort={{ salary_sort }}{% endif %}">Next</a>
+        </li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">Next</span></li>
+      {% endif %}
+    </ul>
+  </nav>
+</div>
+
+
+
+
+<!-- Add Job Modal -->
+<!-- Add Job Modal -->
+<div class="modal custom-modal fade" id="addJobModal" tabindex="-1" aria-labelledby="addJobModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <form method="POST" action="{% url 'job_list' %}" class="modal-content">
+      {% csrf_token %}
+      <div class="modal-header">
+        <h4 class="modal-title mx-auto" id="addJobModalLabel">Add New Job</h4>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"><span>&times;</span></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label for="title" class="form-label">Job Title <span class="text-danger">*</span></label>
+            <input type="text" id="title" name="title" class="form-control" required>
+          </div>
+
+          <!-- Department -->
+          <div class="col-md-6">
+            <label class="form-label">Department <span class="text-danger">*</span></label>
+            <select name="department" class="form-control custom-select-padding custom-dropdown" required>
+              <option value="" selected disabled>Select Department</option>
+              {% for dept in departments %}
+                <option value="{{ dept.id }}">{{ dept.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Location -->
+          <div class="col-md-6 mt-3">
+            <label class="form-label">Job Location <span class="text-danger">*</span></label>
+            <input type="text" name="location" class="form-control" required>
+          </div>
+
+          <!-- Vacancies -->
+          <div class="col-md-6 mt-3">
+            <label class="form-label">No of Vacancies <span class="text-danger">*</span></label>
+            <input type="number" name="vacancies" class="form-control" required>
+          </div>
+
+          <!-- Experience -->
+          <div class="col-md-6 mt-3">
+            <label for="experience" class="form-label">Experience <span class="text-danger">*</span></label>
+            <input type="text" name="experience" id="experience" class="form-control"
+                   placeholder="E.g. 0-2 or 10+" required>
+            <div id="experience-error" class="text-danger mt-1" style="display: none;">
+              Please enter in format like 0-2 or 10+
+            </div>
+          </div>
+
+          <!-- Opportunity -->
+          <div class="col-md-6 mt-3">
+            <label class="form-label">Opportunity <span class="text-danger">*</span></label>
+            <select name="opportunity" class="form-control custom-select-padding custom-dropdown" required>
+              <option value="" selected disabled>Select Opportunity</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Anyone">Anyone can</option>
+              <option value="NoPreference">Preferred not to say</option>
+            </select>
+          </div>
+
+          <!-- Salary -->
+          <div class="col-md-6 mt-3">
+            <label class="form-label" for="salary_from">Salary From <span class="text-danger">*</span></label>
+            <input type="number" step="0.01" min="0" id="salary_from" name="salary_from" class="form-control" required>
+          </div>
+          <div class="col-md-6 mt-3">
+            <label class="form-label" for="salary_to">Salary To <span class="text-danger">*</span></label>
+            <input type="number" step="0.01" min="0" id="salary_to" name="salary_to" class="form-control" required>
+            <div id="salary-error" class="text-danger mt-1" style="display: none;">
+              Salary To must be greater than or equal to Salary From.
+            </div>
+          </div>
+
+          <!-- Dates -->
+          <div class="col-md-6 mt-3">
+            <label class="form-label">Start Date <span class="text-danger">*</span></label>
+            <input type="date" name="start_date" class="form-control" required>
+          </div>
+          <div class="col-md-6 mt-3">
+            <label class="form-label">Expired Date <span class="text-danger">*</span></label>
+            <input type="date" name="expired_date" class="form-control" required>
+          </div>
+
+          <!-- Status -->
+          <div class="col-md-6 mt-3">
+            <label class="form-label">Status <span class="text-danger">*</span></label>
+            <select name="status" class="form-control custom-select-padding custom-dropdown" required>
+              <option value="" selected disabled>Select Status</option>
+              <option value="Open">Open</option>
+              <option value="Closed">Closed</option>
+              <option value="Cancelled">Cancelled</option>
+            </select>
+          </div>
+
+          <!-- Job Type -->
+          <div class="col-md-6 mt-3">
+            <label class="form-label">Job Type <span class="text-danger">*</span></label>
+            <select name="job_type" class="form-control custom-select-padding custom-dropdown" required>
+              <option value="" selected disabled>Select Job Type</option>
+              <option value="Full Time">Full Time</option>
+              <option value="Part Time">Part Time</option>
+              <option value="Internship">Internship</option>
+            </select>
+          </div>
+
+          <!-- Description -->
+          <div class="col-12 mt-3">
+            <label class="form-label">Description <span class="text-danger">*</span></label>
+            <textarea name="description" id="description" class="form-control" rows="3" required></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer justify-content-center">
+        <button type="submit" class="btn btn-primary btn-center rounded-pill px-4 py-2">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+   <script src="https://cdn.ckeditor.com/ckeditor5/41.0.0/classic/ckeditor.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    ClassicEditor
+      .create(document.querySelector('#description'))
+      .catch(error => {
+        console.error(error);
+      });
+  });
+</script>     
+<style>
+  /* Force modal background white */
+  .modal-content,
+  .modal-header,
+  .modal-body,
+  .modal-footer {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  /* Labels and inputs styled properly */
+  .modal .form-label {
+    color: #000000 !important;
+    font-weight: 500;
+  }
+
+  .modal .form-control,
+  .modal select,
+  .modal textarea {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border: 1px solid #ced4da;
+    box-shadow: none;
+  }
+
+  .modal .form-control:focus {
+    border-color: #80bdff;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+  }
+
+  /* Fix close button */
+  .modal .btn-close span,
+  .modal .btn-close {
+    color: #000000 !important;
+    background-color: transparent;
+    border: none;
+  }
+
+  /* Optional: Better modal appearance */
+  .modal-content {
+    border-radius: 12px;
+    padding: 15px;
+  }
+</style>
+<style>
+  .custom-dropdown {
+    appearance: none; /* Removes default OS style */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 140 140' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolygon points='0,0 140,0 70,80' fill='%23000'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 15px top 18px; /* Moves arrow to the left by 5px from edge */
+    background-size: 12px;
+  }
+</style>
+
+<script src="{% static 'ckeditor/ckeditor/ckeditor.js' %}"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll("textarea[id^='description']").forEach(function (textarea) {
+      CKEDITOR.replace(textarea.id);
+    });
+  });
+</script>
+<script>
+  const salaryFromInput = document.getElementById('salary_from');
+  const salaryToInput = document.getElementById('salary_to');
+  const errorDiv = document.getElementById('salary-error');
+
+  function validateSalaryRange() {
+    const salaryFrom = parseFloat(salaryFromInput.value);
+    const salaryTo = parseFloat(salaryToInput.value);
+
+    if (!isNaN(salaryFrom) && !isNaN(salaryTo)) {
+      if (salaryTo < salaryFrom) {
+        errorDiv.style.display = 'block';
+        salaryToInput.classList.add('is-invalid');
+      } else {
+        errorDiv.style.display = 'none';
+        salaryToInput.classList.remove('is-invalid');
+      }
+    } else {
+      errorDiv.style.display = 'none';
+      salaryToInput.classList.remove('is-invalid');
+    }
+  }
+
+  salaryFromInput.addEventListener('input', validateSalaryRange);
+  salaryToInput.addEventListener('input', validateSalaryRange);
+</script>
+<script>
+  const experienceInput = document.getElementById('experience');
+  const experienceError = document.getElementById('experience-error');
+
+  // Accept formats like: 0-2, 1-5, 10+, 2-10, etc.
+  const experienceRegex = /^(\d{1,2}-\d{1,2}|\d{1,2}\+)$/;
+
+  experienceInput.addEventListener('input', function () {
+    const value = experienceInput.value.trim();
+
+    if (value && !experienceRegex.test(value)) {
+      experienceError.style.display = 'block';
+      experienceInput.classList.add('is-invalid');
+    } else {
+      experienceError.style.display = 'none';
+      experienceInput.classList.remove('is-invalid');
+    }
+  });
+</script>
+<script>
+  // When modal is hidden (closed), reset the form
+  document.addEventListener('DOMContentLoaded', function () {
+    const modalEl = document.getElementById('addJobModal');
+    const formEl = modalEl.querySelector('form');
+
+    modalEl.addEventListener('hidden.bs.modal', function () {
+      formEl.reset();
+
+      // Optional: Clear validation error messages manually if any
+      document.getElementById('experience-error').style.display = 'none';
+      document.getElementById('salary-error').style.display = 'none';
+
+      // Optional: If you're using a rich text editor like CKEditor or TinyMCE, reset it too
+      if (typeof CKEDITOR !== 'undefined' && CKEDITOR.instances.description) {
+        CKEDITOR.instances.description.setData('');
+      }
+    });
+  });
+</script>
+
+
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// For job start date and expire date - disable past dates
+document.addEventListener('DOMContentLoaded', function() {
+    const startDateField = document.querySelector('#addJobModal input[name="start_date"]');
+const expireDateField = document.querySelector('#addJobModal input[name="expired_date"]');
+    
+    if (startDateField) {
+        startDateField.addEventListener('focus', function() {
+            // Set min date to today
+            const today = new Date();
+            const minDate = today.toISOString().split('T')[0];
+            this.setAttribute('min', minDate);
+        });
+        
+        // Also set on page load
+        const today = new Date();
+        const minDate = today.toISOString().split('T')[0];
+        startDateField.setAttribute('min', minDate);
+    }
+    
+    if (expireDateField) {
+        expireDateField.addEventListener('focus', function() {
+            // Set min date to today
+            const today = new Date();
+            const minDate = today.toISOString().split('T')[0];
+            this.setAttribute('min', minDate);
+        });
+        
+        // Also set on page load
+        const today = new Date();
+        const minDate = today.toISOString().split('T')[0];
+        expireDateField.setAttribute('min', minDate);
+    }
+});
+</script>
+<style>
+  .custom-dropdown {
+    appearance: none; /* Removes default OS style */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 140 140' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolygon points='0,0 140,0 70,80' fill='%23000'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 15px top 18px; /* Moves arrow to the left by 5px from edge */
+    background-size: 12px;
+  }
+</style>
+
+
+{% endblock%}

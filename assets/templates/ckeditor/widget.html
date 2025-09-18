@@ -1,0 +1,25 @@
+{% load static %}
+
+<!-- Load CKEditor core JS -->
+<script src="{% static 'ckeditor/ckeditor/ckeditor.js' %}"></script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll('textarea.django-ckeditor-widget').forEach(function (textarea) {
+      if (!textarea.classList.contains('ckeditor-applied')) {
+        CKEDITOR.replace(textarea.id);
+        textarea.classList.add('ckeditor-applied');
+      }
+    });
+  });
+
+  // Reinitialize CKEditor when modal is shown (for dynamic modals)
+  $(document).on('shown.bs.modal', function () {
+    $('textarea.django-ckeditor-widget').each(function () {
+      if (!$(this).hasClass('ckeditor-applied')) {
+        CKEDITOR.replace(this.id);
+        $(this).addClass('ckeditor-applied');
+      }
+    });
+  });
+</script>

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12pt;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        h2 {
+            color: #d7263d;
+            font-size: 18pt;
+            margin-bottom: 20px;
+        }
+        p {
+            margin: 12px 0;
+        }
+        strong {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h2>Offer Letter</h2>
+
+    <p>Dear {{ applicant_name }},</p>
+
+    <p>
+        We are pleased to offer you the position of <strong>{{ job_title }}</strong> at
+        <strong>{{ company_name }}</strong> in the <strong>{{ department }}</strong> department.
+    </p>
+
+    <p>
+        <strong>Salary:</strong> ₹{{ salary }}/year<br>
+        <strong>Start Date:</strong> {{ start_date }}
+    </p>
+
+    <p>
+        Please confirm your acceptance by replying to this letter.
+    </p>
+
+    <p>
+        Sincerely,<br>
+        <strong>{{ company_name }} HR Team</strong>
+    </p>
+</body>
+</html>

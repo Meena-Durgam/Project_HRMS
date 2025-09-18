@@ -1,0 +1,425 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+{% block title %}Qubits HRMS | Attendance {% endblock %}
+{% block content %}
+<style>.select-arrow-spacing {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+
+  background-image: url("data:image/svg+xml;utf8,<svg fill='gray' height='30' viewBox='0 0 24 24' width='30' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+  background-repeat: no-repeat;
+
+  /* 👇 Arrow spacing from the right */
+  background-position: right 14px center;
+
+  /* 👇 Add right padding so text doesn't collide with the arrow */
+  padding-right: 38px;
+
+  background-size: 24px;
+}  </style>
+<!-- Updated Header -->
+<div class="page-header d-sm-flex align-items-center justify-content-between mb-4">
+  <div>
+    <h3 class="mb-0">Employee Attendance</h3>
+    <small class="text-muted">Dashboard / Employee Attendance</small>
+  </div>
+
+  <div class="d-flex align-items-center gap-2 flex-wrap">
+    <!-- Report Button -->
+     
+
+  <div>
+  <button 
+    class="btn rounded-pill me-1 text-danger" 
+    style="background: transparent; border: none; box-shadow: none;" 
+    data-bs-toggle="modal" 
+    data-bs-target="#attendanceReportModal">
+    <i ></i> 
+  </button>
+</div>
+ 
+    <!-- Mark Attendance Button -->
+    <button class="btn btn-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#attendanceModal">
+      <i class="fa fa-plus"></i> Mark Attendance
+    </button>
+  </div>
+</div>
+
+{% if messages %}
+  <div class="messages mt-2">
+    {% for message in messages %}
+      <div class="alert {% if message.tags == 'error' %}alert-danger
+                       {% elif message.tags == 'success' %}alert-success
+                       {% elif message.tags == 'warning' %}alert-warning
+                       {% elif message.tags == 'info' %}alert-info
+                       {% else %}alert-secondary{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+<button type="button" class="close" data-dismiss="alert">&times;</button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<div class="row g-4">
+  <!-- Profile Summary -->
+  <div class="col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <h6 class="text-muted">Hello, {{ user.first_name }}</h6>
+        <h5 class="fw-bold">{{ now|date:"h:i A, d M Y" }}</h5>
+        <img src="{% if employee.profile.profile_picture %}{{ employee.profile.profile_picture.url }}{% else %}{% static 'img/user.jpg' %}{% endif %}" class="rounded-circle my-3 mt-4" width="80" />
+
+        <div class="mt-1">
+          <div class="badge bg-warning fs-5 fw-bold text-dark">Production : {{ productive_hours_display }}</div>
+
+        </div>
+        <div class="text-danger mb-2 mt-2">
+          <i class="fas fa-clock"></i>
+          {% if attendance_today and attendance_today.check_in_time %}
+            Punch In at {{ attendance_today.check_in_time|time:"h:i A" }}
+          {% else %}
+            Not Checked In
+          {% endif %}
+        </div>
+        {% if attendance_today and not attendance_today.check_out_time %}
+<div class="d-grid mb-3">
+  <form method="post" action="{% url 'check_out' %}">{% csrf_token %}
+    <button type="submit" class="btn btn-dark rounded-pill p-2">Punch Out</button>
+  </form>
+</div>
+{% endif %}
+
+<div class="d-flex flex-wrap">
+  <form method="post" action="{% url 'pause_break' %}" class="flex-fill m-1">{% csrf_token %}
+    <button type="submit" class="btn btn-warning btn-sm rounded-pill w-100 p-2">Pause Break</button>
+  </form>
+  <form method="post" action="{% url 'resume_break' %}" class="flex-fill m-1">{% csrf_token %}
+    <button type="submit" class="btn btn-success btn-sm rounded-pill w-100 p-2">Resume Break</button>
+  </form>
+</div>
+
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Summary Cards -->
+  <div class="col-md-9">
+    <div class="row g-3">
+      <div class="col-md-3">
+        <div class="card shadow-sm border rounded">
+          <div class="card-body text-start">
+            <div class="d-flex flex-column align-items-left mb-2">
+              <i class="fas fa-clock text-warning me-2"></i>
+              <span class="fs-5 fw-bold">{{ total_hours_today_display }} <small class="text-muted"></small></span>
+
+
+            </div>
+            <div class="text-muted">Total Hours Today</div>
+            <div class="text-success small mt-1"><i class="fas fa-arrow-up me-1"></i>{{ percent_today_growth|default:"0" }}% This Week</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card shadow-sm border rounded">
+          <div class="card-body text-start">
+            <div class="d-flex flex-column align-items-left mb-2">
+              <i class="fas fa-calendar-week text-dark me-2"></i>
+              <span class="fs-5 fw-bold">{{ total_hours_week_display }} <small class="text-muted"></small></span>
+            </div>
+            <div class="text-muted">Total Hours Week</div>
+            <div class="text-success small mt-1"><i class="fas fa-arrow-up me-1"></i>{{ percent_week_growth|default:"0" }}% Last Week</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card shadow-sm border rounded">
+          <div class="card-body text-start">
+            <div class="d-flex flex-column align-items-left mb-2">
+              <i class="fas fa-calendar-alt text-primary me-2"></i>
+              <span class="fs-5 fw-bold">{{ total_hours_month_display }} <small class="text-muted"></small></span>
+            </div>
+            <div class="text-muted">Total Hours Month</div>
+            <div class="text-danger small mt-1"><i class="fas fa-arrow-down me-1"></i>{{ percent_month_drop|default:"0" }}% Last Month</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card shadow-sm border rounded">
+          <div class="card-body text-start">
+            <div class="d-flex flex-column align-items-left mb-2">
+              <i class="fas fa-stopwatch text-pink me-2"></i>
+              <span class="fw-bold text-primary">{{ overtime_today_display }}</span>
+
+            </div>
+            <div class="text-muted">Overtime this Month</div>
+            <div class="text-danger small mt-1"><i class="fas fa-arrow-down me-1"></i>{{ percent_overtime_drop|default:"0" }}% Last Month</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-3">
+  <div class="card-body">
+    <div class="d-flex justify-content-between mb-2">
+      <span><i class="fas fa-check-circle me-1 text-success"></i> Productive: <strong>{{ productive_hours_display }}</strong></span>
+
+      <span><i class="fas fa-coffee me-1 text-warning"></i> Break: <strong>{{ break_time|format_break_time}}</strong></span>
+      <span><i class="fas fa-bolt me-1 text-primary"></i> Overtime: <strong>{{ overtime_today_display }}</strong></span>
+
+    </div>
+    
+    <div class="progress rounded-pill mt-2">
+  {% for segment in timeline_segments %}
+    <div class="progress-bar {{ segment.color_class }}" style="width: {{ segment.width }}%">
+      {{ segment.label }}
+    </div>
+  {% endfor %}
+</div>
+
+  </div>
+</div>
+
+  </div>
+</div>
+
+<form method="get" class="row g-3 mb-4">
+    <div class="col-md-3">
+      <input id="holidayDate" class="form-control text-uppercase" type="date" name="date" required>
+    </div>
+    <div class="col-md-3">
+      <select name="month" class="form-control custom-select-padding select-arrow-spacing">
+        <option value="">-- Month --</option>
+        {% for m in months %}
+          <option value="{{ m }}" {% if request.GET.month == m|stringformat:"s" %}selected{% endif %}>{{ m }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <select name="year" class="form-control custom-select-padding select-arrow-spacing">
+        <option value="">-- Year --</option>
+        {% for y in years %}
+          <option value="{{ y }}" {% if request.GET.year == y|stringformat:"s" %}selected{% endif %}>{{ y }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <button type="submit" class="btn btn-primary w-100" style="height: 42px;">Search</button>
+    </div>
+  </form>
+
+
+<!-- Attendance Table -->
+<div class="table-responsive mt-4">
+  <table class="table table-bordered table-striped text-center">
+    <thead class="table-light">
+      <tr>
+        <th>Date</th>
+        <th>Check In</th>
+        <th>Check Out</th>
+        <th>Break</th>
+        
+        <th>Overtime</th>
+        <th>Production</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for record in records %}
+      <tr>
+        <td>{{ record.date|date:"d M Y" }}</td>
+        <td>{{ record.check_in_time|default:"--" }}</td>
+        <td>{{ record.check_out_time|default:"--" }}</td>
+        <td>{{ record.break_hours|format_break_time }}</td>
+
+        
+        <td>{{ record.overtime_hours|default:"--" }}</td>
+        <td><span class="badge ">{{ record.productive_hours_display|default:"--" }} </span></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7">No attendance records found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+
+<!-- Attendance Modal -->
+<div class="modal custom-modal fade" id="attendanceModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-md">
+    <div class="modal-content">
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title">Mark Attendance</h5>
+          <button type="button" class="close" data-bs-dismiss="modal"><span>&times;</span></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="status" class="form-label">Status <span style="color: red;">*</span></label>
+            <select id="status" name="status" class="form-control custom-select-padding select-arrow-spacing" required>
+              <option value="">-- Select --</option>
+              <option value="Present">Present</option>
+              <option value="Absent">Absent</option>
+              <option value="Leave">Leave</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Location <span style="color: red;">*</span></label>
+            <input type="text" id="location" name="location" class="form-control" readonly required>
+            <div id="location-status" class="small text-muted mt-1"></div>
+            <a href="#" id="mapsLink" target="_blank" class="d-none mt-1">View on Google Maps</a>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Webcam Capture <span style="color: red;">*</span></label>
+            <video id="video" autoplay playsinline class="w-100 border rounded"></video>
+            <canvas id="canvas" style="display:none;"></canvas>
+            <button type="button" id="captureButton" class="btn btn-outline-primary btn-sm mt-2">Capture</button>
+            <div id="snapshotPreview" class="mt-2"></div>
+            <input type="hidden" id="capturedImage" name="image">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary w-100">Submit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Report Modal -->
+<div class="modal custom_modal fade" id="attendanceReportModal" tabindex="-1" aria-labelledby="reportLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content border-0">
+      <div class="modal-header bg-light">
+        <h5 class="modal-title">Attendance</h5>
+        <button type="button" class="close" data-bs-dismiss="modal"><span>&times;</span></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="row mb-3">
+          <div class="col">
+            <strong>Date:</strong> {{ now|date:"d/m/Y" }}
+          </div>
+          <div class="col">
+            <strong>Punch In at:</strong>
+            {% if attendance_today.check_in_time %}
+              {{ attendance_today.check_in_time|time:"h:i A" }}
+            {% else %}
+              --
+            {% endif %}
+          </div>
+          <div class="col">
+            <strong>Punch Out at:</strong>
+            {% if attendance_today.check_out_time %}
+              {{ attendance_today.check_out_time|time:"h:i A" }}
+            {% else %}
+              --
+            {% endif %}
+          </div>
+          <div class="col">
+            <strong>Status:</strong> {{ records.0.status|default:"--" }}
+          </div>
+        </div>
+
+        <div class="row text-center mb-3">
+          <div class="col">
+            <h6>Total Working Hours</h6>
+            <span class="fw-bold text-dark">{{ total_hours_today_display }}</span>
+          </div>
+          <div class="col">
+            <h6>Productive Hours</h6>
+            <span class="fw-bold text-success">{{ productive_hours_display }}</span>
+          </div>
+          <div class="col">
+            <h6>Break Hours</h6>
+            <span class="fw-bold text-warning">{{ break_time|format_break_time }}</span>
+          </div>
+          <div class="col">
+            <h6>Overtime</h6>
+            <span class="fw-bold text-primary">{{ overtime_today_display }}</span>
+          </div>
+        </div>
+
+        <!-- Visual Timeline (simple color bars) -->
+        <div class="d-flex align-items-center mt-3" style="height: 10px;">
+          {% for segment in timeline_segments %}
+            <div class="{{ segment.color_class }}" style="width: {{ segment.width }}%; height: 100%;"></div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+
+<script>
+  const video = document.getElementById('video');
+  const canvas = document.getElementById('canvas');
+  const captureBtn = document.getElementById('captureButton');
+  const snapshotPreview = document.getElementById('snapshotPreview');
+  const capturedImageInput = document.getElementById('capturedImage');
+
+  function getLocation() {
+    if (navigator.geolocation) {
+      document.getElementById('location-status').textContent = 'Fetching location...';
+      navigator.geolocation.getCurrentPosition(position => {
+        const lat = position.coords.latitude.toFixed(6);
+        const lon = position.coords.longitude.toFixed(6);
+        const loc = `${lat},${lon}`;
+        document.getElementById('location').value = loc;
+        const link = document.getElementById('mapsLink');
+        link.href = `https://www.google.com/maps?q=${loc}`;
+        link.classList.remove('d-none');
+        document.getElementById('location-status').textContent = 'Location captured.';
+      }, () => {
+        document.getElementById('location-status').textContent = 'Unable to fetch location.';
+      });
+    }
+  }
+
+  function startWebcam() {
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => video.srcObject = stream)
+      .catch(() => snapshotPreview.textContent = 'Webcam access denied.');
+  }
+
+  captureBtn.onclick = () => {
+    const ctx = canvas.getContext('2d');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const dataURL = canvas.toDataURL('image/png');
+    snapshotPreview.innerHTML = `<img src="${dataURL}" class="img-fluid rounded">`;
+    capturedImageInput.value = dataURL;
+  };
+
+  document.getElementById('attendanceModal').addEventListener('shown.bs.modal', () => {
+    getLocation();
+    startWebcam();
+  });
+
+  document.getElementById('attendanceModal').addEventListener('hidden.bs.modal', () => {
+    if (video.srcObject) {
+      video.srcObject.getTracks().forEach(track => track.stop());
+      video.srcObject = null;
+    }
+    snapshotPreview.innerHTML = '';
+    capturedImageInput.value = '';
+    document.getElementById('location-status').textContent = '';
+    document.getElementById('mapsLink').classList.add('d-none');
+  });
+  
+
+</script>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+
+
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+
+{% endblock %}

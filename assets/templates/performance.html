@@ -1,0 +1,453 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Qubits HRMS | Performance Indicators{% endblock %}
+{% load performance_filters %}
+{% block content %}
+
+  <style>
+  .custom-select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    padding-right: 40px;
+    font-size: 16px;
+    background-image: url("data:image/svg+xml;utf8,<svg fill='gray' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 16px 16px;
+    cursor: pointer;
+  }
+</style>
+
+  
+
+<!-- Page Header -->
+<div class="page-header">
+    <div class="row align-items-center">
+        <div class="col">
+            <h3 class="page-title">Performance Indicators</h3>
+            <ul class="breadcrumb">
+                <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+                <li class="breadcrumb-item active">Performance</li>
+            </ul>
+        </div>
+        {% if user_role == 'company_owner' %}
+        <div class="col-auto ml-auto">
+                <a href="#" class="btn btn-primary add-btn mb-3 mb-sm-0" data-bs-toggle="modal" data-bs-target="#add_performance_indicator">
+                 <i class="fa fa-plus"></i> Add New
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+<!-- /Page Header -->
+{% if messages %}
+  <div class="messages mt-2">
+    {% for message in messages %}
+      <div class="alert {% if message.tags == 'error' %}alert-danger
+                       {% elif message.tags == 'success' %}alert-success
+                       {% elif message.tags == 'warning' %}alert-warning
+                       {% elif message.tags == 'info' %}alert-info
+                       {% else %}alert-secondary{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+<button type="button" class="close" data-dismiss="alert">&times;</button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<div class="row">
+  <div class="col-md-12">
+    <div class="table-responsive">
+      <table class="table table-striped custom-table mb-0 datatable">
+        <thead>
+          <tr>
+            <th>SL. No.</th>
+            <th>Employee </th>
+            <th>Added By</th>
+            <th>Create At</th>
+            <th>Status</th>
+            {% if user_role == 'company_owner' %}
+            <th class="text-center">Action</th>
+            {% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for indicator in indicators %}
+          <tr>
+            <!-- 1. Row Number -->
+            <td>{{ forloop.counter }}</td>
+            <td>{{ indicator.employee.first_name }} {{ indicator.employee.last_name }}</td>
+            <!-- 2. Designation -->
+            
+
+            <!-- 4. Added By -->
+            <td>
+  <div class="media align-items-center">
+    {% comment %}
+      First, check if the user has an associated profile with an image.
+      Adjust 'profile.image' if your field is named differently (e.g. 'avatar').
+    {% endcomment %}
+    {% if indicator.added_by.profile.image %}
+ 
+    {% else %}
+      <!-- Fallback: a circle with the user’s initial -->
+
+    {% endif %}
+
+    <div class="media-body">
+      {# If first_name and last_name both exist, show them; else show username #}
+      {% if indicator.added_by.first_name or indicator.added_by.last_name %}
+        {{ indicator.added_by.first_name }} {{ indicator.added_by.last_name }}
+      {% else %}
+        {{ indicator.added_by.username }}
+      {% endif %}
+    </div>
+  </div>
+</td>
+
+
+            <!-- 5. Created At -->
+            <td>{{ indicator.created_at|date:"d M Y" }}</td>
+
+            <!-- 6. Status Dropdown Button -->
+            <td>
+              <div class="dropdown action-label">
+                <a class="btn btn-white btn-sm btn-rounded dropdown-toggle" href="#" data-toggle="dropdown" aria-expanded="false">
+                    {% if indicator.status == "active" %}
+                    <i class="fa fa-dot-circle-o text-success"></i> Active
+                  {% else %}
+                    <i class="fa fa-dot-circle-o text-danger"></i> Inactive
+                  {% endif %}
+                    
+                </a>
+
+                <div class="dropdown-menu dropdown-menu-right">
+                    <a class="dropdown-item"href="{% url 'performance_indicator_toggle_status' indicator.id 'active' %}">
+                        <i class="fa fa-dot-circle-o text-success"></i> Active
+                    </a>
+                    <a class="dropdown-item" href="{% url 'performance_indicator_toggle_status' indicator.id 'inactive' %}">
+                        <i class="fa fa-dot-circle-o text-danger"></i> Inactive
+                    </a>
+                  </a>
+                </div>
+              </div>
+            </td>
+
+            <!-- 7. Action (Edit/Delete) – only for superadmin or employee_admin -->
+            {% if user_role == 'company_owner' %}
+           <td class="text-center">
+  <div class="dropdown dropdown-action">
+    <a 
+      href="#" 
+      class="action-icon dropdown-toggle" 
+      data-toggle="dropdown" 
+      aria-expanded="false"
+    >
+      <i class="material-icons">more_vert</i>
+    </a>
+    <div class="dropdown-menu dropdown-menu-right">
+      <!-- Edit triggers a modal -->
+      <a 
+        class="dropdown-item" 
+        href="#" 
+        data-toggle="modal" 
+        data-target="#edit_performance_{{ indicator.id }}"
+      >
+        <i class="fa fa-pencil m-r-5"></i> Edit
+      </a>
+
+      <!-- Delete triggers a confirmation modal -->
+      <a 
+        class="dropdown-item text-danger" 
+        href="#" 
+        data-toggle="modal" 
+        data-target="#delete_performance_{{ indicator.id }}"
+      >
+        <i class="fa fa-trash-o m-r-5"></i> Delete
+      </a>
+    </div>
+  </div>
+</td>
+            {% endif %}
+          </tr>
+<!-- Delete Confirmation Modal -->
+<!-- Delete Performance Indicator Modal -->
+<div class="modal custom-modal fade" id="delete_performance_{{ indicator.id }}" tabindex="-1" role="dialog" aria-labelledby="deletePerformanceLabel{{ indicator.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="{% url 'performance_indicator_delete' indicator.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="form-header text-center">
+                        <h3>Delete Performance Indicator</h3>
+                        <p>Are you sure you want to delete this indicator?</p>
+                    </div>
+                    <div class="modal-btn delete-action mt-4">
+                        <div class="row">
+                            <div class="col-6">
+                                <button type="submit" class="btn btn-outline-primary btn-block continue-btn">Delete</button>
+                            </div>
+                            <div class="col-6">
+                                <button type="button" class="btn btn-outline-secondary btn-block cancel-btn" data-dismiss="modal">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+          <!-- ===== Edit Modal for This Indicator ===== -->
+<div id="edit_performance_{{ indicator.id }}" class="modal custom-modal fade" role="dialog">
+  <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <form method="post" action="{% url 'performance_indicator_update' indicator.id %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title">Edit Performance Indicator</h5>
+                           <button type="button" class="close" data-bs-dismiss="modal" onclick="location.reload();">
+    <span>&times;</span>
+</button>
+        </div>
+
+        <div class="modal-body">
+          {% with form=performance_forms|get_item:indicator.id %}
+          
+          <!-- Employee -->
+          <div class="form-group mb-3">
+            <label for="{{ form.employee.id_for_label }}">Employee <span class="text-danger">*</span></label>
+            {{ form.employee }}
+            {% for err in form.employee.errors %}
+              <div class="text-danger">{{ err }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="row">
+            <!-- Technical Skills -->
+            <div class="col-md-4">
+  <h4 class="fw-bold">Technical</h4>
+  {% for field in technical_fields %}
+    <div class="form-group mb-2">
+      <label for="{{ field.id_for_label }}">{{ field.label }} <span class="text-danger">*</span></label>
+      {{ field }}
+      {% for err in field.errors %}
+        <div class="text-danger">{{ err }}</div>
+      {% endfor %}
+    </div>
+  {% endfor %}
+</div>
+
+<div class="col-md-4">
+  <h4 class="fw-bold">Organizational</h4>
+  {% for field in organizational_fields %}
+    <div class="form-group mb-2">
+      <label for="{{ field.id_for_label }}">{{ field.label }} <span class="text-danger">*</span></label>
+      {{ field }}
+      {% for err in field.errors %}
+        <div class="text-danger">{{ err }}</div>
+      {% endfor %}
+    </div>
+  {% endfor %}
+</div>
+
+<div class="col-md-4">
+  <h4 class="fw-bold">Behavioral</h4>
+  {% for field in behavioral_fields %}
+    <div class="form-group mb-2">
+      <label for="{{ field.id_for_label }}">{{ field.label }} <span class="text-danger">*</span></label>
+      {{ field }}
+      {% for err in field.errors %}
+        <div class="text-danger">{{ err }}</div>
+      {% endfor %}
+    </div>
+  {% endfor %}
+</div>
+
+          <!-- Status -->
+          <div class="form-group mb-2">
+            <label for="{{ form.status.id_for_label }}">Status <span class="text-danger">*</span></label>
+            {{ form.status }}
+            {% for err in form.status.errors %}
+              <div class="text-danger">{{ err }}</div>
+            {% endfor %}
+          </div>
+
+          {% endwith %}
+        </div>
+
+        <div class="modal-footer">
+        <button type="submit" class="btn btn-primary submit-btn">Save</button>
+    </div>
+      </form>
+    </div>
+  </div>
+</div>
+<!-- /Edit Modal -->
+
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<!-- Add Performance Indicator Modal -->
+<div id="add_performance_indicator" class="modal custom-modal fade" role="dialog">
+  <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <form method="post" action="{% url 'performance_indicator_create' %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title">Add Performance Indicator</h5>
+                           <button type="button" class="close" data-bs-dismiss="modal" onclick="location.reload();">
+    <span>&times;</span>
+</button>
+        </div>
+
+    <div class="modal-body">
+        <!-- Designation and Department -->
+         <div class="form-group mb-3">
+            <label for="{{ add_form.employee.id_for_label }}">Employee <span class="text-danger">*</span></label>
+            {{ add_form.employee }}
+        </div>
+        
+
+        <div class="row">
+            <!-- Technical Skills -->
+            <div class="col-md-4">
+                <h4 class="fw-bold">Technical</h4>
+                <div class="form-group mb-2">
+                    <label for="{{ add_form.customer_experience.id_for_label }}">Customer Experience <span class="text-danger">*</span></label>
+                    {{ add_form.customer_experience }}
+                </div>
+                <div class="form-group mb-2">
+                    <label for="{{ add_form.marketing.id_for_label }}">Marketing <span class="text-danger">*</span></label>
+                    {{ add_form.marketing }}
+                </div>
+                <div class="form-group mb-2">
+                    <label for="{{ add_form.management.id_for_label }}">Management <span class="text-danger">*</span></label>
+                    {{ add_form.management }}
+                </div>
+                <div class="form-group mb-2">
+                    <label for="{{ add_form.administration.id_for_label }}">Administration <span class="text-danger">*</span></label>
+                    {{ add_form.administration }}
+                </div>
+                <div class="form-group mb-2">
+                    <label for="{{ add_form.presentation_skill.id_for_label }}">Presentation Skill <span class="text-danger">*</span></label>
+                    {{ add_form.presentation_skill }}
+                </div>
+                <div class="form-group mb-2">
+                    <label for="{{ add_form.quality_of_work.id_for_label }}">Quality of Work <span class="text-danger">*</span></label>
+                    {{ add_form.quality_of_work }}
+                </div>
+            </div>
+
+            <!-- Organizational Skills -->
+            <div class="col-md-4">
+                <h4 class="fw-bold">Organizational</h4>
+                <div class="form-group mb-2">
+                    <label for="{{ add_form.efficiency.id_for_label }}">Efficiency <span class="text-danger">*</span></label>
+                    {{ add_form.efficiency }}
+                </div>
+                <div class="form-group mb-2">
+                    <label for="{{ add_form.integrity.id_for_label }}">Integrity <span class="text-danger">*</span></label>
+                    {{ add_form.integrity }}
+                </div>
+                <div class="form-group mb-2">
+                    <label for="{{ add_form.professionalism.id_for_label }}">Professionalism <span class="text-danger">*</span></label>
+                    {{ add_form.professionalism }}
+                </div>
+                <div class="form-group mb-2">
+                    <label for="{{ add_form.teamwork.id_for_label }}">Teamwork <span class="text-danger">*</span></label>
+                    {{ add_form.teamwork }}
+                </div>
+                <div class="form-group mb-2">
+                    <label for="{{ add_form.critical_thinking.id_for_label }}">Critical Thinking <span class="text-danger">*</span></label>
+                    {{ add_form.critical_thinking }}
+                </div>
+                <div class="form-group mb-2">
+                    <label for="{{ add_form.conflict_management.id_for_label }}">Conflict Management <span class="text-danger">*</span></label>
+                    {{ add_form.conflict_management }}
+                </div>
+            </div>
+
+            <!-- Behavioral Skills -->
+            <div class="col-md-4">
+                <h4 class="fw-bold">Behavioral</h4>
+                <div class="form-group mb-2">
+                    <label for="{{ add_form.attendance.id_for_label }}">Attendance <span class="text-danger">*</span></label>
+                    {{ add_form.attendance }}
+                </div>
+                <div class="form-group mb-2">
+                    <label for="{{ add_form.punctuality.id_for_label }}">Punctuality <span class="text-danger">*</span></label>
+                    {{ add_form.punctuality }}
+                </div>
+                <div class="form-group mb-2">
+                    <label for="{{ add_form.dependability.id_for_label }}">Dependability <span class="text-danger">*</span></label>
+                    {{ add_form.dependability }}
+                </div>
+                <div class="form-group mb-2">
+                    <label for="{{ add_form.communication.id_for_label }}">Communication <span class="text-danger">*</span></label>
+                    {{ add_form.communication }}
+                </div>
+                <div class="form-group mb-2">
+                    <label for="{{ add_form.decision_making.id_for_label }}">Decision Making <span class="text-danger">*</span></label>
+                    {{ add_form.decision_making }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Status -->
+        <div class="form-group mt-3">
+            <label for="{{ add_form.status.id_for_label }}">Status <span class="text-danger">*</span></label>
+            {{ add_form.status }}
+        </div>
+    </div>
+
+    <div class="modal-footer">
+        <button type="submit" class="btn btn-primary submit-btn">Save</button>
+    </div>
+</form>
+
+        </div>
+    </div>
+</div>
+
+<!-- Required JS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // 1. Reset ADD modal (clear inputs completely)
+    const addModal = document.getElementById("add_performance_indicator");
+    if (addModal) {
+        addModal.addEventListener("hidden.bs.modal", function () {
+            const form = addModal.querySelector("form");
+            if (form) {
+                form.reset();
+
+                // also clear Django validation errors if present
+                form.querySelectorAll(".text-danger").forEach(el => el.remove());
+            }
+        });
+    }
+
+});
+</script>
+
+
+{% endblock %}
+<style>
+    /* Custom “medium” modal (approx. 700px wide max) */
+.modal-md {
+  max-width: 700px; /* adjust as needed */
+  width: 100%;
+}
+
+</style>

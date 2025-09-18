@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block content %}
+<div class="page-header">
+    <div class="row align-items-center">
+        <div class="col">
+            <h3 class="page-title">Payslip</h3>
+            <ul class="breadcrumb">
+                <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+                <li class="breadcrumb-item active">Payslip</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="container my-5 p-4 shadow rounded bg-white">
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+        <div>
+            {% if request.user.company.logo %}
+            <img src="{{ request.user.company.logo.url }}" alt="Company Logo" width="120" class="mb-2">
+        {% else %}
+            <img src="{% static 'images/default_logo.png' %}" alt="Default Logo" width="120" class="mb-2">
+        {% endif %}
+            <h4 class="mt-2">{{ company.name }}</h4>
+        </div>
+        <div class="text-end">
+            <h6 class="text-muted">PAYSILP #{{ payroll.id }}</h6>
+            <h6>Salary Month: {{ payroll.payroll_date|date:"F, Y" }}</h6>
+        </div>
+    </div>
+
+    <h5 class="text-center text-uppercase mb-4">Payslip for the month of {{ payroll.payroll_date|date:"F Y" }}</h5>
+
+    <div class="mb-4">
+        <strong>{{ employee.user.get_full_name }}</strong><br>
+        {{ employee.designation }}<br>
+        Employee ID: {{ employee.employee_id }}<br>
+        Joining Date: {{ employee.joining_date|date:"j M Y" }}
+    </div>
+
+    <div class="row">
+        <!-- Earnings -->
+        <div class="col-md-6 mb-4">
+            <h6 class="border-bottom pb-1">Earnings</h6>
+            <table class="table table-bordered">
+                <thead class="table-light">
+                    <tr><th>Item</th><th class="text-end">Amount (₹)</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Basic Salary</td>
+                        <td class="text-end">{{ salary.salary_amount }}</td>
+                    </tr>
+                    {% for item in earnings %}
+                        <tr>
+                            <td>{{ item.title }}</td>
+                            <td class="text-end">{{ item.amount }}</td>
+                        </tr>
+                    {% endfor %}
+                    <tr class="table-active fw-bold">
+                        <td>Total Earnings</td>
+                        <td class="text-end">{{ payroll.total_earnings }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Deductions -->
+        <div class="col-md-6 mb-4">
+            <h6 class="border-bottom pb-1">Deductions</h6>
+            <table class="table table-bordered">
+                <thead class="table-light">
+                    <tr><th>Item</th><th class="text-end">Amount (₹)</th></tr>
+                </thead>
+                <tbody>
+                    {% for item in deductions %}
+                        <tr>
+                            <td>{{ item.title }}</td>
+                            <td class="text-end">{{ item.amount }}</td>
+                        </tr>
+                    {% endfor %}
+                    <tr class="table-active fw-bold">
+                        <td>Total Deductions</td>
+                        <td class="text-end">{{ payroll.total_deductions }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="text-center mt-4">
+        <h4 class="fw-bold">Net Salary: ₹{{ payroll.net_salary }}</h4>
+        <p class="fst-italic">({{ payroll.net_salary|intword|title }} only)</p>
+    </div>
+</div>
+{% endblock %}

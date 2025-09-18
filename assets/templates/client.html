@@ -1,0 +1,620 @@
+{% extends "base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load client_extras %}
+{% load widget_tweaks %}
+
+{% block title %}Qubits HRMS | clients{% endblock %}
+
+{% block content %}
+<style>
+  
+
+.select-arrow-spacing {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+
+  background-image: url("data:image/svg+xml;utf8,<svg fill='gray' height='30' viewBox='0 0 24 24' width='30' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+  background-repeat: no-repeat;
+
+  /* 👇 Arrow spacing from the right */
+  background-position: right 3px center;
+
+  /* 👇 Add right padding so text doesn't collide with the arrow */
+  padding-right: 36px;
+
+  background-size: 20px;
+}  </style>
+<!-- Page Header and View Toggle -->
+<div class="page-header">
+    <div class="row align-items-center">
+        <div class="col">
+            <h3 class="page-title">Clients</h3>
+            <ul class="breadcrumb">
+                <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+                <li class="breadcrumb-item active">Clients</li>
+            </ul>
+        </div>
+        <div class="col-auto d-flex align-items-center">
+            <div class="view-icons me-3">
+                <a href="#" class="grid-view btn btn-link active" id="gridViewBtn"><i class="fa fa-th"></i></a>
+                <a href="#" class="list-view btn btn-link" id="tableViewBtn"><i class="fa fa-bars"></i></a>
+            </div>
+            {% if request.user.role == 'company_owner' %}
+
+            <button class="btn add-btn" data-toggle="modal" data-target="#add_client"><i class="fa fa-plus"></i> Add Client</button>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% if messages %}
+  <div class="messages mt-2">
+    {% for message in messages %}
+      <div class="alert {% if message.tags == 'error' %}alert-danger
+                       {% elif message.tags == 'success' %}alert-success
+                       {% elif message.tags == 'warning' %}alert-warning
+                       {% elif message.tags == 'danger' %}alert-danger
+                       {% else %}alert-secondary{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+<button type="button" class="close" data-dismiss="alert">&times;</button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+<!-- Filter Form -->
+<form method="get" action="{% url 'clients_page' %}">
+  <div class="row filter-row mb-2">
+    <div class="col-md-3 mb-2">
+      <input type="text" name="client_id" class="form-control filter-input" placeholder="Client ID" value="{{ request.GET.client_id }}">
+    </div>
+    <div class="col-md-3 mb-2">
+      <input type="text" name="client_name" class="form-control filter-input" placeholder="Client Name" value="{{ request.GET.client_name }}">
+    </div>
+    <div class="col-md-3 mb-2">
+      <select name="company_name" class="form-control custom-select-padding select-arrow-spacing filter-input">
+        <option value="">Select Company</option>
+        {% for company in company_list %}
+          <option value="{{ company }}" {% if request.GET.company_name == company %}selected{% endif %}>{{ company }}</option>
+        {% endfor %}
+      </select>
+    </div>
+     <div class="col-md-3">
+        <button type="submit" class="btn btn-primary w-100" style="height: 40px;">Search</button>
+    </div>
+  </div>
+</form>
+
+<style>
+  .filter-input {
+    height: 52px !important;
+    padding: 6px 12px;
+    font-size: 14px;
+    border-radius: 4px;
+  }
+  .filter-btn {
+    height: 30px !important;
+    padding: 6px 12px;
+    font-size: 14px;
+    border-radius: 4px;
+    width: 100%;
+  }
+</style>
+
+<style>
+    label.required::after {
+        content: " *";
+        color: red;
+    }
+</style>
+<style>
+  .entry-selector-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+  }
+
+  .entry-input {
+    width: 60px;
+    padding: 4px 8px;
+    font-size: 14px;
+    text-align: center;
+    border: 1px solid #ccc;
+    border-radius: 2px;
+    box-shadow: none;
+  }
+
+  .entry-input::-webkit-outer-spin-button,
+  .entry-input::-webkit-inner-spin-button {
+    opacity: 1;
+  }
+
+  .entry-input[type="number"] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+  }
+</style>
+  <div>
+    <form method="get" class="d-inline">
+      <label for="page_size">Show
+        <select id="page_size" name="page_size" onchange="this.form.submit()" class="form-select form-select-sm d-inline w-auto mx-1">
+        <option value="5" {% if page_size == 5 %}selected{% endif %}>5</option>
+        <option value="10" {% if page_size == 10 %}selected{% endif %}>10</option>
+        <option value="15" {% if page_size == 15 %}selected{% endif %}>15</option>
+        <option value="20" {% if page_size == 20 %}selected{% endif %}>20</option>
+      </select>      
+      entries
+      </label>
+      <!-- Preserve filters when changing page_size -->
+      <input type="hidden" name="client_id" value="{{ client_id }}">
+      <input type="hidden" name="client_name" value="{{ client_name }}">
+      <input type="hidden" name="company_name" value="{{ company_name }}">
+    </form>
+  </div>
+<!-- Grid View -->
+{% load static %}
+
+<div class="row mt-4" id="gridView">
+  {% for client in clients %}
+  <div class="col-md-3 col-sm-6 mb-4 employee-card">
+    <div class="card shadow-sm text-center position-relative p-3 rounded-3">
+
+      <!-- Dropdown -->
+      <div class="dropdown position-absolute" style="top: 10px; right: 10px;">
+        <a href="#" class="text-muted" data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="fa fa-ellipsis-v"></i>
+        </a>
+        <div class="dropdown-menu dropdown-menu-end">
+          <a class="dropdown-item" href="{% url 'view_client' client.id %}">
+            <i class="fa fa-eye me-2"></i> View
+          </a>
+          <a class="dropdown-item" href="#" data-toggle="modal" data-target="#edit_client_{{ client.id }}">
+            <i class="fa fa-pencil me-2"></i> Edit
+          </a>
+           <a class="dropdown-item text-danger" href="{% url 'delete_client' client.id %}" data-toggle="modal" data-target="#deleteClientModal{{ client.id }}">
+    <i class="fa fa-trash me-2"></i> Delete
+</a>
+        </div>
+      </div>
+
+      <!-- Profile Image (Default) -->
+      <img src="{% static 'assets/img/user.jpg' %}" alt="Profile Image"
+           class="rounded-circle mb-2 mx-auto" width="80" height="80">
+
+      <!-- Client Name -->
+       <p class="fw-bold text-truncate px-2 mb-1" style="font-size: 20px;">
+    {{ client.company_name }}
+</p>
+<p class="fw-bold mt-1 mb-0" style="font-size: 13px;">
+    ID: <span style="background-color: #f0f0f0; padding: 2px 6px; border-radius: 4px; color: #333;">
+        {{ client.client_id }}
+    </span>
+</p>
+
+<p class="fw-semibold mt-1 mb-0" style="font-size: 13px;">
+    {{ client.client_name }}
+</p>
+
+      <!-- Company Name -->
+      
+
+      <!-- Contact Icons -->
+      <div class="d-flex justify-content-center gap-3 mb-1">
+        <a href="#" class="text-muted"><i class="bi bi-chat-dots fs-6"></i></a>
+        <a href="#" class="text-muted"><i class="bi bi-telephone fs-6"></i></a>
+      </div>
+
+      <!-- View Button -->
+      <div class="d-flex justify-content-center mt-2">
+  <a href="chat.html" class="btn btn-white btn-sm">Message</a>
+  <a href="{% url 'view_client' client.id %}" class="btn btn-white btn-sm ml-2">View Profile</a>
+</div>
+
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12 text-center text-muted">No clients found.</div>
+  {% endfor %}
+</div>
+
+
+
+
+
+<!-- Table View -->
+<!-- Table View -->
+<div id="tableView" class="d-none pt-4">
+  <div class="table-responsive">
+    <table class="table align-middle mb-0 bg-white">
+      <thead class="bg-light">
+        <tr>
+          <th>Company Name</th>
+          <th>Client ID</th>
+          <th>Contact Person</th>
+          <th>Email</th>
+          <th>Mobile</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for client in clients %}
+        <tr class="align-middle">
+          <td class="d-flex align-items-center">
+            
+            <span class="fw-bold">{{ client.company_name }}</span>
+          </td>
+          <td>
+  <a href="{% url 'view_client' client.id %}">
+    {{ client.client_id }}
+</a>
+
+</td>
+
+          <td>{{ client.client_name }}</td>
+          <td>{{ client.email }}</td>
+          <td>{{ client.phone|default:"-" }}</td>
+          <td>
+  <div class="dropdown action-label text-center">
+    <a class="btn btn-white btn-sm btn-rounded dropdown-toggle" href="#" data-toggle="dropdown" aria-expanded="false">
+      {% if client.status == "Active" %}
+        <i class="fa fa-dot-circle-o text-success"></i> Active
+      {% else %}
+        <i class="fa fa-dot-circle-o text-danger"></i> Inactive
+      {% endif %}
+    </a>
+    <div class="dropdown-menu dropdown-menu-right">
+      <a class="dropdown-item" href="#"><i class="fa fa-dot-circle-o text-success"></i> Active</a>
+      <a class="dropdown-item" href="#"><i class="fa fa-dot-circle-o text-danger"></i> Inactive</a>
+    </div>
+  </div>
+</td>
+          <td>
+            <div class="dropdown text-center">
+              <a href="#" class="text-muted" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fa fa-ellipsis-v"></i>
+              </a>
+              <div class="dropdown-menu dropdown-menu-end">
+                <a class="dropdown-item" href="{% url 'view_client' client.id %}"><i class="fa fa-eye me-2"></i> View</a>
+                <a class="dropdown-item" href="#" data-toggle="modal" data-target="#edit_client_{{ client.id }}"><i class="fa fa-pencil me-2"></i> Edit</a>
+                <a class="dropdown-item text-danger" href="#" data-toggle="modal" data-target="#deleteClientModal{{ client.id }}">
+    <i class="fa fa-trash me-2"></i> Delete
+</a>
+              </div>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="text-center text-muted">No clients found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+<div class="d-flex justify-content-between align-items-center mt-3">
+  <!-- Entry Info -->
+  <div>
+    Showing {{ clients.start_index }} to {{ clients.end_index }} of {{ clients.paginator.count }} entries
+  </div>
+
+  <!-- Pagination Controls -->
+  <nav>
+    <ul class="pagination pagination-sm mb-0">
+      {% if clients.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?page=1&page_size={{ page_size }}&client_id={{ client_id }}&client_name={{ client_name }}&company_name={{ company_name }}">Previous</a>
+        </li>
+        
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">Previous</span></li>
+      {% endif %}
+
+      {% for num in clients.paginator.page_range %}
+        {% if clients.number == num %}
+          <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+        {% elif num > clients.number|add:'-3' and num < clients.number|add:'3' %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ num }}&page_size={{ page_size }}&client_id={{ client_id }}&client_name={{ client_name }}&company_name={{ company_name }}">{{ num }}</a>
+          </li>
+        {% endif %}
+      {% endfor %}
+
+      {% if clients.has_next %}
+        
+        <li class="page-item">
+          <a class="page-link" href="?page={{ clients.paginator.num_pages }}&page_size={{ page_size }}&client_id={{ client_id }}&client_name={{ client_name }}&company_name={{ company_name }}">Next</a>
+        </li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">Next</span></li>
+      {% endif %}
+    </ul>
+  </nav>
+</div>
+
+<!-- Modals -->
+{% for client in clients %}
+<div id="edit_client_{{ client.id }}" class="modal custom-modal fade" tabindex="-1" role="dialog" aria-labelledby="editClientLabel_{{ client.id }}" aria-hidden="true">
+  <div class="modal-dialog modal-md modal-dialog-centered">
+    <div class="modal-content">
+      <form method="POST" action="{% url 'edit_client' client.id %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="editClientLabel_{{ client.id }}">Edit Client - {{ client.client_name }}</h5>
+          <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="mb-3">
+            {% with form=edit_forms|get_item:client.id %}
+              {% for field in form %}
+                <div class="mb-3">
+                  <label for="{{ field.id_for_label }}"
+                         class="form-label {% if field.field.required %}required-label{% endif %}">
+                    {{ field.label }}
+                  </label>
+                  {{ field }}
+                  {% if field.help_text %}
+                    <div class="form-text text-muted">{{ field.help_text }}</div>
+                  {% endif %}
+                  {% for error in field.errors %}
+                    <div class="text-danger">{{ error }}</div>
+                  {% endfor %}
+                </div>
+              {% endfor %}
+            {% endwith %}
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<!-- Delete Client Modal -->
+<div class="modal custom-modal fade" id="deleteClientModal{{ client.id }}" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel{{ client.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="{% url 'delete_client' client.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="form-header text-center">
+                        <h3>Delete Client</h3>
+                        <p>Are you sure you want to delete <strong>{{ client.name }}</strong>?</p>
+                    </div>
+                    <div class="modal-btn delete-action mt-4">
+                        <div class="row">
+                            <div class="col-6">
+                                <button type="submit" class="btn btn-outline-primary btn-block continue-btn">Delete</button>
+                            </div>
+                            <div class="col-6">
+                                <button type="button" class="btn btn-outline-secondary btn-block cancel-btn" data-dismiss="modal">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<style>
+  label.required-label::after {
+    content: " *";
+    color: red;
+    margin-left: 2px;
+  }
+</style>
+
+
+<div id="add_client" class="modal custom-modal fade" tabindex="-1" aria-labelledby="addClientLabel" aria-hidden="true">
+  <div class="modal-dialog modal-md modal-dialog-centered">
+    <div class="modal-content">
+      <form method="post" action="{% url 'add_client' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="addClientLabel">Add Client</h5>
+          <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+        </div>
+
+        <div class="modal-body">
+          {% for field in form %}
+            <div class="mb-3">
+              <label for="{{ field.id_for_label }}" 
+                     class="form-label {% if field.field.required %}required-label{% endif %}">
+                {{ field.label }} {% if field.name == "phone" %}{% endif %}
+              </label>
+              
+{% if field.name == 'phone' %}
+  {% render_field field id="add_phone" %}
+  <small id="add-phone-error" class="text-danger"></small>
+{% else %}
+  {{ field }}
+{% endif %}
+
+
+              {% if field.help_text %}
+                <div class="form-text text-muted">{{ field.help_text }}</div>
+              {% endif %}
+              {% for error in field.errors %}
+                <div class="text-danger">{{ error }}</div>
+              {% endfor %}
+            </div>
+          {% endfor %}
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // 🔹 Add Client Modal Phone Validation
+    const addPhoneInput = document.getElementById("add_phone");
+    const addPhoneError = document.getElementById("add-phone-error");
+
+    if (addPhoneInput) {
+        addPhoneInput.addEventListener("input", function () {
+            let value = addPhoneInput.value.replace(/[^0-9]/g, ""); 
+            addPhoneInput.value = value;
+
+            if (value.length === 0) {
+                addPhoneError.textContent = "Phone number is required.";
+                addPhoneInput.classList.add("is-invalid");
+            } else if (value.length < 10) {
+                addPhoneError.textContent = "Phone number must be 10 digits.";
+                addPhoneInput.classList.add("is-invalid");
+            } else if (value.length > 10) {
+                addPhoneError.textContent = "Phone number cannot exceed 10 digits.";
+                addPhoneInput.classList.add("is-invalid");
+            } else {
+                addPhoneError.textContent = "";
+                addPhoneInput.classList.remove("is-invalid");
+                addPhoneInput.classList.add("is-valid");
+            }
+        });
+    }
+});
+</script>
+
+<style>
+  label.required-label::after {
+    content: " *";
+    color: red;
+    margin-left: 3px;
+  }
+</style>
+
+
+<!-- View Toggle Script -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const gridViewBtn = document.getElementById("gridViewBtn");
+    const tableViewBtn = document.getElementById("tableViewBtn");
+    const gridView = document.getElementById("gridView");
+    const tableView = document.getElementById("tableView");
+
+    gridViewBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+        gridView.classList.remove("d-none");
+        tableView.classList.add("d-none");
+        gridViewBtn.classList.add("active");
+        tableViewBtn.classList.remove("active");
+    });
+
+    tableViewBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+        tableView.classList.remove("d-none");
+        gridView.classList.add("d-none");
+        tableViewBtn.classList.add("active");
+        gridViewBtn.classList.remove("active");
+    });
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const phoneInput = document.getElementById("phone");
+  const errorMsg = document.getElementById("phone-error");
+  const form = phoneInput.closest("form");
+
+  phoneInput.addEventListener("input", function () {
+    // Already restricted to digits via Django widget, but keep safeguard
+    phoneInput.value = phoneInput.value.replace(/\D/g, '');
+    const value = phoneInput.value;
+
+    if (value.length === 0) {
+      errorMsg.textContent = "Phone number is required.";
+      phoneInput.classList.add("is-invalid");
+      phoneInput.classList.remove("is-valid");
+    } else if (value.length < 10) {
+      errorMsg.textContent = "Phone number must be exactly 10 digits.";
+      phoneInput.classList.add("is-invalid");
+      phoneInput.classList.remove("is-valid");
+    } else if (value.length === 10) {
+      errorMsg.textContent = ""; // ✅ valid
+      phoneInput.classList.remove("is-invalid");
+      phoneInput.classList.add("is-valid");
+    }
+  });
+
+  form.addEventListener("submit", function (e) {
+    const value = phoneInput.value;
+
+    if (value.length !== 10) {
+      e.preventDefault();
+      errorMsg.textContent = "Please enter a valid 10-digit phone number.";
+      phoneInput.classList.add("is-invalid");
+      phoneInput.focus();
+    }
+  });
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const phoneInput = document.getElementById("phone");
+  const errorMsg = document.getElementById("phone-error");
+  const form = phoneInput.closest("form");
+
+  // ✅ Real-time validation while typing
+  phoneInput.addEventListener("input", function () {
+    // Remove all non-digit characters
+    phoneInput.value = phoneInput.value.replace(/\D/g, '');
+    const value = phoneInput.value;
+
+    if (value.length === 0) {
+      errorMsg.textContent = "Phone number is required.";
+      phoneInput.classList.add("is-invalid");
+      phoneInput.classList.remove("is-valid");
+    } else if (value.length < 10) {
+      errorMsg.textContent = "Phone number must be 10 digits.";
+      phoneInput.classList.add("is-invalid");
+      phoneInput.classList.remove("is-valid");
+    } else if (value.length > 10) {
+      errorMsg.textContent = "Phone number must be exactly 10 digits.";
+      phoneInput.classList.add("is-invalid");
+      phoneInput.classList.remove("is-valid");
+    } else {
+      errorMsg.textContent = ""; // ✅ valid
+      phoneInput.classList.remove("is-invalid");
+      phoneInput.classList.add("is-valid");
+    }
+  });
+
+  // ✅ Block form submit if phone number is invalid
+  form.addEventListener("submit", function (e) {
+    const value = phoneInput.value;
+
+    if (value.length !== 10) {
+      e.preventDefault();
+      errorMsg.textContent = "Please enter a valid 10-digit phone number.";
+      phoneInput.classList.add("is-invalid");
+      phoneInput.focus();
+    }
+  });
+});
+</script>
+
+<!-- Include Bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // Reset form when modal is closed
+  $('#add_client').on('hidden.bs.modal', function () {
+    const form = $(this).find('form')[0];
+    if (form) form.reset();  // Reset form fields
+    $('#phone-error').text('');  // Clear phone validation message if any
+  });
+</script>
+
+{% endblock %}

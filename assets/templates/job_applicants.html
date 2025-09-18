@@ -1,0 +1,418 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load job_filters %}
+
+{% block content %}
+  <!-- Page Header -->
+  <div class="page-header d-sm-flex align-items-center justify-content-between mb-4">
+    <div class="page-title">
+      <h3 class="mb-0">Job Applicants</h3>
+      <ul class="breadcrumb">
+        <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+        <li class="breadcrumb-item active">Job Applicants</li>
+      </ul>
+    </div>
+  </div>
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+<form method="get" class="row g-3 ">
+  <input type="hidden" name="job_id" value="{{ job_id }}">
+  <div class="col-md-6 pb-1">
+    <input type="text" name="name" class="form-control" placeholder="Search by Applicant Name" value="{{ request.GET.name }}">
+  </div>
+
+  <div class="col-md-4">
+    <select name="status" class="form-control custom-select-padding custom-dropdown">
+      <option value="">All Status</option>
+      <option value="rejected" {% if request.GET.status == 'rejected' %}selected{% endif %}>Rejected</option>
+      <option value="hired" {% if request.GET.status == 'hired' %}selected{% endif %}>Hired</option>
+      <option value="interview_scheduled" {% if request.GET.status == 'interview_scheduled' %}selected{% endif %}>Interview Scheduled</option>
+    </select>
+  </div>
+
+  <div class="col-md-2 d-grid">
+    <button type="submit" class="btn btn-primary w-100">Search</button>
+  </div>
+</form>
+
+<!-- ✅ Job Info Card -->
+{% if page_obj and page_obj.0.applicant.job.title %}
+<div class="d-flex align-items-center mb-3">
+  <i class="bi bi-briefcase-fill text-danger fs-4 me-2 p-1"></i>
+  <h5 class="mb-0 fw-bold fs-8"> Job Title: {{ page_obj.0.applicant.job.title }}</h5>
+</div>
+{% endif %}
+
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <form method="get" class="d-flex align-items-center">
+      <input type="hidden" name="job_id" value="{{ job_id }}">
+      <input type="hidden" name="name" value="{{ request.GET.name }}">
+      <input type="hidden" name="status" value="{{ request.GET.status }}">
+
+          <label for="page_size">Show
+        <select id="page_size" name="page_size" onchange="this.form.submit()" class="form-select form-select-sm d-inline w-auto mx-1">
+        <option value="5" {% if page_size == 5 %}selected{% endif %}>5</option>
+        <option value="10" {% if page_size == 10 %}selected{% endif %}>10</option>
+        <option value="15" {% if page_size == 15 %}selected{% endif %}>15</option>
+        <option value="20" {% if page_size == 20 %}selected{% endif %}>20</option>
+      </select>      
+      entries
+      </label>
+    </form>
+  </div>
+<table class="table table-striped custom-table">
+  <thead >
+    <tr>
+      <th>Name</th>
+      <th>JobSeeker ID</th>            <!-- New column -->
+      <th>Email</th>
+      <th>Phone Number</th>           <!-- New column -->
+      <th>Resume</th>                 <!-- New column -->
+      <th>Current Round</th>
+      <th>Status</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for item in page_obj %}
+    {% with applicant=item.applicant current_round=item.current_round %}
+    <tr>
+      <td>
+        <a href="{% url 'job_feedback' applicant.id %}" class="text-decoration-none text-primary fw-semibold">
+          {{ applicant.name }}
+        </a>
+      </td>
+      
+      <!-- JobSeeker ID -->
+<td>
+   {% if applicant.jobseeker_profile and applicant.jobseeker_profile.jobseeker_id %}
+    <a href="{% url 'profile_view_other' applicant.jobseeker_profile.jobseeker_id %}" 
+       class="btn btn-sm btn-outline-primary">
+        {{ applicant.jobseeker_profile.jobseeker_id }}
+    </a>
+{% else %}
+    <span class="text-muted">N/A</span>
+{% endif %}
+</td>
+
+
+            <!-- Email -->
+            <td>{{ applicant.email }}</td>
+
+            <!-- ✅ Phone Number with fallback -->
+            <td>
+                {% if applicant.jobseeker_profile and applicant.jobseeker_profile.contact_number %}
+                    {{ applicant.jobseeker_profile.contact_number }}
+                {% else %}
+                    {{ applicant.phone }}
+                {% endif %}
+            </td>
+      
+      <!-- Resume link -->
+      <td>
+        {% if applicant.resume %}
+          <a href="{{ applicant.resume.url }}" target="_blank" class="text-decoration-none">
+            View Resume
+          </a>
+        {% else %}
+          <span class="text-muted">No Resume</span>
+        {% endif %}
+      </td>
+      
+      <!-- Current Round -->
+      <td>
+        {% if applicant.latest_round %}
+          Round {{ applicant.latest_round }}
+        {% else %}
+          Not Scheduled
+        {% endif %}
+      </td>
+      
+      <!-- Status -->
+      <td>{{ applicant.status|capfirst }}</td>
+      
+      <!-- Actions -->
+      <td>
+        {% if applicant.status == "hired" %}
+          <button class="btn btn-secondary btn-sm" disabled>
+            <i class="bi bi-check-circle-fill"></i> Hired
+          </button>
+        {% else %}
+          <div class="dropdown">
+            <button class="btn btn-light btn-sm" type="button" data-bs-toggle="dropdown">
+              <i class="bi bi-three-dots-vertical"></i>
+            </button>
+            <ul class="dropdown-menu">
+
+              {% if applicant.latest_round_obj %}
+                {% if applicant.latest_round_obj.status == "shortlisted" %}
+                  <!-- Show Schedule next round -->
+                  <li>
+                    <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#scheduleModal{{ applicant.id }}">
+                      <i class="bi bi-calendar-event-fill"></i> Schedule Round {{ current_round }}
+                    </a>
+                  </li>
+                {% elif applicant.latest_round_obj.status == "rejected" %}
+                  <li>
+                    <span class="dropdown-item text-danger">
+                      <i class="bi bi-x-circle-fill"></i> Applicant Rejected
+                    </span>
+                  </li>
+                {% elif applicant.meeting_link %}
+                  <li>
+                    <a href="{% url 'join_meeting_interviewer' applicant.id %}" class="dropdown-item text-success" target="_blank">
+                      <i class="bi bi-camera-video-fill"></i> Join Meeting (Round {{ applicant.latest_round_obj.round_number }})
+                    </a>
+                  </li>
+                {% endif %}
+              {% else %}
+                <!-- First interview -->
+                <li>
+                  <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#scheduleModal{{ applicant.id }}">
+                    <i class="bi bi-calendar-event-fill"></i> Schedule Interview (Round 1)
+                  </a>
+                </li>
+              {% endif %}
+
+              <!-- Feedback form -->
+             {% if applicant.latest_round_obj and applicant.latest_round_obj.meeting_link and not applicant.latest_round_obj.feedback %}
+              <li class="px-2 pt-3" style="min-width: 500px; max-width: 900px;">
+                <div class="card border-0 bg-light-subtle rounded-4 shadow-lg p-4" style="width: 100%;">
+                  <form method="post" action="{% url 'submit_feedback' applicant.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="round_number" value="{{ applicant.latest_round_obj.round_number }}">
+
+                    <!-- Application Status Field -->
+                    <div class="mb-4">
+                      <label class="form-label fw-semibold text-dark small" title="This field is required">
+                        Application Status 
+                        <span class="text-danger">*</span>
+                      </label>
+                      <div class="input-group input-group-sm w-100">
+                        <span class="input-group-text bg-white border-end-0">
+                          <i class="bi bi-person-badge-fill"></i>
+                        </span>
+                        <select name="status" class="form-control border-start-0 w-100" required title="This field is required">
+                          <option value="">Select Status</option>
+                          <option value="shortlisted">Shortlist</option>
+                          <option value="rejected">Reject</option>
+                          <option value="hired">Hire</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <!-- Interview Feedback Field -->
+                    <div class="mb-4">
+                      <label class="form-label fw-semibold text-dark small" title="This field is required">
+                        Interview Feedback 
+                        <span class="text-danger">*</span>
+                      </label>
+                      <div class="input-group input-group-sm w-100">
+                        <span class="input-group-text bg-white border-end-0">
+                          <i class="bi bi-chat-left-text-fill"></i>
+                        </span>
+                        <textarea name="feedback" class="form-control border-start-0 w-100" rows="4" placeholder="Write detailed feedback..." required title="This field is required"></textarea>
+                      </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="d-grid mt-3">
+                      <button type="submit" class="btn btn-danger btn-sm rounded-pill">
+                        <i class="bi bi-send-check-fill me-1"></i> Submit Feedback
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </li>
+             {% endif %}
+
+            </ul>
+          </div>
+        {% endif %}
+      </td>
+    </tr>
+
+    <!-- Schedule Modal -->
+    <div class="modal custom-modal fade" id="scheduleModal{{ applicant.id }}" tabindex="-1" aria-labelledby="scheduleModalLabel{{ applicant.id }}" aria-hidden="true">
+      <div class="modal-dialog">
+        <form method="post" action="{% url 'schedule_interview' applicant.id %}">
+          {% csrf_token %}
+          <input type="hidden" name="job_id" value="{{ applicant.job.id }}">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title mx-auto" id="scheduleModalLabel{{ applicant.id }}">Schedule Interview</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+              <div class="mb-3">
+                <label class="form-label">Round Number</label>
+                <input type="number" name="round_number" class="form-control" required min="1" readonly
+                       value="{% if applicant.latest_round_obj %}{{ applicant.latest_round_obj.round_number|add:'1' }}{% else %}1{% endif %}">
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Round Type</label>
+                <input type="text" name="round_type" class="form-control" placeholder="Enter round type (e.g., Technical, HR)" required>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Interview Date</label>
+                <input type="date" name="date" class="form-control" required>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Interview Time</label>
+                <input type="time" name="time" class="form-control" required>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Interview Mode</label>
+                <select name="mode" id="mode{{ applicant.id }}" class="form-control" required onchange="handleModeChange('{{ applicant.id }}')">
+                  <option value="">Select mode</option>
+                  <option value="Online">Online</option>
+                </select>
+              </div>
+
+              <div class="mb-3" id="meet-link-div{{ applicant.id }}" style="display:none;">
+                <label class="form-label">Google Meet Link</label>
+                <input type="text" id="meet-link{{ applicant.id }}" name="meet_link" class="form-control" placeholder="Leave blank to auto-generate">
+              </div>
+
+              <div class="mb-3" id="venue-div{{ applicant.id }}" style="display:none;">
+                <label class="form-label">Venue Details</label>
+                <textarea name="message" id="venue-text{{ applicant.id }}" class="form-control" placeholder="Enter Venue Details..."></textarea>
+              </div>
+            </div>
+
+            <div class="modal-footer">
+              <button type="submit" class="btn btn-primary">Send</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    {% endwith %}
+  {% endfor %}
+  </tbody>
+</table>
+
+
+  <div class="d-flex justify-content-between align-items-center mt-3">
+    <!-- Left: entries info -->
+    <div>
+      Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} entries
+    </div>
+
+    <!-- Right: pagination -->
+    <nav>
+      <ul class="pagination pagination-sm mb-0">
+        {% if page_obj.has_previous %}
+          <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&per_page={{ per_page }}">Previous</a></li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">Previous</span></li>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+          {% if page_obj.number == num %}
+            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+          {% elif num > page_obj.number|add:'-2' and num < page_obj.number|add:'2' %}
+            <li class="page-item"><a class="page-link" href="?page={{ num }}&per_page={{ per_page }}">{{ num }}</a></li>
+          {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+          <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&per_page={{ per_page }}">Next</a></li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">Next</span></li>
+        {% endif %}
+      </ul>
+    </nav>
+  </div>
+</div>
+<!-- Scripts -->
+<script>
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+      cookie = cookie.trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+function changeStatus(applicantId, newStatus) {
+  fetch(/applicants/update-status/${applicantId}/, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCookie('csrftoken'),
+    },
+    body: JSON.stringify({ status: newStatus })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      location.reload();
+    } else {
+      alert(data.error || "Update failed.");
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert("Request failed.");
+  });
+}
+
+function handleModeChange(applicantId) {
+  const mode = document.getElementById('mode' + applicantId).value;
+  const meetDiv = document.getElementById('meet-link-div' + applicantId);
+  const venueDiv = document.getElementById('venue-div' + applicantId);
+  const meetInput = document.getElementById('meet-link' + applicantId);
+  const venueInput = document.getElementById('venue-text' + applicantId);
+
+  if (mode === 'Online') {
+    meetDiv.style.display = 'block';
+    venueDiv.style.display = 'none';
+    meetInput.value = '';
+  } else if (mode === 'Offline') {
+    meetDiv.style.display = 'none';
+    venueDiv.style.display = 'block';
+    venueInput.value = '';
+  } else {
+    meetDiv.style.display = 'none';
+    venueDiv.style.display = 'none';
+  }
+}
+</script>
+<style>
+  .custom-dropdown {
+    appearance: none; /* Removes default OS style */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 140 140' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolygon points='0,0 140,0 70,80' fill='%23000'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 15px top 18px; /* Moves arrow to the left by 5px from edge */
+    background-size: 12px;
+  }
+</style>
+
+<!-- Bootstrap Icons -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+{% endblock %}

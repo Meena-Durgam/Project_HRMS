@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}Qubits HRMS | Ticket Management{% endblock %}
+
+{% block content %}
+
+<!-- Left Column -->
+<div class="col-lg-8 message-view task-view">
+  <div class="chat-window">
+    <div class="fixed-header">
+      <div class="navbar">
+        <div class="float-left ticket-view-details">
+          <div class="ticket-header">
+            <span>Status:</span>
+            <span class="badge badge-warning">{{ ticket.status }}</span>
+            <span class="ml-3 text-muted">Client:</span>
+            <a href="#">{{ ticket.client }}</a>
+            <span class="ml-3 text-muted">Created:</span>
+            <span>{{ ticket.created_at|date:"M d, Y H:i" }}</span>
+            <span class="ml-3 text-muted">Created by:</span>
+            <a href="#">{{ ticket.created_by }}</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-contents">
+      <div class="chat-content-wrap">
+        <div class="chat-box">
+          <div class="task-wrapper">
+
+            <!-- Description -->
+            <div class="card mb-3">
+              <div class="ticket ml-auto">
+                <span>Priority:</span>
+                <div class="btn-group">
+                  <a href="#" class="badge badge-danger dropdown-toggle" data-toggle="dropdown">{{ ticket.priority }}</a>
+                  <div class="dropdown-menu">
+                    <a class="dropdown-item" href="#">Highest</a>
+                    <a class="dropdown-item" href="#">High</a>
+                    <a class="dropdown-item" href="#">Normal</a>
+                    <a class="dropdown-item" href="#">Low</a>
+                  </div>
+                </div>
+              </div>
+              <div class="card-body">
+                <h5 class="card-title">{{ ticket.subject }}</h5>
+                <p>{{ ticket.description|linebreaks }}</p>
+              </div>
+            </div>
+
+            <!-- Uploaded Files -->
+            <div class="card mb-3">
+              <div class="card-body">
+                <h5 class="card-title">Uploaded Files</h5>
+                {% if ticket.file %}
+                <ul class="files-list">
+                  <li>
+                    <div class="files-cont">
+                      <div class="file-type">
+                        <span class="files-icon"><i class="fa fa-file"></i></span>
+                      </div>
+                      <div class="files-info">
+                        <span class="file-name text-ellipsis">
+                          <a href="{{ ticket.file.url }}" target="_blank">{{ ticket.file.name|cut:"uploads/" }}</a>
+                        </span>
+                        <span class="file-author"><a href="#">{{ ticket.created_by }}</a></span>
+                        <span class="file-date">{{ ticket.created_at|date:"M d, Y H:i" }}</span>
+                      </div>
+                    </div>
+                  </li>
+                </ul>
+                {% else %}
+                <p class="text-muted">No attachments.</p>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Comments Section -->
+            
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Right Column -->
+<!-- Right Column -->
+<div class="col-lg-4 message-view task-chat-view ticket-chat-view">
+  <div class="chat-window">
+    <div class="fixed-header">
+      <div class="navbar">
+        <div class="task-assign">
+          <span class="assign-title">Assigned to</span>
+          {% if ticket.assigned_staff %}
+          <a href="#" class="avatar">
+            <img src="{{ ticket.assigned_staff.profile_photo.url|default:'/static/assets/img/profiles/avatar-02.jpg' }}" alt="">
+          </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-contents task-chat-contents">
+      <div class="chat-content-wrap">
+        <div class="chat-box">
+          <!-- Ticket Info -->
+          <ul class="list-group list-group-flush mb-3">
+            <li class="list-group-item d-flex justify-content-between">
+              <strong>Category:</strong> <span>-</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between">
+              <strong>Status:</strong> <span>{{ ticket.status }}</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between">
+              <strong>CC:</strong> <span>{{ ticket.cc|default:"-" }}</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between">
+              <strong>Assign Staff:</strong>
+              <span>
+                {% if ticket.assigned_staff %}
+                  {{ ticket.assigned_staff.get_full_name }}
+                {% else %}
+                  -
+                {% endif %}
+              </span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between">
+              <strong>Assignee:</strong>
+              <span>
+                {% with ticket.get_assigned_employee as emp %}
+                  {% if emp %}
+                    {{ emp.user.get_full_name }}
+                  {% else %}
+                    -
+                  {% endif %}
+                {% endwith %}
+              </span>
+            </li>
+            <li class="list-group-item">
+              <strong>Followers:</strong><br>
+              {% with ticket.get_following_employees as employees %}
+                {% if employees %}
+                  <small class="text-muted">
+                    {% for emp in employees %}
+                      {% if emp %}{{ emp.user.get_full_name }}{% if not forloop.last %}, {% endif %}{% endif %}
+                    {% endfor %}
+                  </small>
+                {% else %}
+                  <small class="text-muted">None</small>
+                {% endif %}
+              {% endwith %}
+            </li>
+            <li class="list-group-item d-flex justify-content-between">
+              <strong>Updated:</strong> <span>{{ ticket.last_reply|default:ticket.created_at|date:"M d, Y H:i" }}</span>
+            </li>
+          </ul>
+
+          <!-- Comments Section -->
+          <div class="card mb-3">
+            <div class="card-body">
+              <h5 class="card-title">Comments ({{ comments.count }})</h5>
+              {% if comments %}
+                {% for comment in comments %}
+                <div class="chat chat-left">
+                  <div class="chat-avatar">
+                    <a href="#" class="avatar">
+                      <img src="{{ comment.user.profile_photo.url|default:'/static/assets/img/profiles/avatar-21.jpg' }}" alt="">
+                    </a>
+                  </div>
+                  <div class="chat-body">
+                    <div class="chat-bubble">
+                      <div class="chat-content">
+                        <span class="task-chat-user">{{ comment.user.get_full_name }}</span>
+                        <span class="chat-time">{{ comment.created_at|date:"M d, Y H:i" }}</span>
+                        <p>{{ comment.comment|linebreaks }}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                {% endfor %}
+              {% else %}
+                <p class="text-muted">No comments yet.</p>
+              {% endif %}
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Comment Form -->
+    <div class="chat-footer">
+      <div class="message-bar">
+        <div class="message-inner">
+          <form method="post">
+  {% csrf_token %}
+  <div class="input-group">
+    {{ comment_form.comment|add_class:"form-control" }}
+    <div class="input-group-append">
+      <button type="submit" name="submit_comment" class="btn btn-primary"><i class="fa fa-send"></i></button>
+    </div>
+  </div>
+</form>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script src="{% static 'assets/js/jquery-3.2.1.min.js' %}"></script>
+<script src="{% static 'assets/js/bootstrap.min.js' %}"></script>
+<script src="{% static 'assets/js/app.js' %}"></script>
+{% endblock %}

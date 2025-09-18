@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Qubits HRMS | Payments {% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div class="row align-items-center">
+        <div class="col">
+            <h3 class="page-title">Payments</h3>
+            <ul class="breadcrumb">
+                <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+                <li class="breadcrumb-item active">Payments</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Alerts -->
+{% if messages %}
+  <div class="messages mt-2">
+    {% for message in messages %}
+      <div class="alert {% if message.tags == 'error' %}alert-danger
+                       {% elif message.tags == 'success' %}alert-success
+                       {% elif message.tags == 'warning' %}alert-warning
+                       {% elif message.tags == 'info' %}alert-info
+                       {% else %}alert-secondary{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+<button type="button" class="close" data-dismiss="alert">&times;</button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+
+<!-- Filter Form -->
+<form method="get" action="{% url 'invoice_payments' %}">
+  <div class="row filter-row mb-3">
+    <div class="col-md-3 mb-2">
+      <input type="text" name="invoice_number" class="form-control" style="height: 50px;" placeholder="Invoice ID" value="{{ request.GET.invoice_number }}">
+    </div>
+    <div class="col-md-3 mb-2">
+      <input type="text" name="client_name" class="form-control" style="height: 50px;" placeholder="Client Name" value="{{ request.GET.client_name }}">
+    </div>
+    <div class="col-md-3 mb-2">
+      <input type="date" name="invoice_date" class="form-control text-uppercase" style="height: 50px;" placeholder="Paid Date (dd-mm-yyyy)" value="{{ request.GET.invoice_date }}">
+    </div>
+    <div class="col-md-3 mb-2">
+      <button type="submit" class="btn btn-primary w-100" style="height: 40px !important;">Search</button>
+    </div>
+  </div>
+</form>
+
+<!-- Payments Table -->
+<div class="row">
+  <div class="col-md-12">
+    <div class="table-responsive">
+      <table class="table table-striped custom-table mb-0">
+        <thead>
+          <tr>
+            <th>Invoice ID</th>
+            <th>Client</th>
+            <th>Paid Date</th>
+            <th>Paid Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for invoice in invoices %}
+            <tr>
+              <td><a href="{% url 'invoice_detail' invoice.id %}">{{ invoice.invoice_number }}</a></td>
+              <td>{{ invoice.client.client_name }}</td>
+              <td>{{ invoice.invoice_date|date:"j M Y" }}</td>
+              <td>₹ {{ invoice.grand_total }}</td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="4" class="text-center text-muted">No paid invoices found.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Pagination Centered -->
+{% if invoices.paginator.num_pages > 1 %}
+  <div class="d-flex justify-content-center mt-4">
+    <nav>
+      <ul class="pagination">
+        {% if invoices.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?{% if request.GET.invoice_number %}invoice_number={{ request.GET.invoice_number }}&{% endif %}
+            {% if request.GET.client_name %}client_name={{ request.GET.client_name }}&{% endif %}
+            {% if request.GET.invoice_date %}invoice_date={{ request.GET.invoice_date }}&{% endif %}
+            page={{ invoices.previous_page_number }}">Previous</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">Previous</span></li>
+        {% endif %}
+
+        {% for num in invoices.paginator.page_range %}
+          {% if invoices.number == num %}
+            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+          {% else %}
+            <li class="page-item">
+              <a class="page-link" href="?{% if request.GET.invoice_number %}invoice_number={{ request.GET.invoice_number }}&{% endif %}
+              {% if request.GET.client_name %}client_name={{ request.GET.client_name }}&{% endif %}
+              {% if request.GET.invoice_date %}invoice_date={{ request.GET.invoice_date }}&{% endif %}
+              page={{ num }}">{{ num }}</a>
+            </li>
+          {% endif %}
+        {% endfor %}
+
+        {% if invoices.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?{% if request.GET.invoice_number %}invoice_number={{ request.GET.invoice_number }}&{% endif %}
+            {% if request.GET.client_name %}client_name={{ request.GET.client_name }}&{% endif %}
+            {% if request.GET.invoice_date %}invoice_date={{ request.GET.invoice_date }}&{% endif %}
+            page={{ invoices.next_page_number }}">Next</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">Next</span></li>
+        {% endif %}
+      </ul>
+    </nav>
+  </div>
+{% endif %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+
+{% endblock %}

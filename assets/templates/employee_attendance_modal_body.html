@@ -1,0 +1,41 @@
+<div class="modal-body">
+  <div class="row mb-3">
+    <div class="col">
+      <strong>Date:</strong> {{ today }}
+    </div>
+    <div class="col">
+      <strong>Check In:</strong> {{ check_in_time|default:"--" }}
+    </div>
+    <div class="col">
+      <strong>Check Out:</strong> {{ check_out_time|default:"--" }}
+    </div>
+    <div class="col">
+      <strong>Status:</strong> {{ status }}
+    </div>
+  </div>
+
+  <div class="row text-center mb-3">
+    <div class="col">
+      <h6>Total Hours</h6>
+      <span class="fw-bold">{{ total_hours }}</span>
+    </div>
+    <div class="col">
+      <h6>Productive</h6>
+      <span class="fw-bold text-success">{{ productive_hours }}</span>
+    </div>
+    <div class="col">
+      <h6>Break</h6>
+      <span class="fw-bold text-warning">{{ break_hours }}</span>
+    </div>
+    <div class="col">
+      <h6>Overtime</h6>
+      <span class="fw-bold text-primary">{{ overtime }}</span>
+    </div>
+  </div>
+
+  <div class="d-flex align-items-center mt-3" style="height: 10px;">
+    {% for segment in timeline %}
+      <div class="{{ segment.color_class }}" style="width: {{ segment.width }}%; height: 100%;"></div>
+    {% endfor %}
+  </div>
+</div>

@@ -1,0 +1,236 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+{% block title %}Qubits HRMS | Termination {% endblock %}
+
+{% block content %}
+
+<!-- Page Header -->
+<div class="page-header">
+  <div class="row align-items-center">
+    <div class="col">
+      <h3 class="page-title">Termination</h3>
+      <ul class="breadcrumb">
+        <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+        <li class="breadcrumb-item active">Termination</li>
+      </ul>
+    </div>
+    {% if request.user.role == 'company_owner' %}
+    <div class="col-auto float-right ml-auto">
+      <a href="#" class="btn btn-primary rounded-pill px-4 py-2" data-bs-toggle="modal" data-bs-target="#addTerminationModal">
+        <i class="fa fa-plus me-1"></i> Add Termination
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% if messages %}
+  <div class="messages mt-2">
+    {% for message in messages %}
+      <div class="alert {% if message.tags == 'error' %}alert-danger
+                       {% elif message.tags == 'success' %}alert-success
+                       {% elif message.tags == 'warning' %}alert-warning
+                       {% elif message.tags == 'danger' %}alert-danger
+                       {% else %}alert-secondary{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+<button type="button" class="close" data-dismiss="alert">&times;</button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<form method="get" class="row mb-4">
+  <div class="col-md-4">
+    <input type="text" name="employee" class="form-control" placeholder="Search by Employee Name" value="{{ request.GET.employee }}">
+  </div>
+  <div class="col-md-4">
+    <input type="text" name="department" class="form-control" placeholder="Search by Department" value="{{ request.GET.department }}">
+  </div>
+  <div class="col-md-4">
+    <button type="submit" class="btn btn-primary w-100"style="height: 40px;">Search</button>
+  </div>
+</form>
+
+
+
+<div class="table-responsive">
+  <table class="table table-striped custom-table mb-0 datatable">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Terminated Employee</th>
+        <th>Department</th>
+        <th>Type</th>
+        <th>Notice Date</th>
+        <th>Termination Date</th>
+        <th>Reason</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for termination in terminations %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ termination.employee.first_name }} {{ termination.employee.last_name }}</td>
+        <td>{{ termination.employee.department.name }}</td>
+        <td>{{ termination.termination_type }}</td>
+        <td>{{ termination.notice_date|date:"d M Y" }}</td>
+        <td>{{ termination.termination_date|date:"d M Y" }}</td>
+        <td>{{ termination.reason }}</td>
+        <td>
+          {% if request.user.role == 'company_owner' %}
+          <div class="dropdown dropdown-action">
+            <a href="#" class="action-icon dropdown-toggle" data-toggle="dropdown">
+              <i class="material-icons">more_vert</i>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-right">
+              <li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#editModal{{ termination.id }}"><i class="fa fa-pencil m-r-5"></i>Edit</a></li>
+              <li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#deleteModal{{ termination.id }}"><i class="fa fa-trash-o m-r-5"></i>Delete</a></li>
+            </ul>
+          </div>
+          {% endif %}
+        </td>
+      </tr>
+
+      <!-- Edit Modal -->
+      <div class="modal custom-modal fade" id="editModal{{ termination.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+          <form method="post" action="{% url 'edit_termination' termination.id %}">
+            {% csrf_token %}
+            <div class="modal-content rounded-4">
+              <div class="modal-header">
+                <h5 class="modal-title">Edit Termination</h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                  <span>&times;</span>
+                </button>
+              </div>
+              <div class="modal-body px-4 py-3">
+                <div class="mb-4">
+                  <label class="form-label">Terminated Employee <span class="text-danger">*</span></label>
+                  <select name="employee" class="form-control" required>
+                    {% for emp in employees %}
+                      <option value="{{ emp.pk }}" {% if emp.pk == termination.employee.pk %}selected{% endif %}>
+                        {{ emp.first_name }} {{ emp.last_name }}
+                      </option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="mb-4">
+                  <label class="form-label">Termination Type <span class="text-danger">*</span></label>
+                  <select name="termination_type" class="form-control" required>
+                    {% for val, label in form.fields.termination_type.choices %}
+                      <option value="{{ val }}" {% if val == termination.termination_type %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="mb-4">
+                  <label class="form-label">Notice Date <span class="text-danger">*</span></label>
+                  <input type="date" name="notice_date" class="form-control" value="{{ termination.notice_date|date:'Y-m-d' }}">
+                </div>
+                <div class="mb-4">
+                  <label class="form-label">Termination Date <span class="text-danger">*</span></label>
+                  <input type="date" name="termination_date" class="form-control" value="{{ termination.termination_date|date:'Y-m-d' }}">
+                </div>
+                <div class="mb-4">
+                  <label class="form-label">Reason <span class="text-danger">*</span></label>
+                  <textarea name="reason" class="form-control">{{ termination.reason }}</textarea>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="submit" class="btn btn-primary w-100 rounded-4">Update</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Delete Modal -->
+      <div class="modal custom-modal fade" id="deleteModal{{ termination.id }}" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+          <div class="modal-content text-center p-4 rounded-4">
+            <div class="modal-body">
+              <h3 class="mb-2 fw-semibold">Delete Termination</h3>
+              <p class="text-muted mb-4" style="font-size: 14px;">Are you sure want to delete?</p>
+              <form method="post" action="{% url 'delete_termination' termination.id %}">
+                {% csrf_token %}
+                <div class="d-flex justify-content-center gap-6">
+                  <button type="submit" class="btn border border-primary text-primary fw-semibold rounded-pill px-4 py-2 mx-4" style="min-width: 200px; background-color: transparent;">
+                    Delete
+                  </button>
+                  <button type="button" class="btn border border-primary text-primary fw-semibold rounded-pill px-4 py-2" style="min-width: 200px; background-color: transparent;" data-bs-dismiss="modal">
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+
+<!-- Add Termination Modal -->
+{% if request.user.role == 'company_owner' %}
+<div class="modal custom-modal fade" id="addTerminationModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-md">
+    <form method="post" class="w-100">
+      {% csrf_token %}
+      <input type="hidden" name="add_termination" value="1">
+      <div class="modal-content rounded-4">
+        <div class="modal-header">
+          <h5 class="modal-title">Add Termination</h5>
+          <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+            <span>&times;</span>
+          </button>
+        </div>
+        <div class="modal-body px-4 py-3">
+          <div class="mb-4">
+            <label class="form-label">Terminated Employee <span class="text-danger">*</span></label>
+            {{ form.employee|add_class:"form-control" }}
+          </div>
+          <div class="mb-4">
+            <label class="form-label">Termination Type <span class="text-danger">*</span></label>
+            {{ form.termination_type|add_class:"form-control" }}
+          </div>
+          <div class="mb-4">
+            <label class="form-label">Notice Date <span class="text-danger">*</span></label>
+            {{ form.notice_date|add_class:"form-control" }}
+          </div>
+          <div class="mb-4">
+            <label class="form-label">Termination Date <span class="text-danger">*</span></label>
+            {{ form.termination_date|add_class:"form-control" }}
+          </div>
+          <div class="mb-4">
+            <label class="form-label">Reason <span class="text-danger">*</span></label>
+            {{ form.reason|add_class:"form-control" }}
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary rounded-4">Save</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var addTerminationModal = document.getElementById('addTerminationModal');
+    if (addTerminationModal) {
+      addTerminationModal.addEventListener('hidden.bs.modal', function () {
+        location.reload();
+      });
+    }
+  });
+</script>
+
+{% endblock %}

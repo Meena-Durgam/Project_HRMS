@@ -1,0 +1,370 @@
+{% extends "base.html" %}
+{% load static %}
+{% load expense_filters %}
+
+{% block title %}Expenses{% endblock %}
+
+{% block content %}
+<style>
+    .required-star { color: red; margin-left: 3px; }
+
+    .select-arrow-spacing {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+
+    background-image: url("data:image/svg+xml;utf8,<svg fill='gray' height='30' viewBox='0 0 24 24' width='30' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+    background-repeat: no-repeat;
+
+    /* 👇 Arrow spacing from the right */
+    background-position: right 14px center;
+
+    /* 👇 Add right padding so text doesn't collide with the arrow */
+    padding-right: 38px;
+
+    background-size: 24px;
+    }
+</style>
+
+<div class="page-header">
+    <div class="row align-items-center">
+        <div class="col">
+            <h3 class="page-title">Expenses</h3>
+            <ul class="breadcrumb">
+                <li class="breadcrumb-item active">Manage Expenses</li>
+            </ul>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#expenseModal">
+                <i class="fa fa-plus "></i> Add Expense
+            </button>
+        </div>
+    </div>
+</div>
+{% if messages %}
+  <div class="messages mt-2">
+    {% for message in messages %}
+      <div class="alert {% if message.tags == 'error' %}alert-danger
+                       {% elif message.tags == 'success' %}alert-success
+                       {% elif message.tags == 'warning' %}alert-warning
+                       {% elif message.tags == 'danger' %}alert-danger
+                       {% else %}alert-secondary{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+<button type="button" class="close" data-bs-dismiss="alert">&times;</button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+<!-- FILTERS -->
+<!-- ✅ Filter Form -->
+<form method="GET" class="mb-3">
+    <div class="row g-2 align-items-end">
+        <!-- Search Field -->
+        <div class="col-md-3">
+            <label for="search" class="form-label">ID / Title</label>
+            <input type="text" id="search" name="search" value="{{ request.GET.search }}" class="form-control" placeholder="Search by ID or Title">
+        </div>
+
+        <!-- From Date -->
+        <div class="col-md-2">
+            <label for="from_date" class="form-label">Expense Date</label>
+            <input type="date" id="from_date" name="from_date" value="{{ request.GET.from_date }}" class="form-control">
+        </div>
+
+        <!-- Category -->
+        <div class="col-md-2">
+            <label for="category" class="form-label">Category</label>
+            <select id="category" name="category" class="form-control custom-select-padding select-arrow-spacing">
+                <option value="">All Categories</option>
+                {% for cat in categories %}
+                    <option value="{{ cat }}" {% if request.GET.category == cat %}selected{% endif %}>{{ cat }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Status -->
+        <div class="col-md-2">
+            <label for="status" class="form-label">Status</label>
+            <select id="status" name="status" class="form-control custom-select-padding select-arrow-spacing">
+                <option value="">All Status</option>
+                <option value="Pending" {% if request.GET.status == 'Pending' %}selected{% endif %}>Pending</option>
+                <option value="Approved" {% if request.GET.status == 'Approved' %}selected{% endif %}>Approved</option>
+                <option value="Rejected" {% if request.GET.status == 'Rejected' %}selected{% endif %}>Rejected</option>
+            </select>
+        </div>
+
+        <!-- Search Button -->
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-primary w-100" style="height: 45px;">Search</button>
+        </div>
+    </div>
+  <!-- Page size selector -->
+  <div class="entry-selector-wrapper mt-3">
+    <label for="per_page">Show
+      <select id="per_page" name="per_page" onchange="this.form.submit()" 
+              class="form-select form-select-sm d-inline w-auto mx-1">
+        <option value="5"  {% if page_size == 5 %}selected{% endif %}>5</option>
+        <option value="10" {% if page_size == 10 %}selected{% endif %}>10</option>
+        <option value="15" {% if page_size == 15 %}selected{% endif %}>15</option>
+        <option value="20" {% if page_size == 20 %}selected{% endif %}>20</option>
+      </select>
+      entries
+    </label>
+  </div>
+</form>
+
+
+<style>
+  .entry-selector-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+  }
+
+  .entry-input {
+    width: 60px;
+    padding: 4px 8px;
+    font-size: 14px;
+    text-align: center;
+    border: 1px solid #ccc;
+    border-radius: 2px;
+    box-shadow: none;
+  }
+
+  .entry-input::-webkit-outer-spin-button,
+  .entry-input::-webkit-inner-spin-button {
+    opacity: 1;
+  }
+
+  .entry-input[type="number"] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+  }
+</style>
+
+<!-- EXPENSE TABLE -->
+ 
+<div class="table-responsive mt-3">
+    <table class="table table-striped align-middle mb-0 bg-white">
+        <thead>
+            <tr>
+        
+                <th>Expense ID</th>
+                <th>Title</th>
+                <th>Category</th>
+                <th>Employee</th>
+                <th>Department</th>
+                <th>Date</th>
+                <th>Amount</th>
+                <th>Paid By</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for expense in expenses %}
+            <tr>
+                
+                <td>{{ expense.expense_id }}</td>
+                <td>{{ expense.expense_title }}</td>
+                <td>{{ expense.category }}</td>
+                <td>{{ expense.employee }}</td>
+                <td>{{ expense.department }}</td>
+                <td>{{ expense.expense_date|date:"d/m/Y" }}</td>
+                <td>₹{{ expense.amount }}</td>
+                <td>{{ expense.paid_by }}</td>
+                <td>{{ expense.expense_type }}</td>
+                <td>{{ expense.status }}</td>
+                <td class="text-center">
+    <div class="dropdown">
+        <a href="#" class="text-muted" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fa fa-ellipsis-v"></i>
+        </a>
+        <div class="dropdown-menu dropdown-menu-end">
+            <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#editModal{{ expense.id }}">
+                <i class="fa fa-pencil me-2"></i> Edit
+            </a>
+            <a class="dropdown-item text-danger" href="#" data-bs-toggle="modal" data-bs-target="#deleteExpenseModal{{ expense.id }}">
+                <i class="fa fa-trash me-2"></i> Delete
+            </a>
+        </div>
+    </div>
+</td>
+
+<!-- DELETE EXPENSE MODAL -->
+<div class="modal custom-modal fade" id="deleteExpenseModal{{ expense.id }}" tabindex="-1" role="dialog" aria-labelledby="deleteExpenseLabel{{ expense.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+<form method="POST" action="{% url 'delete_expense' expense.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="form-header text-center">
+                        <h3>Delete Expense</h3>
+                        <p>Are you sure you want to delete <strong>{{ expense.expense_title }}</strong> ({{ expense.expense_id }})</p>
+                    </div>
+                    <div class="modal-btn delete-action mt-4">
+                        <div class="row">
+                            <div class="col-6">
+                                <button type="submit" class="btn btn-outline-primary btn-block continue-btn">Delete</button>
+                            </div>
+                            <div class="col-6">
+<button type="button" class="btn btn-outline-secondary btn-block cancel-btn" data-bs-dismiss="modal">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+            </tr>
+
+            <!-- EDIT EXPENSE MODAL -->
+<div class="modal custom-modal fade" id="editModal{{ expense.id }}" tabindex="-1" aria-labelledby="editExpenseModalLabel{{ expense.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="post" action="{% url 'edit_expense' expense.id %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Expense</h5>
+                    <button type="button" class="close" data-bs-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        {% with edit_form=edit_forms|dict_get:expense.id %}
+  {% for field in edit_form %}
+        <div class="col-md-6 mb-3">
+        <label>
+            {{ field.label }}
+            {% if field.field.required %}
+                <span style="color:red;">*</span>
+            {% endif %}
+        </label>
+        {{ field }}
+    </div>
+  {% endfor %}
+{% endwith %}
+
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">
+                         Save
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+            {% empty %}
+            <tr><td colspan="12" class="text-center">No expenses found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<div class="d-flex justify-content-between align-items-center mt-3">
+    <!-- Entry info -->
+    <div>
+        Showing {{ expenses.start_index }} to {{ expenses.end_index }} of {{ expenses.paginator.count }} entries
+    </div>
+
+    <!-- Pagination -->
+    <nav>
+        <ul class="pagination pagination-sm mb-0">
+            <!-- Previous -->
+            {% if expenses.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ expenses.previous_page_number }}&{{ request.GET.urlencode }}">Previous</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Previous</span></li>
+            {% endif %}
+
+            <!-- Page numbers -->
+            {% for num in expenses.paginator.page_range %}
+                {% if num >= expenses.number|add:'-2' and num <= expenses.number|add:'2' %}
+                    {% if expenses.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}&{{ request.GET.urlencode }}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+
+            <!-- Next -->
+            {% if expenses.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ expenses.next_page_number }}&{{ request.GET.urlencode }}">Next</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Next</span></li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+
+
+<!-- ADD EXPENSE MODAL -->
+<div class="modal custom-modal fade" id="expenseModal" tabindex="-1" aria-labelledby="expenseModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Expense</h5>
+          <button type="button" class="close" data-bs-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+    {% for field in form %}
+    <div class="col-md-6 mb-3">
+        <label>
+            {{ field.label }}
+            {% if field.field.required %}
+                <span style="color:red;">*</span>
+            {% endif %}
+        </label>
+        {{ field }}
+    </div>
+    {% endfor %}
+</div>
+
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Reset Add Expense modal
+    const addModal = document.getElementById('expenseModal');
+    addModal.addEventListener('hidden.bs.modal', function () {
+        const form = addModal.querySelector('form');
+        if (form) form.reset();
+    });
+
+    // Reset Edit Expense modals
+    document.querySelectorAll('[id^="editModal"]').forEach(function (modal) {
+        modal.addEventListener('hidden.bs.modal', function () {
+            const form = modal.querySelector('form');
+            if (form) form.reset();
+        });
+    });
+});
+</script>
+
+{% endblock %}

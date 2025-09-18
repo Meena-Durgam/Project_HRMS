@@ -1,0 +1,185 @@
+{% extends 'base_no_header_sidebar.html' %}
+{% load static %}
+{% block title %}Home | Qubits HRMS{% endblock %}
+
+{% block content %}
+<!-- AOS + Bootstrap -->
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+
+<style>
+  :root {
+    --q-blue: #2563eb;
+    --q-orange: #f97316;
+    --q-light: #f1f5f9;
+    --q-dark: #1e293b;
+  }
+
+  body {
+    background-color: var(--q-light);
+    font-family: 'Segoe UI', sans-serif;
+    scroll-behavior: smooth;
+  }
+
+  .hero {
+    background: linear-gradient(135deg, var(--q-blue), var(--q-orange));
+    color: white;
+    padding: 5rem 2rem;
+    border-radius: 1.5rem;
+    margin-bottom: 3rem;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  }
+
+  .hero h1 {
+    font-size: 2.8rem;
+    font-weight: 700;
+  }
+
+  .hero p {
+    font-size: 1.2rem;
+    margin-top: 1rem;
+  }
+
+  .card-login {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+  }
+
+  .card-login:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+  }
+
+  .card-login i {
+    margin-bottom: 1rem;
+    color: var(--q-blue);
+  }
+
+  .btn-primary, .btn-success {
+    border-radius: 30px;
+    padding: 0.5rem 1.5rem;
+    font-weight: 500;
+  }
+
+  .feature-icon-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem 1.2rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.04);
+  }
+
+  .feature-icon-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+  }
+
+  .feature-icon {
+    background-color: var(--q-blue);
+    color: white;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    font-size: 1.6rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+  }
+
+  .footer {
+    text-align: center;
+    margin-top: 4rem;
+    font-size: 0.9rem;
+    color: #666;
+  }
+
+  .footer-links a {
+    color: #666;
+    text-decoration: none;
+    margin: 0 0.5rem;
+  }
+
+  .footer-links a:hover {
+    text-decoration: underline;
+  }
+</style>
+
+<div class="container py-5">
+
+  <!-- Hero Section -->
+  <div class="hero" data-aos="zoom-in">
+    <h1>Welcome to Qubits HRMS</h1>
+    <p>Smart, scalable, and secure HR solution for companies of all sizes</p>
+    <a href="{% url 'company_signup' %}" class="btn btn-light mt-3 fw-bold">Register Your Company</a>
+  </div>
+
+  <!-- Login Cards -->
+  <div class="row g-4 mb-5" data-aos="fade-up">
+    <div class="col-md-6">
+      <div class="card-login text-center h-100">
+        <i class="fas fa-building fa-3x text-primary"></i>
+        <h5 class="mt-3">Company Login</h5>
+        <p>Manage employees, projects, payrolls, and more.</p>
+        <a href="{% url 'login' %}?role=company" class="btn btn-primary">Login as Company</a>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card-login text-center h-100">
+        <i class="fas fa-user fa-3x text-success"></i>
+        <h5 class="mt-3">Employee Login</h5>
+        <p>Access your attendance, tasks, leave, and salary details.</p>
+        <a href="{% url 'login' %}?role=employee" class="btn btn-success">Login as Employee</a>
+      </div>
+    </div>
+  </div>
+
+  <hr class="mb-5"/>
+
+  <!-- Feature Highlights -->
+  <div class="row g-4 text-center" data-aos="fade-up" data-aos-delay="100">
+    <div class="col-md-3">
+      <div class="feature-icon-card">
+        <div class="feature-icon"><i class="fas fa-users"></i></div>
+        <h6 class="fw-bold mt-3">Employee Directory</h6>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="feature-icon-card">
+        <div class="feature-icon"><i class="fas fa-clock"></i></div>
+        <h6 class="fw-bold mt-3">Attendance Management</h6>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="feature-icon-card">
+        <div class="feature-icon"><i class="fas fa-wallet"></i></div>
+        <h6 class="fw-bold mt-3">Payroll System</h6>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="feature-icon-card">
+        <div class="feature-icon"><i class="fas fa-plane-departure"></i></div>
+        <h6 class="fw-bold mt-3">Leave Management</h6>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer mt-5">
+    <p>&copy; 2025 Qubits HRMS. All rights reserved.</p>
+    <div class="footer-links">
+      <a href="#">Privacy Policy</a> |
+      <a href="#">Terms</a> |
+      <a href="#">Support</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  AOS.init({ duration: 800, once: true });
+</script>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h2>Task: {{ task.title }}</h2>
+    <p><strong>Description:</strong> {{ task.description }}</p>
+    <p><strong>Assigned To:</strong> {{ task.assigned_to }}</p>
+    <p><strong>Due Date:</strong> {{ task.due_date }}</p>
+
+    <hr>
+    <h4>Progress Updates:</h4>
+    {% if progress_updates %}
+        <ul class="list-group">
+        {% for progress in progress_updates %}
+            <li class="list-group-item">
+                <p><strong>Date:</strong> {{ progress.date }}</p>
+                <p><strong>Description:</strong> {{ progress.progress_description }}</p>
+                <p><strong>Completed:</strong> {{ progress.percentage_complete }}%</p>
+                {% if progress.attachment %}
+                    <p><a href="{{ progress.attachment.url }}">Download Attachment</a></p>
+                {% endif %}
+            </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>No progress updates yet.</p>
+    {% endif %}
+
+    <a href="{% url 'task_list' %}" class="btn btn-secondary mt-3">Back to Task List</a>
+</div>
+{% endblock %}

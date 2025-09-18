@@ -1,0 +1,831 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+    
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="row">
+        <div class="col-sm-12">
+          <h3 class="page-title">Performance</h3>
+          <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+            <li class="breadcrumb-item active">Performance</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    
+
+  <section class="review-section information">
+  <div class="review-header text-center">
+    <h3 class="review-title">Employee Basic Information</h3>
+    <p class="text-muted">Review the employee's general information and background</p>
+  </div>
+
+  <div class="row">
+    <div class="col-md-12">
+      <div class="table-responsive">
+        <table class="table table-bordered review-table mb-0">
+          <tbody>
+            <tr>
+              <!-- Column 1 -->
+              <td>
+                <div class="form-group">
+                  <label for="employee_name">Name <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="employee_name" name="employee_name"
+                         value="{{ employee.full_name|default_if_none:'' }}" readonly>
+                </div>
+
+                <div class="form-group">
+                  <label for="department">Department <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="department" name="department"
+                         value="{{ employee.department.name|default_if_none:'' }}" readonly>
+                </div>
+
+                <div class="form-group">
+                  <label for="designation">Designation <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="designation" name="designation"
+                         value="{{ employee.designation.name|default_if_none:'' }}" readonly>
+                </div>
+
+                <div class="form-group">
+                  <label for="qualification">Qualification <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="qualification" name="qualification"
+                         value="{{ employee.qualification|default_if_none:'' }}" readonly>
+                </div>
+              </td>
+
+              <!-- Column 2 -->
+              <td>
+                <div class="form-group">
+                  <label for="emp_id">Employee ID <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="emp_id" name="emp_id"
+                         value="{{ employee.employee_id|default_if_none:'' }}" readonly>
+                </div>
+
+                <div class="form-group">
+                  <label for="doj">Date of Joining <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="doj" name="doj"
+                         value="{{ employee.joining_date|date:'Y-m-d' }}" readonly>
+                </div>
+
+                <div class="form-group">
+                  <label for="confirmation_date">Date of Confirmation <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="confirmation_date" name="confirmation_date"
+                         value="{{ employee.confirmation_date|date:'Y-m-d' }}" readonly>
+                </div>
+
+                <div class="form-group">
+                  <label for="experience">Previous Experience (in years) <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="experience" name="experience"
+                         value="{{ employee.previous_experience|default_if_none:'0' }}" readonly>
+                </div>
+              </td>
+
+              <!-- Column 3 -->
+              <td>
+                <div class="form-group">
+                  <label for="ro_name">Reporting Officer Name <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="ro_name" name="ro_name"
+                         value="{{ employee.reporting_officer.full_name|default_if_none:'' }}" readonly>
+                </div>
+
+                <div class="form-group">
+                  <label for="ro_designation">RO Designation <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="ro_designation" name="ro_designation"
+                         value="{{ employee.reporting_officer.designation.name|default_if_none:'' }}" readonly>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="review-section professional-excellence">
+  <div class="review-header text-center">
+    <h3 class="review-title">Professional Excellence</h3>
+    <p class="text-muted">Evaluate performance on key result areas and operational efficiency.</p>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-bordered review-table mb-0">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Key Result Area</th>
+          <th>Key Performance Indicators</th>
+          <th>Weightage</th>
+          <th>Percentage Achieved <br>(Self)</th>
+          <th>Points Scored <br>(Self)</th>
+          <th>Percentage Achieved <br>(RO)</th>
+          <th>Points Scored <br>(RO)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in professional_metrics %}
+        <tr {% if item.rowspan %} rowspan="{{ item.rowspan }}" {% endif %}>
+          <td>{{ item.serial }}</td>
+          <td>{{ item.area }}</td>
+          <td>{{ item.kpi }}</td>
+          <td><input type="text" class="form-control" readonly value="{{ item.weightage }}"></td>
+          <td><input type="text" class="form-control" name="self_percentage_{{ forloop.counter }}"></td>
+          <td><input type="text" class="form-control" readonly value="0"></td>
+          <td><input type="text" class="form-control" name="ro_percentage_{{ forloop.counter }}"></td>
+          <td><input type="text" class="form-control" readonly value="0"></td>
+        </tr>
+        {% endfor %}
+        <tr>
+          <td colspan="3" class="text-center"><strong>Total</strong></td>
+          <td><input type="text" class="form-control" readonly value="85"></td>
+          <td><input type="text" class="form-control" readonly value="0"></td>
+          <td><input type="text" class="form-control" readonly value="0"></td>
+          <td><input type="text" class="form-control" readonly value="0"></td>
+          <td><input type="text" class="form-control" readonly value="0"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+<section class="review-section personal-excellence">
+  <div class="review-header text-center">
+    <h3 class="review-title">Personal Excellence</h3>
+    <p class="text-muted">Assess individual conduct, contribution, and collaboration.</p>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-bordered review-table mb-0">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Personal Attributes</th>
+          <th>Key Indicators</th>
+          <th>Weightage</th>
+          <th>Percentage Achieved <br>(Self)</th>
+          <th>Points Scored <br>(Self)</th>
+          <th>Percentage Achieved <br>(RO)</th>
+          <th>Points Scored <br>(RO)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in personal_metrics %}
+        <tr>
+          <td>{{ item.serial }}</td>
+          <td>{{ item.attribute }}</td>
+          <td>{{ item.indicator }}</td>
+          <td><input type="text" class="form-control" readonly value="{{ item.weightage }}"></td>
+          <td><input type="text" class="form-control" name="self_percentage_{{ forloop.counter }}"></td>
+          <td><input type="text" class="form-control" readonly value="0"></td>
+          <td><input type="text" class="form-control" name="ro_percentage_{{ forloop.counter }}"></td>
+          <td><input type="text" class="form-control" readonly value="0"></td>
+        </tr>
+        {% endfor %}
+        <tr>
+          <td colspan="3" class="text-center"><strong>Total</strong></td>
+          <td><input type="text" class="form-control" readonly value="15"></td>
+          <td><input type="text" class="form-control" readonly value="0"></td>
+          <td><input type="text" class="form-control" readonly value="0"></td>
+          <td><input type="text" class="form-control" readonly value="0"></td>
+          <td><input type="text" class="form-control" readonly value="0"></td>
+        </tr>
+        <tr>
+          <td colspan="3" class="text-center"><strong>Total Percentage (%)</strong></td>
+          <td colspan="5"><input type="text" class="form-control text-center" readonly value="0"></td>
+        </tr>
+        <tr>
+          <td colspan="8" class="text-center">
+            <div class="grade-span">
+              <h4>Grade</h4>
+              <span class="badge bg-danger">Below 65 Poor</span>
+              <span class="badge bg-warning text-dark">65-74 Average</span>
+              <span class="badge bg-info text-dark">75-84 Satisfactory</span>
+              <span class="badge bg-primary">85-92 Good</span>
+              <span class="badge bg-success">Above 92 Excellent</span>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+{% comment %} Special Initiatives, Achievements, Contributions Section {% endcomment %}
+<section class="review-section">
+	<div class="review-header text-center">
+		<h3 class="review-title">Special Initiatives, Achievements, Contributions</h3>
+		<p class="text-muted">Include notable contributions, initiatives, and achievements</p>
+	</div>
+	<div class="row">
+		<div class="col-md-12">
+			<div class="table-responsive">
+				<table class="table table-bordered table-review review-table mb-0" id="table_achievements">
+					<thead>
+						<tr>
+							<th style="width:40px;">#</th>
+							<th>By Self</th>
+							<th>RO's Comment</th>
+							<th>HOD's Comment</th>
+							<th style="width: 64px;"><button type="button" class="btn btn-primary btn-add-row"><i class="fa fa-plus"></i></button></th>
+						</tr>
+					</thead>
+					<tbody id="table_achievements_tbody">
+						<tr>
+							<td>{{ i }}</td>
+							<td><input type="text" class="form-control" name="initiative_self_{{ i }}"></td>
+							<td><input type="text" class="form-control" name="initiative_ro_{{ i }}"></td>
+							<td><input type="text" class="form-control" name="initiative_hod_{{ i }}"></td>
+							<td></td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+</section>
+
+{% comment %} Comments on Role Section {% endcomment %}
+<section class="review-section">
+	<div class="review-header text-center">
+		<h3 class="review-title">Comments on the Role</h3>
+		<p class="text-muted">Alterations if any required, like addition/deletion of responsibilities</p>
+	</div>
+	<div class="row">
+		<div class="col-md-12">
+			<div class="table-responsive">
+				<table class="table table-bordered table-review review-table mb-0" id="table_alterations">
+					<thead>
+						<tr>
+							<th style="width:40px;">#</th>
+							<th>By Self</th>
+							<th>RO's Comment</th>
+							<th>HOD's Comment</th>
+							<th style="width: 64px;"><button type="button" class="btn btn-primary btn-add-row"><i class="fa fa-plus"></i></button></th>
+						</tr>
+					</thead>
+					<tbody id="table_alterations_tbody">
+						<tr>
+							<td>{{ i }}</td>
+							<td><input type="text" class="form-control" name="role_self_{{ i }}"></td>
+							<td><input type="text" class="form-control" name="role_ro_{{ i }}"></td>
+							<td><input type="text" class="form-control" name="role_hod_{{ i }}"></td>
+							<td></td>
+						</tr>
+						
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+</section>
+{% comment %} Appraisee's Own Strengths & Improvements Section {% endcomment %}
+<section class="review-section">
+  <div class="review-header text-center">
+    <h3 class="review-title">Self: Strengths and Areas for Improvement</h3>
+    <p class="text-muted">Provide your assessment of your strengths and improvement areas</p>
+  </div>
+  <div class="row">
+    <div class="col-md-12">
+      <div class="table-responsive">
+        <table class="table table-bordered review-table mb-0">
+          <thead>
+            <tr>
+              <th style="width:40px;">#</th>
+              <th>Strengths</th>
+              <th>Areas for Improvement</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+            <tr>
+              <td>{{ i }}</td>
+              <td><input type="text" class="form-control" name="self_strength_{{ i }}"></td>
+              <td><input type="text" class="form-control" name="self_improvement_{{ i }}"></td>
+            </tr>
+
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% comment %} RO's Perception of Appraisee's Strengths & Improvements {% endcomment %}
+<section class="review-section">
+  <div class="review-header text-center">
+    <h3 class="review-title">RO: Strengths and Areas for Improvement of Appraisee</h3>
+    <p class="text-muted">Reported by the Reporting Officer</p>
+  </div>
+  <div class="row">
+    <div class="col-md-12">
+      <div class="table-responsive">
+        <table class="table table-bordered review-table mb-0">
+          <thead>
+            <tr>
+              <th style="width:40px;">#</th>
+              <th>Strengths</th>
+              <th>Areas for Improvement</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{{ i }}</td>
+              <td><input type="text" class="form-control" name="ro_strength_{{ i }}"></td>
+              <td><input type="text" class="form-control" name="ro_improvement_{{ i }}"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% comment %} HOD's Perception of Appraisee's Strengths & Improvements {% endcomment %}
+<section class="review-section">
+  <div class="review-header text-center">
+    <h3 class="review-title">HOD: Strengths and Areas for Improvement of Appraisee</h3>
+    <p class="text-muted">Feedback by the Head of the Department</p>
+  </div>
+  <div class="row">
+    <div class="col-md-12">
+      <div class="table-responsive">
+        <table class="table table-bordered review-table mb-0">
+          <thead>
+            <tr>
+              <th style="width:40px;">#</th>
+              <th>Strengths</th>
+              <th>Areas for Improvement</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{{ i }}</td>
+              <td><input type="text" class="form-control" name="hod_strength_{{ i }}"></td>
+              <td><input type="text" class="form-control" name="hod_improvement_{{ i }}"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+{% comment %} Personal Goals {% endcomment %}
+<section class="review-section">
+  <div class="review-header text-center">
+    <h3 class="review-title">Personal Goals</h3>
+    <p class="text-muted">Lorem ipsum dollar</p>
+  </div>
+  <div class="row">
+    <div class="col-md-12">
+      <div class="table-responsive">
+        <table class="table table-bordered review-table mb-0">
+          <thead>
+            <tr>
+              <th style="width:40px;">#</th>
+              <th>Goal Achieved during last year</th>
+              <th>Goal set for current year</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{{ i }}</td>
+              <td><input type="text" name="goal_achieved_{{ i }}" class="form-control" /></td>
+              <td><input type="text" name="goal_set_{{ i }}" class="form-control" /></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% comment %} Personal Updates {% endcomment %}
+<section class="review-section">
+  <div class="review-header text-center">
+    <h3 class="review-title">Personal Updates</h3>
+    <p class="text-muted">Lorem ipsum dollar</p>
+  </div>
+  <div class="row">
+    <div class="col-md-12">
+      <div class="table-responsive">
+        <table class="table table-bordered review-table mb-0">
+          <thead>
+            <tr>
+              <th style="width:40px;">#</th>
+              <th>Last Year</th>
+              <th>Yes/No</th>
+              <th>Details</th>
+              <th>Current Year</th>
+              <th>Yes/No</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for label, field_name in [
+              ('Married/Engaged?', 'marriage'),
+              ('Higher Studies/Certifications?', 'study'),
+              ('Health Issues?', 'health'),
+              ('Others', 'others')
+            ] %}
+            <tr>
+              <td>{{ forloop.counter }}</td>
+              <td>{{ label }}</td>
+              <td>
+                <select name="last_year_{{ field_name }}_yn" class="form-control select">
+                  <option value="">Select</option>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+              </td>
+              <td><input type="text" name="last_year_{{ field_name }}_details" class="form-control" /></td>
+              <td>{{ label }}</td>
+              <td>
+                <select name="curr_year_{{ field_name }}_yn" class="form-control select">
+                  <option value="">Select</option>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+              </td>
+              <td><input type="text" name="curr_year_{{ field_name }}_details" class="form-control" /></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% comment %} Professional Goals Achieved {% endcomment %}
+<section class="review-section">
+  <div class="review-header text-center">
+    <h3 class="review-title">Professional Goals Achieved for last year</h3>
+    <p class="text-muted">Lorem ipsum dollar</p>
+  </div>
+  <div class="row">
+    <div class="col-md-12">
+      <div class="table-responsive">
+        <table class="table table-bordered table-review review-table mb-0">
+          <thead>
+            <tr>
+              <th style="width:40px;">#</th>
+              <th>By Self</th>
+              <th>RO's Comment</th>
+              <th>HOD's Comment</th>
+              <th style="width:64px;"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{{ i }}</td>
+              <td><input type="text" name="self_goal_{{ i }}" class="form-control" /></td>
+              <td><input type="text" name="ro_goal_comment_{{ i }}" class="form-control" /></td>
+              <td><input type="text" name="hod_goal_comment_{{ i }}" class="form-control" /></td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="review-section">
+  <div class="review-header text-center">
+    <h3 class="review-title">Professional Goals for the Forthcoming Year</h3>
+    <p class="text-muted">Lorem ipsum dollar</p>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-bordered table-review mb-0" id="table_forthcoming">
+      <thead>
+        <tr>
+          <th style="width:40px;">#</th>
+          <th>By Self</th>
+          <th>RO's Comment</th>
+          <th>HOD's Comment</th>
+          <th style="width:64px;"><button type="button" class="btn btn-primary btn-add-row"><i class="fa fa-plus"></i></button></th>
+        </tr>
+      </thead>
+      <tbody id="table_forthcoming_tbody">
+        {% for i in "12345" %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td><input type="text" class="form-control" name="goal_self_{{ forloop.counter }}"></td>
+          <td><input type="text" class="form-control" name="goal_ro_{{ forloop.counter }}"></td>
+          <td><input type="text" class="form-control" name="goal_hod_{{ forloop.counter }}"></td>
+          <td></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+<section class="review-section">
+						<div class="review-header text-center">
+							<h3 class="review-title">Training Requirements</h3>
+							<p class="text-muted">if any to achieve the Performance Standard Targets completely</p>
+						</div>
+						<div class="row">
+							<div class="col-md-12">
+								<div class="table-responsive">
+									<table class="table table-bordered table-review review-table mb-0" id="table_targets">
+										<thead>
+											<tr>
+											<th style="width:40px;">#</th>
+											<th>By Self</th>
+											<th>RO's Comment</th>
+											<th>HOD's Comment</th>
+											<th style="width: 64px;"><button type="button" class="btn btn-primary btn-add-row"><i class="fa fa-plus"></i></button></th>
+											</tr>
+										</thead>
+										<tbody id="table_targets_tbody">
+											<tr>
+												<td>1</td>
+												<td><input type="text" class="form-control" ></td>
+												<td><input type="text" class="form-control" ></td>
+												<td><input type="text" class="form-control" ></td>
+												<td></td>
+											</tr>
+											<tr>
+												<td>2</td>
+												<td><input type="text" class="form-control" ></td>
+												<td><input type="text" class="form-control" ></td>
+												<td><input type="text" class="form-control" ></td>
+												<td></td>
+											</tr>
+											<tr>
+												<td>3</td>
+												<td><input type="text" class="form-control" ></td>
+												<td><input type="text" class="form-control" ></td>
+												<td><input type="text" class="form-control" ></td>
+												<td></td>
+											</tr>
+											<tr>
+												<td>4</td>
+												<td><input type="text" class="form-control" ></td>
+												<td><input type="text" class="form-control" ></td>
+												<td><input type="text" class="form-control" ></td>
+												<td></td>
+											</tr>
+											<tr>
+												<td>5</td>
+												<td><input type="text" class="form-control" ></td>
+												<td><input type="text" class="form-control" ></td>
+												<td><input type="text" class="form-control" ></td>
+												<td></td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+					</section>
+
+					<section class="review-section">
+						<div class="review-header text-center">
+							<h3 class="review-title">Any other general comments, observations, suggestions etc.</h3>
+							<p class="text-muted">Lorem ipsum dollar</p>
+						</div>
+						<div class="row">
+							<div class="col-md-12">
+								<div class="table-responsive">
+									<table class="table table-bordered table-review review-table mb-0" id="general_comments">
+										<thead>
+											<tr>
+											<th style="width:40px;">#</th>
+											<th>Self</th>
+											<th>RO</th>
+											<th>HOD</th>
+											<th style="width: 64px;"><button type="button" class="btn btn-primary btn-add-row"><i class="fa fa-plus"></i></button></th>
+											</tr>
+										</thead>
+										<tbody id="general_comments_tbody" >
+											<tr>
+												<td>1</td>
+												<td><input type="text" class="form-control" ></td>
+												<td><input type="text" class="form-control" ></td>
+												<td><input type="text" class="form-control" ></td>
+												<td></td>
+											</tr>
+											<tr>
+												<td>2</td>
+												<td><input type="text" class="form-control" ></td>
+												<td><input type="text" class="form-control" ></td>
+												<td><input type="text" class="form-control" ></td>
+												<td></td>
+											</tr>
+											<tr>
+												<td>3</td>
+												<td><input type="text" class="form-control" ></td>
+												<td><input type="text" class="form-control" ></td>
+												<td><input type="text" class="form-control" ></td>
+												<td></td>
+											</tr>
+											<tr>
+												<td>4</td>
+												<td><input type="text" class="form-control" ></td>
+												<td><input type="text" class="form-control" ></td>
+												<td><input type="text" class="form-control" ></td>
+												<td></td>
+											</tr>
+											<tr>
+												<td>5</td>
+												<td><input type="text" class="form-control" ></td>
+												<td><input type="text" class="form-control" ></td>
+												<td><input type="text" class="form-control" ></td>
+												<td></td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+					</section>
+
+					<section class="review-section">
+						<div class="review-header text-center">
+							<h3 class="review-title">For RO's Use Only</h3>
+							<p class="text-muted">Lorem ipsum dollar</p>
+						</div>
+						<div class="row">
+							<div class="col-md-12">
+								<div class="table-responsive">
+									<table class="table table-bordered review-table mb-0">
+										<thead>
+											<tr>
+												<th></th>
+												<th>Yes/No</th>
+												<th>If Yes - Details</th>
+											</tr>
+										</thead>
+										<tbody>
+											<tr>
+												<td>The Team member has Work related Issues</td>
+												<td>
+													<select class="form-control select">
+														<option>Select</option>
+														<option>Yes</option>
+														<option>No</option>
+													</select>
+												</td>
+												<td><input type="text" class="form-control" ></td>
+											</tr>
+											<tr>
+												<td>The Team member has Leave Issues</td>
+												<td>
+												<select class="form-control select">
+													<option>Select</option>
+													<option>Yes</option>
+													<option>No</option>
+												</select>
+												</td>
+												<td><input type="text" class="form-control" ></td>
+											</tr>
+											<tr>
+												<td>The team member has Stability Issues</td>
+												<td>
+													<select class="form-control select">
+														<option>Select</option>
+														<option>Yes</option>
+														<option>No</option>
+													</select>
+												</td>
+												<td><input type="text" class="form-control" ></td>
+											</tr>
+											<tr>
+												<td>The Team member exhibits non-supportive attitude</td>
+												<td>
+													<select class="form-control select">
+														<option>Select</option>
+														<option>Yes</option>
+														<option>No</option>
+													</select>
+												</td>
+												<td><input type="text" class="form-control" ></td>
+											</tr>
+											<tr>
+												<td>Any other points in specific to note about the team member</td>
+												<td>
+													<select class="form-control select">
+														<option>Select</option>
+														<option>Yes</option>
+														<option>No</option>
+													</select>
+												</td>
+												<td><input type="text" class="form-control" ></td>
+											</tr>
+											<tr>
+											<td>Overall Comment /Performance of the team member</td>
+												<td>
+													<select class="form-control select">
+														<option>Select</option>
+														<option>Yes</option>
+														<option>No</option>
+													</select>
+												</td>
+												<td><input type="text" class="form-control" ></td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+					</section>
+					
+					<section class="review-section">
+						<div class="review-header text-center">
+							<h3 class="review-title">For HRD's Use Only</h3>
+							<p class="text-muted">Lorem ipsum dollar</p>
+						</div>
+						<div class="row">
+							<div class="col-md-12">
+								<div class="table-responsive">
+									<table class="table table-bordered review-table mb-0">
+										<thead>
+											<tr>
+												<th>Overall Parameters</th>
+												<th>Available Points</th>
+												<th>Points Scored</th>
+												<th>RO's Comment</th>
+											</tr>
+										</thead>
+										<tbody>
+											<tr>
+												<td>KRAs Target Achievement Points (will be considered from the overall score specified in this document by the Reporting officer)</td>
+												<td><input type="text" class="form-control" ></td>
+												<td><input type="text" class="form-control" ></td>
+												<td><input type="text" class="form-control" ></td>
+											</tr>
+											<tr>
+												<td>Professional Skills Scores(RO's Points furnished in the skill & attitude assessment sheet will be considered)</td>
+												<td><input type="text" class="form-control" ></td>
+												<td><input type="text" class="form-control" ></td>
+												<td><input type="text" class="form-control" ></td>
+											</tr>
+											<tr>
+												<td>Personal Skills Scores(RO's Points furnished in the skill & attitude assessment sheet will be considered)</td>
+												<td><input type="text" class="form-control" ></td>
+												<td><input type="text" class="form-control" ></td>
+												<td><input type="text" class="form-control" ></td>
+											</tr>
+											<tr>
+												<td>Special Achievements Score (HOD to furnish)</td>
+												<td><input type="text" class="form-control" ></td>
+												<td><input type="text" class="form-control" ></td>
+												<td><input type="text" class="form-control" ></td>
+											</tr>
+											<tr>
+												<td>Overall Total Score</td>
+												<td><input type="text" class="form-control" ></td>
+												<td><input type="text" class="form-control" ></td>
+												<td><input type="text" class="form-control" ></td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+					</section>
+
+					<div class="row">
+						<div class="col-md-12">
+							<div class="table-responsive">
+								<table class="table table-bordered review-table mb-0">
+									<thead>
+										<tr>
+											<th></th>
+											<th>Name</th>
+											<th>Signature</th>
+											<th>Date</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr>
+											<td>Employee</td>
+											<td><input type="text" class="form-control" ></td>
+											<td><input type="text" class="form-control" ></td>
+											<td><input type="text" class="form-control" ></td>
+										</tr>
+										<tr>
+											<td>Reporting Officer</td>
+											<td><input type="text" class="form-control" ></td>
+											<td><input type="text" class="form-control" ></td>
+											<td><input type="text" class="form-control" ></td>
+										</tr>
+										<tr>
+											<td>HOD</td>
+											<td><input type="text" class="form-control" ></td>
+											<td><input type="text" class="form-control" ></td>
+											<td><input type="text" class="form-control" ></td>
+										</tr>
+										<tr>
+											<td>HRD</td>
+											<td><input type="text" class="form-control" ></td>
+											<td><input type="text" class="form-control" ></td>
+											<td><input type="text" class="form-control" ></td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+
+{% endblock %}

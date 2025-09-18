@@ -1,0 +1,326 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Training Management{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="row align-items-center">
+        <div class="col-12 col-md">
+            <h3 class="page-title">Training</h3>
+            <ul class="breadcrumb">
+                <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+                <li class="breadcrumb-item active">Training</li>
+            </ul>
+        </div>
+      
+        <div class="col-auto mt-3 mt-md-0 ml-auto">
+        {% if request.user.role == 'company_owner' %}
+        <button class="btn btn-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#addTrainingModal">
+            <i class="fa fa-plus me-1"></i> Add New
+        </button>
+        {% endif %}
+        </div>
+    </div>
+</div>
+<!-- /Page Header -->
+    
+{% if messages %}
+  <div class="messages mt-2">
+    {% for message in messages %}
+      <div class="alert {% if message.tags == 'error' %}alert-danger
+                       {% elif message.tags == 'success' %}alert-success
+                       {% elif message.tags == 'warning' %}alert-warning
+                       {% elif message.tags == 'info' %}alert-info
+                       {% else %}alert-secondary{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+<button type="button" class="close" data-dismiss="alert">&times;</button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+    <!-- Training Table -->
+    <div class="row">
+    <div class="col-12">
+        <div class="table-responsive">
+            <table class="table table-striped custom-table mb-0 datatable">
+            <thead>
+                <tr>
+                    <th>Training Type</th>
+                    <th>Trainer</th>
+                    <th>Employee</th>
+                    <th>Cost</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Status</th>
+                    {% if request.user.role == 'company_owner' %}
+                    <th>Actions</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody id="trainingTable">
+                {% for training in trainings %}
+                <tr>
+                    <td>{{ training.training_type }}</td>
+                    <td>{{ training.trainer.first_name }} {{ training.trainer.last_name }}</td>
+                    <td>{{ training.employee.first_name }} {{ training.employee.last_name }}</td>
+                    <td>{{ training.training_cost }}</td>
+                    <td>{{ training.start_date }}</td>
+                    <td>{{ training.end_date }}</td>
+
+                    <!-- Status Dropdown -->
+                    <td>
+    <div class="dropdown action-label">
+        <a class="btn btn-white btn-sm btn-rounded dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false">
+            {% if training.status == "Scheduled" %}
+                <i class="fa fa-calendar text-info"></i> Scheduled
+            {% elif training.status == "Ongoing" %}
+                <i class="fa fa-spinner text-primary"></i> Ongoing
+            {% elif training.status == "Completed" %}
+                <i class="fa fa-check-circle text-success"></i> Completed
+            {% elif training.status == "Cancelled" %}
+                <i class="fa fa-times-circle text-danger"></i> Cancelled
+            {% else %}
+                <i class="fa fa-dot-circle-o text-secondary"></i> Unknown
+            {% endif %}
+        </a>
+        <div class="dropdown-menu dropdown-menu-end">
+            <a class="dropdown-item" href="{% url 'training_toggle_status' training.id 'Scheduled' %}">
+                <i class="fa fa-calendar text-info"></i> Scheduled
+            </a>
+            <a class="dropdown-item" href="{% url 'training_toggle_status' training.id 'Ongoing' %}">
+                <i class="fa fa-spinner text-primary"></i> Ongoing
+            </a>
+            <a class="dropdown-item" href="{% url 'training_toggle_status' training.id 'Completed' %}">
+                <i class="fa fa-check-circle text-success"></i> Completed
+            </a>
+            <a class="dropdown-item" href="{% url 'training_toggle_status' training.id 'Cancelled' %}">
+                <i class="fa fa-times-circle text-danger"></i> Cancelled
+            </a>
+        </div>
+    </div>
+</td>
+
+
+
+                    {% if request.user.role == 'company_owner' %}
+                    <td class="text-end">
+                        <div class="dropdown dropdown-action">
+                            <a href="#" class="action-icon dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="material-icons">more_vert</i>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-end">
+                                <a class="dropdown-item" href="?edit_id={{ training.id }}">
+                                    <i class="fa fa-pencil m-r-5"></i> Edit
+                                </a>
+                                <a class="dropdown-item text-danger" href="javascript:void(0);" data-toggle="modal" data-target="#deleteTrainingModal{{ training.id }}">
+    <i class="fa fa-trash-o m-r-5"></i> Delete
+</a>
+
+                            </div>
+                        </div>
+                    </td>
+                    {% endif %}
+                </tr>
+                <div class="modal custom-modal fade" id="deleteTrainingModal{{ training.id }}" role="dialog">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="{% url 'delete_training' training.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="form-header text-center">
+                        <h3 class="text-danger">Delete Training</h3>
+                        <p>Are you sure want to delete?</p>
+                    </div>
+                    <div class="modal-btn delete-action mt-4">
+                        <div class="row">
+                            <div class="col-6">
+                                <button type="submit" class="btn btn-primary btn-block continue-btn">Delete</button>
+                            </div>
+                            <div class="col-6">
+                                <button type="button" class="btn btn-secondary btn-block cancel-btn" data-dismiss="modal">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="text-center">No training records found.</td>
+                </tr>
+                
+                {% endfor %}
+                
+            </tbody>
+            </table>
+        </div>
+    </div>
+
+
+<!-- Add Training Modal -->
+<div id="addTrainingModal" class="modal custom-modal fade" tabindex="-1" role="dialog" aria-labelledby="addTrainingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <!-- Modal Header -->
+            <div class="modal-header">
+                <h5 class="modal-title" id="addTrainingModalLabel">Add New Training</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <!-- Modal Form -->
+            <form method="POST">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.training_type.id_for_label }}" class="form-label">Training Type <span style="color: red;">*</span></label>
+                            {{ form.training_type }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.trainer.id_for_label }}" class="form-label">Trainer <span style="color: red;">*</span></label>
+                            {{ form.trainer }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.employee.id_for_label }}" class="form-label">Employee <span style="color: red;">*</span></label>
+                            {{ form.employee }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.training_cost.id_for_label }}" class="form-label">Training Cost <span style="color: red;">*</span></label>
+                            {{ form.training_cost }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+    <label for="id_start_date" class="form-label">
+        Start Date <span style="color: red;">*</span>
+    </label>
+    <input type="date" name="start_date" id="id_start_date"
+           class="form-control text-uppercase py-3"
+           placeholder="DD/MM/YYYY" autocomplete="off" />
+</div>
+
+<div class="col-md-6 mb-3">
+    <label for="id_end_date" class="form-label">
+        End Date <span style="color: red;">*</span>
+    </label>
+    <input type="date" name="end_date" id="id_end_date"
+           class="form-control text-uppercase py-3"
+           placeholder="DD/MM/YYYY" autocomplete="off" />
+</div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.status.id_for_label }}" class="form-label">Status <span style="color: red;">*</span></label>
+                            {{ form.status }}
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+                            {{ form.description }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fa fa-check-circle mr-1"></i> Submit
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fa fa-times-circle mr-1"></i> Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% if edit_training and edit_form %}
+<!-- Edit Training Modal -->
+<div id="editTrainingModal" class="modal custom-modal fade show" tabindex="-1" role="dialog" aria-labelledby="editTrainingModalLabel" style="display: block;" aria-modal="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <!-- Modal Header -->
+            <div class="modal-header">
+                <h5 class="modal-title" id="editTrainingModalLabel">Edit Training</h5>
+                <a href="{% url 'training_list' %}" class="close" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </a>
+            </div>
+
+            <!-- Modal Form -->
+            <form method="POST" action="{% url 'update_training' edit_training.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ edit_form.training_type.id_for_label }}" class="form-label">Training Type</label>
+                            {{ edit_form.training_type }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ edit_form.trainer.id_for_label }}" class="form-label">Trainer</label>
+                            {{ edit_form.trainer }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ edit_form.employee.id_for_label }}" class="form-label">Employee</label>
+                            {{ edit_form.employee }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ edit_form.training_cost.id_for_label }}" class="form-label">Training Cost</label>
+                            {{ edit_form.training_cost }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ edit_form.start_date.id_for_label }}" class="form-label">Start Date</label>
+                            {{ edit_form.start_date }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ edit_form.end_date.id_for_label }}" class="form-label">End Date</label>
+                            {{ edit_form.end_date }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ edit_form.status.id_for_label }}" class="form-label">Status</label>
+                            {{ edit_form.status }}
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label for="{{ edit_form.description.id_for_label }}" class="form-label">Description</label>
+                            {{ edit_form.description }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa fa-check-circle mr-1"></i> Update
+                    </button>
+                    <a href="{% url 'training_list' %}" class="btn btn-secondary">
+                        <i class="fa fa-times-circle mr-1"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<!-- Auto Open Edit Modal Script -->
+<script>
+    window.addEventListener('load', () => {
+        const editModal = document.getElementById('editTrainingModal');
+        if (editModal) {
+            editModal.classList.add('show');
+            editModal.style.display = 'block';
+            document.body.classList.add('modal-open');
+        }
+    });
+</script>
+{% endif %}
+<!-- Search Script -->
+<script>
+document.getElementById('searchByTraining').addEventListener('input', function () {
+    const query = this.value.toLowerCase();
+    document.querySelectorAll('#trainingTable tr').forEach(row => {
+        const trainingType = row.children[0]?.textContent.toLowerCase();
+        row.style.display = trainingType.includes(query) ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}

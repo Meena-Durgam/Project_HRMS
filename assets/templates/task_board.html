@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load project_filters %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+  <h2 class="text-center mb-4">🗂️ Task Board</h2>
+
+  <div class="row">
+    {% for status, tasks in task_groups.items %}
+    <div class="col-lg-3 col-md-6 mb-4">
+      <div class="card border-0 shadow-sm">
+        <!-- Card Column Header -->
+        <div class="card-header text-white text-center fw-bold
+          {% if status == 'To_Do' %} bg-danger 
+          {% elif status == 'In_Progress' %} bg-primary 
+          {% elif status == 'Review' %} bg-warning text-dark
+          {% elif status == 'Completed' %} bg-success 
+          {% else %} bg-secondary {% endif %}">
+          {{ status|replace_underscore }}
+        </div>
+
+        <div class="card-body p-2" style="min-height: 500px;">
+          {% for item in tasks %}
+          {% with task=item.task latest_progress=item.latest_progress %}
+          <div class="card mb-3">
+            <div class="card-body p-3">
+              <h6 class="fw-semibold mb-2">{{ task.title }}</h6>
+
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <div><i class="far fa-clock"></i> {{ task.due_date|date:"M d" }}</div>
+                <strong>{{ progress.employee.first_name }} {{ progress.employee.last_name }}</strong>
+
+                <span class="badge 
+                  {% if task.priority == 'high' %} bg-danger
+                  {% elif task.priority == 'medium' %} bg-warning text-dark
+                  {% else %} bg-success {% endif %}">
+                  {{ task.get_priority_display }}
+                </span>
+              </div>
+
+              {% if latest_progress %}
+  <div class="progress mb-2" style="height: 6px;">
+    <div 
+      class="progress-bar 
+      {% if latest_progress.percentage_complete < 25 %}
+        bg-danger
+      {% elif latest_progress.percentage_complete < 50 %}
+        bg-warning
+      {% elif latest_progress.percentage_complete < 75 %}
+        bg-primary
+      {% else %}
+        bg-success
+      {% endif %}"
+      role="progressbar"
+      style="width: {{ latest_progress.percentage_complete }}%;"
+      aria-valuenow="{{ latest_progress.percentage_complete }}"
+      aria-valuemin="0"
+      aria-valuemax="100">
+    </div>
+  </div>
+  <small>{{ latest_progress.percentage_complete }}% Complete</small>
+{% else %}
+  <small class="text-muted">No progress</small>
+{% endif %}
+
+            </div>
+          </div>
+          {% endwith %}
+          {% empty %}
+          <div class="text-center text-muted mt-3">No Tasks</div>
+          {% endfor %}
+        </div>
+
+        <div class="card-footer text-center bg-white border-top-0">
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

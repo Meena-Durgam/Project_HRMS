@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load resignation_tag %}
+{% load widget_tweaks %}
+
+{% block title %}Qubits HRMS | Resignations{% endblock %}
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div class="row align-items-center">
+        <div class="col">
+            <h3 class="page-title">Resignations</h3>
+            <ul class="breadcrumb">
+                <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+                <li class="breadcrumb-item active">Resignation</li>
+            </ul>
+        </div>
+        {% if request.user.role == 'employee' %}
+        <div class="col-auto float-right ml-auto">
+           <a href="#" class="btn add-btn" data-bs-toggle="modal" data-bs-target="#add_resignation">
+    <i class="fa fa-plus"></i> Add Resignation
+</a>
+
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Display messages -->
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+
+<!-- Resignation Table -->
+<!-- Add Resignation Modal -->
+<div id="add_resignation" class="modal custom-modal fade" role="dialog">
+    <div class="modal-dialog modal-md modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <form method="post" action="{% url 'add_resignation' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Resignation</h5>
+                    <button type="button" class="close" data-bs-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+
+                    <!-- Employee Info -->
+                    <div class="form-group">
+                        <label>Employee ID</label>
+                        <input type="text" class="form-control" value="{{ employee_obj.employee_id }}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Name</label>
+                        <input type="text" class="form-control" value="{{ request.user.first_name }} {{ request.user.last_name }}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Department</label>
+                        <input type="text" class="form-control" value="{{ employee_obj.department.name }}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Designation</label>
+                        <input type="text" class="form-control" value="{{ employee_obj.designation.name }}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Reporting Manager</label>
+                        <input type="text" class="form-control" value="{{ employee_obj.reporting_manager.get_full_name }}" readonly>
+                    </div>
+
+                    <!-- Resignation Details -->
+                    <div class="form-group">
+                        <label for="resignation_date">Resignation Date <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" name="resignation_date" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="last_working_day">Last Working Day <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" name="last_working_day" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="notice_period">Notice Period Duration (in days) <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" name="notice_period" min="0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="mode_of_exit">Mode of Exit <span class="text-danger">*</span></label>
+                        <select class="form-control" name="mode_of_exit" required>
+                            <option value="" disabled selected>Select</option>
+                            <option value="resignation">Resignation</option>
+                            <option value="retirement">Retirement</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reason">Reason for Resignation <span class="text-danger">*</span></label>
+                        <textarea class="form-control" name="reason" rows="3" required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="comments">Additional Comments (optional)</label>
+                        <textarea class="form-control" name="comments" rows="2"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="resignation_letter">Upload Resignation Letter <span class="text-danger">*</span></label>
+                        <input type="file" class="form-control" name="resignation_letter" accept=".pdf,.doc,.docx" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="status">Status <span class="text-danger">*</span></label>
+                        <select class="form-control" name="status" required>
+                            <option value="pending" selected>Pending</option>
+                            <option value="approved">Approved</option>
+                            <option value="rejected">Rejected</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary submit-btn">Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

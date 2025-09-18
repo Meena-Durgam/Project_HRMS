@@ -1,0 +1,232 @@
+{% load widget_tweaks %}
+{% load custom %}
+
+{% block extra_css %}
+<style>
+  .modal-content {
+    border-radius: 1rem;
+  }
+  .modal-header.bg-primary {
+    border-top-left-radius: 1rem;
+    border-top-right-radius: 1rem;
+  }
+  .modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+    padding: 1.5rem;
+  }
+  .modal-body .form-label {
+    font-size: 0.95rem;
+    color: #333;
+  }
+  .modal-body .form-control,
+  .modal-body .form-select {
+    min-height: 45px;
+    border-radius: 0.5rem;
+  }
+  .modal-body .btn-success {
+    font-weight: 600;
+    font-size: 1rem;
+  }
+  .modal-body::-webkit-scrollbar {
+    width: 8px;
+  }
+  .modal-body::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+  }
+</style>
+{% endblock %}
+
+<div class="modal fade" id="editJobModal{{ job.id }}" tabindex="-1" aria-labelledby="editJobModalLabel{{ job.id }}" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content shadow rounded-4 border-0">
+      <div class="modal-header bg-primary text-white rounded-top-4">
+        <h5 class="modal-title" id="editJobModalLabel{{ job.id }}">✏ Edit Job</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"><span>&times;</span></button>
+      </div>
+
+      {% with form=forms|get_item:job.id %}
+      <form method="POST" action="{% url 'edit_job' job.id %}">
+        {% csrf_token %}
+        <div class="modal-body p-4">
+          <div class="row g-3">
+           <div class="col-md-6 mt-3">
+  <label class="form-label fw-semibold">
+    {{ form.title.label }}
+    {% if form.title.field.required %}<span class="text-danger">*</span>{% endif %}
+  </label>
+  {{ form.title|add_class:"form-control" }}
+</div>
+
+<div class="col-md-6 mt-3">
+  <label class="form-label fw-semibold">
+    {{ form.department.label }}
+    {% if form.department.field.required %}<span class="text-danger">*</span>{% endif %}
+  </label>
+  {{ form.department|add_class:"form-control" }}
+</div>
+
+<div class="col-md-6 mt-3">
+  <label class="form-label fw-semibold">
+    {{ form.location.label }}
+    {% if form.location.field.required %}<span class="text-danger">*</span>{% endif %}
+  </label>
+  {{ form.location|add_class:"form-control" }}
+</div>
+
+<div class="col-md-6 mt-3">
+  <label class="form-label fw-semibold">
+    {{ form.vacancies.label }}
+    {% if form.vacancies.field.required %}<span class="text-danger">*</span>{% endif %}
+  </label>
+  {{ form.vacancies|add_class:"form-control" }}
+</div>
+
+<div class="col-md-6 mt-3">
+  <label class="form-label fw-semibold">
+    {{ form.experience.label }}
+    {% if form.experience.field.required %}<span class="text-danger">*</span>{% endif %}
+  </label>
+  {{ form.experience|add_class:"form-control" }}
+</div>
+
+<div class="col-md-6 mt-3">
+  <label class="form-label fw-semibold">
+    {{ form.status.label }}
+    {% if form.status.field.required %}<span class="text-danger">*</span>{% endif %}
+  </label>
+  {{ form.status|add_class:"form-control" }}
+</div>
+
+<div class="col-md-6 mt-3">
+  <label class="form-label fw-semibold">
+    {{ form.salary_from.label }}
+    {% if form.salary_from.field.required %}<span class="text-danger">*</span>{% endif %}
+  </label>
+  {{ form.salary_from|add_class:"form-control" }}
+  {% for error in form.salary_from.errors %}
+    <div class="text-danger small">{{ error }}</div>
+  {% endfor %}
+</div>
+
+<div class="col-md-6 mt-3">
+  <label class="form-label fw-semibold">
+    {{ form.salary_to.label }}
+    {% if form.salary_to.field.required %}<span class="text-danger">*</span>{% endif %}
+  </label>
+  {{ form.salary_to|add_class:"form-control" }}
+  {% for error in form.salary_to.errors %}
+    <div class="text-danger small">{{ error }}</div>
+  {% endfor %}
+</div>
+
+
+<div class="col-md-6 mt-3">
+  <label class="form-label fw-semibold">
+    {{ form.start_date.label }}
+    {% if form.start_date.field.required %}<span class="text-danger">*</span>{% endif %}
+  </label>
+  {{ form.start_date|add_class:"form-control" }}
+</div>
+
+<div class="col-md-6 mt-3">
+  <label class="form-label fw-semibold">
+    {{ form.expired_date.label }}
+    {% if form.expired_date.field.required %}<span class="text-danger">*</span>{% endif %}
+  </label>
+  {{ form.expired_date|add_class:"form-control" }}
+</div>
+
+<div class="col-md-6 mt-3">
+  <label class="form-label fw-semibold">
+    {{ form.job_type.label }}
+    {% if form.job_type.field.required %}<span class="text-danger">*</span>{% endif %}
+  </label>
+  {{ form.job_type|add_class:"form-control" }}
+</div>
+
+<div class="col-12 mt-3">
+  <label class="form-label fw-semibold">
+    {{ form.description.label }}
+    {% if form.description.field.required %}<span class="text-danger">*</span>{% endif %}
+  </label>
+  {{ form.description|add_class:"form-control" }}
+</div>
+
+          </div>
+
+         <div class="d-flex justify-content-center mt-4">
+  <button type="submit" class="btn btn-primary px-4 py-2 rounded-pill shadow-sm">
+       Save
+  </button>
+</div>
+
+        </div>
+      </form>
+      {% endwith %}
+    </div>
+  </div>
+</div>
+
+<!-- ✅ CKEditor 5 CDN -->
+<script src="https://cdn.ckeditor.com/ckeditor5/41.0.0/classic/ckeditor.js"></script>
+
+<!-- ✅ CKEditor Initialization per modal -->
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const modalId = "editJobModal{{ job.id }}";
+    const modal = document.getElementById(modalId);
+    const descriptionId = "ckeditor5-description-{{ job.id }}";
+    let editorInstance = null;
+
+    if (modal) {
+      // Initialize CKEditor when modal is shown
+      modal.addEventListener('shown.bs.modal', function () {
+        const textarea = document.getElementById(descriptionId);
+        if (textarea && !textarea.classList.contains('ck-editor-initialized')) {
+          ClassicEditor.create(textarea)
+            .then(editor => {
+              editorInstance = editor;
+              textarea.classList.add('ck-editor-initialized');
+            })
+            .catch(error => console.error(error));
+        }
+      });
+
+      // Reset and destroy CKEditor when modal is hidden
+      modal.addEventListener('hidden.bs.modal', function () {
+        const form = modal.querySelector('form');
+        if (form) {
+          form.reset();
+        }
+
+        if (editorInstance) {
+          editorInstance.destroy()
+            .then(() => {
+              const textarea = document.getElementById(descriptionId);
+              if (textarea) {
+                textarea.classList.remove('ck-editor-initialized');
+              }
+              editorInstance = null;
+            })
+            .catch(error => console.error(error));
+        }
+      });
+
+      // Add form validation: salary_to > salary_from
+      const form = modal.querySelector('form');
+      if (form) {
+        form.addEventListener('submit', function (event) {
+          const salaryFrom = parseFloat(form.querySelector('[name="salary_from"]').value) || 0;
+          const salaryTo = parseFloat(form.querySelector('[name="salary_to"]').value) || 0;
+
+          if (salaryTo <= salaryFrom) {
+            event.preventDefault();
+            alert("Salary To must be greater than Salary From.");
+          }
+        });
+      }
+    }
+  });
+</script>

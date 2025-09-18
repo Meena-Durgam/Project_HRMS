@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+{% load static %}
+{% load project_filters %}
+{% load widget_tweaks %}
+{% load dict_extras %}
+{% block title %}Project Management{% endblock %}
+
+{% block extra_head %}
+<style>
+    .search-input {
+        height: 40px;       /* Uniform height */
+        min-width: 400px;   /* Minimum width for consistency */
+        padding: 5px 10px;
+        border-radius: 4px;
+    }
+
+    .search-btn {
+        height: 38px;
+        min-width: 120px;
+        border-radius: 4px;
+    }
+    .custom-select {
+        border-radius: 0.375rem;
+        padding: 0.5rem 0.75rem;
+        font-size: 1rem;
+        height: 40px;
+    }
+    
+    @media (max-width: 768px) {
+        .search-input {
+            min-width: 120px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div class="row align-items-center">
+        <div class="col">
+            <h3 class="page-title">Project Management</h3>
+            <ul class="breadcrumb">
+                <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+                <li class="breadcrumb-item active">Projects</li>
+            </ul>
+        </div>
+        
+    </div>
+</div>
+
+<!-- Display Messages -->
+{% if messages %}
+  <div class="messages mt-2">
+    {% for message in messages %}
+      <div class="alert {% if message.tags == 'error' %}alert-danger
+                       {% elif message.tags == 'success' %}alert-success
+                       {% elif message.tags == 'warning' %}alert-warning
+                       {% elif message.tags == 'info' %}alert-info
+                       {% else %}alert-secondary{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+<button type="button" class="close" data-dismiss="alert">&times;</button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+\
+<!-- Projects Table -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="table-responsive">
+            <table class="table table-striped custom-table datatable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Project Name</th>
+                        <th>Team Leader</th>
+                        <th>Team Members</th>
+                        <th>Deadline</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        
+                        {% if user.role in 'superadmin company_owner' %}
+
+                        <th class="text-right">Actions</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for project in projects %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ project.name }}</td>
+                        <td>
+                            <div class="team-leader-info" style="display: inline-flex; align-items: center; position: relative;">
+    {% if project.team_leader.profile and project.team_leader.profile.profile_picture %}
+        <img src="{{ project.team_leader.profile.profile_picture.url }}"
+             title="{{ project.team_leader.first_name }} {{ project.team_leader.last_name }}"
+             alt="Profile" width="30" height="30"
+             style="border-radius: 50%; margin-right: 5px;">
+    {% else %}
+        <img src="{% static 'default-user.png' %}"
+             alt="Default" width="30" height="30"
+             style="border-radius: 50%; margin-right: 5px;">
+    {% endif %}
+    
+    <span class="team-leader-name" style="display: none; white-space: nowrap;">
+        {{ project.team_leader.first_name }} {{ project.team_leader.last_name }}
+    </span>
+</div>
+
+                        </td>                          
+                        <td>
+                            {% for member in project.team_members.all %}
+    {% if member.profile and member.profile.profile_picture %}
+        <img src="{{ member.profile.profile_picture.url }}" alt="Photo" 
+             title="{{ member.first_name }} {{ member.last_name }}"
+             width="30" height="30" style="border-radius: 50%; margin: 2px;">
+    {% else %}
+        <img src="{% static 'default-user.png' %}" alt="Default" 
+             title="{{ member.first_name }} {{ member.last_name }}"
+             width="30" height="30" style="border-radius: 50%; margin: 2px;">
+    {% endif %}
+{% endfor %}
+
+                        </td>                                               
+                        <td>{{ project.end_date }}</td>
+                        <!-- Priority Column -->
+                        <td>
+                            {% if request.user.employee_account == project.team_leader %}
+
+                            <div class="dropdown action-label">
+                                <a class="btn btn-white btn-sm btn-rounded dropdown-toggle" href="#" data-toggle="dropdown" aria-expanded="false">
+                                    <i class="fa fa-dot-circle-o 
+                                        {% if project.priority == 'low' %}text-success
+                                        {% elif project.priority == 'medium' %}text-warning
+                                        {% elif project.priority == 'high' %}text-danger
+                                        {% endif %}
+                                    "></i> {{ project.priority|title }}
+                                </a>
+                                <div class="dropdown-menu dropdown-menu-right">
+                                    <form method="post" action="{% url 'update_priority' project.id %}">
+                                        {% csrf_token %}
+                                        <button class="dropdown-item" type="submit" name="priority" value="low">
+                                            <i class="fa fa-dot-circle-o text-success"></i> Low
+                                        </button>
+                                        <button class="dropdown-item" type="submit" name="priority" value="medium">
+                                            <i class="fa fa-dot-circle-o text-warning"></i> Medium
+                                        </button>
+                                        <button class="dropdown-item" type="submit" name="priority" value="high">
+                                            <i class="fa fa-dot-circle-o text-danger"></i> High
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="dropdown action-label">
+                                <a class="btn btn-white btn-sm btn-rounded">
+                                    <i class="fa fa-dot-circle-o 
+                                        {% if project.priority == 'low' %}text-success
+                                        {% elif project.priority == 'medium' %}text-warning
+                                        {% elif project.priority == 'high' %}text-danger
+                                        {% endif %}
+                                    "></i> {{ project.priority|title }}
+                                </a>
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td>
+  {% if request.user.employee_account == project.team_leader %}
+  <div class="dropdown action-label">
+    <a class="btn btn-white btn-sm btn-rounded dropdown-toggle" href="#" data-toggle="dropdown" aria-expanded="false">
+      <i class="fa fa-dot-circle-o 
+        {% if project.status == 'Completed' %}text-success
+        {% elif project.status == 'Ongoing' %}text-warning
+        {% else %}text-danger
+        {% endif %}
+      "></i>
+      <span>{{ project.status }}</span>
+    </a>
+    <div class="dropdown-menu dropdown-menu-right">
+      <form method="post" action="{% url 'update_status' project.id %}">
+        {% csrf_token %}
+        <input type="hidden" name="status" value="Not Started">
+        <button class="dropdown-item" type="submit">
+          <i class="fa fa-dot-circle-o text-danger"></i> Not Started
+        </button>
+      </form>
+      <form method="post" action="{% url 'update_status' project.id %}">
+        {% csrf_token %}
+        <input type="hidden" name="status" value="Ongoing">
+        <button class="dropdown-item" type="submit">
+          <i class="fa fa-dot-circle-o text-warning"></i> Ongoing
+        </button>
+      </form>
+      <form method="post" action="{% url 'update_status' project.id %}">
+        {% csrf_token %}
+        <input type="hidden" name="status" value="Completed">
+        <button class="dropdown-item" type="submit">
+          <i class="fa fa-dot-circle-o text-success"></i> Completed
+        </button>
+      </form>
+    </div>
+  </div>
+  {% else %}
+  <div class="dropdown action-label">
+    <a class="btn btn-white btn-sm btn-rounded">
+      <i class="fa fa-dot-circle-o 
+        {% if project.status == 'Completed' %}text-success
+        {% elif project.status == 'Ongoing' %}text-warning
+        {% else %}text-danger
+        {% endif %}
+      "></i> {{ project.status }}
+    </a>
+  </div>
+  {% endif %}
+</td>
+
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.status-form button[data-status]').forEach(button => {
+        button.addEventListener('click', function () {
+            const status = this.getAttribute('data-status');
+            const form = this.closest('form');
+            const projectId = form.getAttribute('data-project-id');
+            const csrfToken = form.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            fetch(`/projects/update-status/${projectId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: `status=${encodeURIComponent(status)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const span = document.getElementById(`project-status-${projectId}`);
+                    if (span) {
+                        span.innerText = data.new_status;
+                        span.previousElementSibling.className = 'fa fa-dot-circle-o';
+                        if (status === 'Completed') span.previousElementSibling.classList.add('text-success');
+                        else if (status === 'Ongoing') span.previousElementSibling.classList.add('text-warning');
+                        else span.previousElementSibling.classList.add('text-danger');
+                    }
+                } else {
+                    alert("Status update failed: " + (data.error || "Unknown error"));
+                }
+            })
+            .catch(error => {
+                console.error("AJAX failed:", error);
+                alert("Request failed.");
+            });
+        });
+    });
+});
+
+
+{% endblock %}

@@ -1,0 +1,406 @@
+{% extends 'base.html' %}
+{% load promotion_filters %}
+{% load widget_tweaks %}
+{% block title %}Qubits HRMS | Promotion {% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div class="row align-items-center">
+        <div class="col">
+            <h3 class="page-title">Promotion</h3>
+            <ul class="breadcrumb">
+                <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+                <li class="breadcrumb-item active">Promotion</li>
+            </ul>
+        </div>
+        {% if request.user.role == 'company_owner' %}
+        <div class="col-auto float-right ml-auto">
+            <a href="#" class="btn add-btn" data-toggle="modal" data-target="#add_promotion">
+                <i class="fa fa-plus"></i> Add Promotion
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+<!-- /Page Header -->
+
+
+{% if messages %}
+  <div class="messages mt-2">
+    {% for message in messages %}
+      <div class="alert {% if message.tags == 'error' %}alert-danger
+                       {% elif message.tags == 'success' %}alert-success
+                       {% elif message.tags == 'warning' %}alert-warning
+                       {% elif message.tags == 'danger' %}alert-danger
+                       {% else %}alert-secondary{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+<button type="button" class="close" data-dismiss="alert">&times;</button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="table-responsive">
+            <table class="table table-striped custom-table datatable mb-0">
+                <thead>
+                    <tr>
+                        <th>SL.No</th>
+                        <th>Employee</th>
+                        <th>Department</th>
+                        <th>From</th>
+                        <th>To</th>
+                        <th>Date</th>
+                        <th class="text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for promotion in promotions %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ promotion.employee }}</td>
+                        <td>{{ promotion.new_department }}</td>
+                        <td> {{ promotion.old_designation }}</td>
+                        <td>{{ promotion.new_designation }}</td>
+                        <td>{{ promotion.promotion_date }}</td>
+        {% if request.user.role == 'company_owner' %}
+                        <td class="text-center">
+                            <div class="dropdown dropdown-action">
+                                <a href="#" class="action-icon dropdown-toggle" data-toggle="dropdown">
+                                    <i class="material-icons">more_vert</i>
+                                </a>
+                                <div class="dropdown-menu dropdown-menu-right">
+                                    <a class="dropdown-item" href="#" data-toggle="modal" data-target="#edit_promotion_{{ promotion.id }}">
+                                        <i class="fa fa-pencil m-r-5"></i> Edit
+                                    </a>
+                                    <a class="dropdown-item text-danger" href="#" data-toggle="modal" data-target="#delete_promotion_modal_{{ promotion.id }}">
+  <i class="fa fa-trash-o m-r-5"></i> Delete
+</a>
+
+                                </div>
+                            </div>
+                        </td>
+                        {% endif %}
+                    </tr>
+
+                    <!-- Edit Modal for this promotion -->
+                    <!-- Edit Modal for this promotion -->
+<div id="edit_promotion_{{ promotion.id }}" class="modal custom-modal fade" role="dialog">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <form method="post" action="{% url 'promotion_edit' promotion.id %}">
+                {% csrf_token %}
+                {% with form=promotion_forms|get_item:promotion.id %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Promotion</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    
+                    <!-- Employee -->
+                    <div class="form-group">
+                        <label for="id_employee_{{ promotion.id }}">Employee <span style="color:red;">*</span></label>
+                        {{ form.employee|add_class:"form-control" }}
+                    </div>
+
+                    <!-- Current Department -->
+                    <div class="form-group">
+                        <label>Current Department</label>
+                        <input type="text" id="oldDepartment_{{ promotion.id }}" class="form-control" value="{{ promotion.employee.department.name }}" readonly>
+                    </div>
+
+                    <!-- Current Designation -->
+                    <div class="form-group">
+                        <label>Current Designation</label>
+                        <input type="text" id="oldDesignation_{{ promotion.id }}" class="form-control" value="{{ promotion.employee.designation.name }}" readonly>
+                    </div>
+
+                    <!-- Promotion Date -->
+                    <div class="form-group">
+                        <label for="promotion_date_{{ promotion.id }}">Promotion Date <span style="color:red;">*</span></label>
+                        {{ form.promotion_date|add_class:"form-control"|attr:"type:date" }}
+                    </div>
+
+                    <!-- Remarks -->
+                    <div class="form-group">
+                        <label for="remarks_{{ promotion.id }}">Remarks</label>
+                        {{ form.remarks|add_class:"form-control" }}
+                    </div>
+
+                    <!-- New Department -->
+                    <div class="form-group">
+                        <label for="id_new_department_{{ promotion.id }}">New Department <span style="color:red;">*</span></label>
+                        {{ form.new_department|add_class:"form-control" }}
+                    </div>
+
+<div class="form-group">
+  <label for="id_new_designation_{{ promotion.id }}">New Designation <span style="color: red;">*</span></label>
+  <select id="id_new_designation_{{ promotion.id }}" name="new_designation" class="form-control" required>
+      <option value="">Select New Designation</option>
+      {% for desig in form.fields.new_designation.queryset %}
+          <option value="{{ desig.id }}"
+              {% if form.new_designation.value|stringformat:"s" == desig.id|stringformat:"s" %}selected{% endif %}
+              data-dept="{{ desig.department.id }}">
+              {{ desig.name }}
+          </option>
+      {% endfor %}
+  </select>
+</div>
+
+
+                <div class="modal-footer justify-content-center">
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+                {% endwith %}
+            </form>
+        </div>
+    </div>
+</div>
+
+                    <!-- Delete Modal -->
+<div class="modal custom-modal fade" id="delete_promotion_modal_{{ promotion.id }}" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content text-center p-4 rounded-4">
+      <div class="modal-body">
+        <h3 class="mb-2 fw-semibold">Delete Promotion</h3>
+        <p class="text-muted mb-4" style="font-size: 14px;">Are you sure you want to delete this promotion?</p>
+        <form method="post" action="{% url 'promotion_delete' promotion.id %}">
+          {% csrf_token %}
+          <div class="row">
+                            <div class="col-6">
+                                <button type="submit" class="btn btn-outline-primary btn-block continue-btn">Delete</button>
+                            </div>
+                            <div class="col-6">
+                                <button type="button" class="btn btn-outline-secondary btn-block cancel-btn" data-dismiss="modal">Cancel</button>
+                            </div>
+                        </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% empty %}
+        <tr>
+          <td colspan="7" class="text-center text-muted">No ata is  found.</td>
+        </tr>
+                    <!-- /Edit Modal -->
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% if request.user.role == 'company_owner' %}
+<!-- Add Promotion Modal -->
+<div id="add_promotion" class="modal custom-modal fade" role="dialog">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <form method="post" action="{% url 'promotion_add' %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Promotion</h5>
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Employee -->
+                    <div class="form-group">
+                        <label for="id_employee">Employee <span style="color: red;">*</span></label>
+                        {{ promotion_form.employee|add_class:"form-control" }}
+                    </div>
+
+                    <!-- Old Department -->
+                    <div class="form-group">
+                        <label>Current Department</label>
+                        <input type="text" id="oldDepartment" class="form-control" readonly>
+                    </div>
+
+                    <!-- Old Designation -->
+                    <div class="form-group">
+                        <label>Current Designation</label>
+                        <input type="text" id="oldDesignation" class="form-control" readonly>
+                    </div>
+
+                    <!-- Promotion Date -->
+                    <div class="form-group">
+                        <label for="promotion_date">Promotion Date <span style="color: red;">*</span></label>
+                        {{ promotion_form.promotion_date|add_class:"form-control"|attr:"type:date" }}
+                    </div>
+
+                    <!-- Remarks -->
+                    <div class="form-group">
+                        <label for="remarks">Remarks</label>
+                        {{ promotion_form.remarks|add_class:"form-control" }}
+                    </div>
+
+                    <!-- New Department -->
+                    <div class="form-group">
+                        <label for="new_department">New Department <span style="color: red;">*</span></label>
+                        {{ promotion_form.new_department|add_class:"form-control" }}
+                    </div>
+
+                    <!-- New Designation (Filtered) -->
+                   <div class="form-group">
+    <label for="new_designation">New Designation <span style="color: red;">*</span></label>
+    <select id="id_new_designation" name="new_designation" class="form-control" required>
+        <option value="">Select New Designation</option>
+        {% for desig in promotion_form.fields.new_designation.queryset %}
+            <option value="{{ desig.id }}" data-dept="{{ desig.department.id }}">
+                {{ desig.name }}
+            </option>
+        {% endfor %}
+    </select>
+
+    {% if promotion_form.new_designation.errors %}
+        <small class="text-danger">
+            {{ promotion_form.new_designation.errors|join:", " }}
+        </small>
+    {% endif %}
+</div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    // Loop through each modal that has an employee dropdown
+    document.querySelectorAll(".modal").forEach(function(modal) {
+        const empSelect = modal.querySelector("[id^='id_employee']");
+        const deptInput = modal.querySelector("[id^='oldDepartment']");
+        const desigInput = modal.querySelector("[id^='oldDesignation']");
+        const departmentSelect = modal.querySelector("[id^='id_new_department']");
+        const designationSelect = modal.querySelector("[id^='id_new_designation']");
+
+        if (!empSelect || !deptInput || !desigInput || !departmentSelect || !designationSelect) {
+            return; // Skip if this modal doesn't have promotion fields
+        }
+
+        // Grab all options with data-dept from this modal's dropdown
+        const allDesignations = Array.from(designationSelect.querySelectorAll("option[data-dept]"));
+
+        // Employee data from template
+        const employeeData = {
+            {% for emp in promotion_form.fields.employee.queryset %}
+                "{{ emp.id }}": {
+                    "department": "{{ emp.department.name|escapejs }}",
+                    "designation": "{{ emp.designation.name|escapejs }}"
+                },
+            {% endfor %}
+        };
+
+        function updateOldFields(empId) {
+            const data = employeeData[empId];
+            deptInput.value = data ? data.department : "";
+            desigInput.value = data ? data.designation : "";
+        }
+
+        function filterDesignations(departmentId) {
+            designationSelect.innerHTML = '<option value="">Select New Designation</option>';
+            allDesignations.forEach(opt => {
+                if (opt.dataset.dept === departmentId) {
+                    designationSelect.appendChild(opt.cloneNode(true));
+                }
+            });
+        }
+
+        empSelect.addEventListener("change", function () {
+            updateOldFields(this.value);
+        });
+
+        departmentSelect.addEventListener("change", function () {
+            filterDesignations(this.value);
+        });
+
+        // Pre-fill when modal opens
+        modal.addEventListener('show.bs.modal', function () {
+            if (empSelect.value) updateOldFields(empSelect.value);
+            if (departmentSelect.value) filterDesignations(departmentSelect.value);
+        });
+    });
+
+});
+</script>
+
+<script>
+  $(document).ready(function () {
+    // Listen to ALL modals with class modal
+    $('.modal').on('hidden.bs.modal', function () {
+      console.log('Any modal closed — reloading...');
+      location.reload();
+    });
+  });
+</script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const empSelect = document.getElementById("id_employee");
+    const deptInput = document.getElementById("oldDepartment");
+    const desigInput = document.getElementById("oldDesignation");
+
+    const departmentSelect = document.getElementById("id_new_department");
+    const designationSelect = document.getElementById("id_new_designation");
+    const allDesignations = Array.from(designationSelect.querySelectorAll("option[data-dept]"));
+
+    const employeeData = {
+      {% for emp in promotion_form.fields.employee.queryset %}
+        "{{ emp.id }}": {
+          "department": "{{ emp.department.name|escapejs }}",
+          "designation": "{{ emp.designation.name|escapejs }}"
+        },
+      {% endfor %}
+    };
+
+    function updateOldFields(empId) {
+      const data = employeeData[empId];
+      deptInput.value = data ? data.department : "";
+      desigInput.value = data ? data.designation : "";
+    }
+
+function filterDesignations(departmentId, selectedValue=null) {
+    designationSelect.innerHTML = '<option value="">Select New Designation</option>';
+    allDesignations.forEach(opt => {
+        if (opt.dataset.dept === departmentId) {
+            const clone = opt.cloneNode(true);
+            if (selectedValue && clone.value === selectedValue) {
+                clone.selected = true;
+            }
+            designationSelect.appendChild(clone);
+        }
+    });
+}
+
+// On modal show
+modal.addEventListener('show.bs.modal', function () {
+    if (empSelect.value) updateOldFields(empSelect.value);
+    const currentValue = designationSelect.dataset.selected || designationSelect.value;
+    if (departmentSelect.value) filterDesignations(departmentSelect.value, currentValue);
+});
+
+
+    empSelect.addEventListener("change", function () {
+      updateOldFields(this.value);
+    });
+
+    departmentSelect.addEventListener("change", function () {
+      filterDesignations(this.value);
+    });
+
+    // On load, update if value is pre-selected (edit case)
+    if (empSelect.value) updateOldFields(empSelect.value);
+    if (departmentSelect.value) filterDesignations(departmentSelect.value);
+  });
+</script>
+{% endblock %}

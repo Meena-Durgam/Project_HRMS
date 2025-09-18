@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card shadow-lg border-0">
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0">Task Progress: {{ task.title }}</h3>
+        </div>
+{% if messages %}
+  <div class="messages mt-2">
+    {% for message in messages %}
+      <div class="alert {% if message.tags == 'error' %}alert-danger
+                       {% elif message.tags == 'success' %}alert-success
+                       {% elif message.tags == 'warning' %}alert-warning
+                       {% elif message.tags == 'info' %}alert-info
+                       {% else %}alert-secondary{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+<button type="button" class="close" data-dismiss="alert">&times;</button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+        <div class="card-body">
+            <!-- Previous Progress Updates -->
+            {% if progress_updates %}
+                <h4 class="mb-3">Previous Progress Updates</h4>
+                <ul class="list-group mb-4">
+                    {% for progress in progress_updates %}
+                        <li class="list-group-item">
+                            <strong>Date:</strong> {{ progress.date|date:"M d, Y" }}<br>
+                            <strong>Description:</strong> {{ progress.progress_description }}<br>
+                            <!-- Bootstrap Progress Bar with Dynamic Color -->
+                            <div class="progress mt-2" style="height: 20px;">
+                                {% if progress.percentage_complete >= 80 %}
+                                    <div class="progress-bar bg-success" role="progressbar"
+                                         style="width: {{ progress.percentage_complete }}%;" 
+                                         aria-valuenow="{{ progress.percentage_complete }}" aria-valuemin="0" aria-valuemax="100">
+                                        {{ progress.percentage_complete }}%
+                                    </div>
+                                {% elif progress.percentage_complete >= 50 %}
+                                    <div class="progress-bar bg-warning" role="progressbar"
+                                         style="width: {{ progress.percentage_complete }}%;" 
+                                         aria-valuenow="{{ progress.percentage_complete }}" aria-valuemin="0" aria-valuemax="100">
+                                        {{ progress.percentage_complete }}%
+                                    </div>
+                                {% else %}
+                                    <div class="progress-bar bg-danger" role="progressbar"
+                                         style="width: {{ progress.percentage_complete }}%;" 
+                                         aria-valuenow="{{ progress.percentage_complete }}" aria-valuemin="0" aria-valuemax="100">
+                                        {{ progress.percentage_complete }}%
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            {% if progress.attachment %}
+                                <a href="{{ progress.attachment.url }}" target="_blank" class="btn btn-sm btn-outline-primary mt-2">
+                                    📎 View Attachment
+                                </a>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-muted">No progress updates submitted yet.</p>
+            {% endif %}
+
+            <!-- Submission Form -->
+            <h5 class="mb-3 text-secondary">Submit New Progress</h5>
+            <form method="POST" enctype="multipart/form-data" class="p-3 bg-light border rounded">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label for="{{ form.progress_description.id_for_label }}" class="form-label">Progress Description <span style="color:red">*</span></label>
+                    {{ form.progress_description|add_class:"form-control" }}
+                </div>
+
+                <div class="mb-3">
+                    <label for="{{ form.attachment.id_for_label }}" class="form-label">Attachment <span style="color:red">*</span></label>
+                    {{ form.attachment|add_class:"form-control" }}
+                </div>
+
+                <div class="mb-3">
+                    <label for="{{ form.percentage_complete.id_for_label }}" class="form-label">Completion Percentage <span style="color:red">*</span></label>
+                    {{ form.percentage_complete|add_class:"form-control" }}
+                </div>
+
+                <button type="submit" class="btn btn-primary">Submit Progress</button>
+                <a href="{% url 'task_list' %}" class="btn btn-secondary ms-2">Back to Tasks</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

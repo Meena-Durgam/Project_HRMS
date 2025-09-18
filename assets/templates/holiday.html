@@ -1,0 +1,259 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    .text-uppercase::placeholder {
+  text-transform: uppercase;
+}
+  .filter-form .form-control,
+  .filter-form .btn {
+    height: 42px;
+    font-weight: 500;
+  }
+
+  @media (max-width: 767px) {
+    .filter-form .col-md-3 {
+      margin-bottom: 10px;
+    }
+  }
+
+  .select-arrow-spacing {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg fill='gray' height='30' viewBox='0 0 24 24' width='30' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 38px;
+    background-size: 24px;
+  }
+</style>
+
+<!-- Page Header -->
+<div class="page-header">
+  <div class="row align-items-center">
+    <div class="col">
+      <h3 class="page-title">Holidays</h3>
+      <ul class="breadcrumb">
+        <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+        <li class="breadcrumb-item active">Holidays</li>
+      </ul>
+    </div>
+    {% if user_role == 'company_owner' %}
+    <div class="col-auto float-right ml-auto">
+      <a href="{% url 'holiday_list' %}" class="btn add-btn" data-toggle="modal" data-target="#add_holiday">
+        <i class="fa fa-plus"></i> Add Holiday
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% if messages %}
+  <div class="messages mt-2">
+    {% for message in messages %}
+      <div class="alert {% if message.tags == 'error' %}alert-danger
+                       {% elif message.tags == 'success' %}alert-success
+                       {% elif message.tags == 'warning' %}alert-warning
+                       {% elif message.tags == 'info' %}alert-info
+                       {% else %}alert-secondary{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+<button type="button" class="close" data-dismiss="alert">&times;</button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<form method="GET" action="" class="row filter-form align-items-end gx-2 gy-2 pb-4">
+  <div class="col-md-4 col-sm-12">
+    <select name="year" class="form-control select-arrow-spacing w-100">
+      <option value="">Select Year</option>
+      {% for year in years %}
+        <option value="{{ year }}" {% if selected_year == year %}selected{% endif %}>{{ year }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-4 col-sm-12">
+    <select name="month" class="form-control select-arrow-spacing w-100">
+      <option value="">All Months</option>
+      {% for month in months %}
+        <option value="{{ month.month }}" {% if selected_month == month.month %}selected{% endif %}>{{ month|date:"F" }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-4 col-sm-12">
+    <button type="submit" class="btn btn-primary w-100">Filter</button>
+  </div>
+  
+
+</form>
+
+
+<!-- Added Holidays -->
+<div class="row">
+  <div class="col-md-12">
+
+    <table class="table table-striped custom-table mb-0 datatable">
+      <thead>
+        <tr>
+          <th>SL.No.</th>
+          <th>Holiday Name</th>
+          <th>Date</th>
+          <th>Day</th>
+          {% if user_role == 'company_owner' %}
+          <th class="text-center">Action</th>
+          {% endif %}
+        </tr>
+        
+      </thead>
+      <tbody>
+        {% for holiday in manually_added_holidays %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td>{{ holiday.name }}</td>
+          <td>{{ holiday.date|date:"d-m-Y" }}</td>
+          <td>{{ holiday.date|date:"l" }}</td>
+          {% if user_role == 'company_owner' %}
+          <td class="text-center">
+            <div class="dropdown dropdown-action">
+              <a href="#" class="action-icon dropdown-toggle" data-toggle="dropdown">
+                <i class="material-icons">more_vert</i>
+              </a>
+              <div class="dropdown-menu dropdown-menu-right">
+                <a class="dropdown-item" href="#" data-toggle="modal" data-target="#edit_holiday_{{ holiday.id }}">
+                  <i class="fa fa-pencil m-r-5"></i> Edit
+                </a>
+                <a class="dropdown-item text-danger" href="#" data-toggle="modal" data-target="#delete_holiday_{{ holiday.id }}">
+                  <i class="fa fa-trash-o m-r-5"></i> Delete
+                </a>
+              </div>
+            </div>
+          </td>
+          
+          {% endif %}
+        </tr>
+
+        <!-- Edit Modal -->
+        <div id="edit_holiday_{{ holiday.id }}" class="modal custom-modal fade" role="dialog">
+          <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+              <form method="post" action="{% url 'edit_holiday' holiday.id %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                  <h5 class="modal-title">Edit Holiday</h5>
+                  <button type="button" class="close" data-bs-dismiss="modal" onclick="location.reload();">
+    <span>&times;</span>
+</button>
+                </div>
+                <div class="modal-body">
+                  <div class="form-group">
+                    <label>Holiday Name <span class="text-danger">*</span></label>
+                    <input class="form-control" type="text" name="name" value="{{ holiday.name }}" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Holiday Date <span class="text-danger">*</span></label>
+                    <input class="form-control" type="date" name="date" value="{{ holiday.date|date:'Y-m-d' }}" required>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button class="btn btn-primary submit-btn">Save</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Delete Holiday Modal -->
+<div class="modal custom-modal fade" id="delete_holiday_{{ holiday.id }}" tabindex="-1" role="dialog" aria-labelledby="deleteHolidayLabel{{ holiday.id }}" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="post" action="{% url 'delete_holiday' holiday.id %}">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="form-header text-center">
+            <h3>Delete Holiday</h3>
+            <p>Are you sure you want to delete <strong>{{ holiday.name }}</strong> on <strong>{{ holiday.date|date:"d M Y" }}</strong>?</p>
+          </div>
+          <div class="modal-btn delete-action mt-4">
+            <div class="row">
+              <div class="col-6">
+                <button type="submit" class="btn btn-outline-primary btn-block continue-btn">Delete</button>
+              </div>
+              <div class="col-6">
+                <button type="button" class="btn btn-outline-secondary btn-block cancel-btn" data-dismiss="modal">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+        {% endfor %}
+      </tbody>
+      
+    </table>
+    {% if no_holidays_found %}
+      <div class="alert text-center mb-3">
+        No holidays found for the selected year and month.
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Add Holiday Modal -->
+<div id="add_holiday" class="modal custom-modal fade" role="dialog">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <form method="post" action="{% url 'add_holiday' %}" id="addHolidayForm">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title">Add Holiday</h5>
+          <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Holiday Name <span class="text-danger">*</span></label>
+            <input class="form-control" type="text" name="name" required>
+          </div>
+          <div class="form-group">
+  <label>Holiday Date <span class="text-danger">*</span></label>
+  <input id="holidayDate" class="form-control text-uppercase" type="date" name="date" required>
+
+</div>
+
+
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary submit-btn">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Reset form on modal close -->
+<script>
+  $('#add_holiday').on('hidden.bs.modal', function () {
+    $('#addHolidayForm')[0].reset();
+  });
+
+  $(document).ready(function () {
+    let today = new Date();
+    today.setDate(today.getDate() + 1); // tomorrow
+    let dd = String(today.getDate()).padStart(2, '0');
+    let mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+    let yyyy = today.getFullYear();
+    let minDate = yyyy + '-' + mm + '-' + dd;
+    $('#holidayDate').attr('min', minDate);
+  });
+</script>
+
+{% endblock %}

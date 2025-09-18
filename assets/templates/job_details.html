@@ -1,0 +1,215 @@
+{% extends base_template %}
+{% load static %}
+
+{% block content %}
+
+  <!-- Page Header -->
+  <div class="page-header d-sm-flex align-items-center justify-content-between mb-4">
+    <div class="page-title">
+      <h3 class="mb-0">Job Details</h3>
+      <ul class="breadcrumb">
+        <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+        <li class="breadcrumb-item active">Job Details</li>
+      </ul>
+    </div>
+  </div>
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="row">
+  <!-- Left Column: Job Info + Description -->
+  <div class="col-md-8">
+    <!-- Job Info Card -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <h3>{{ job.title }}</h3>
+        <p class="text-muted">{{ job.department.name }}</p>
+        <p>
+          <i class="fa fa-calendar"></i>
+          Post Date: <span class="blue-text">{{ job.start_date|date:"F d, Y" }}</span> &nbsp;&nbsp;
+          <i class="fa fa-calendar-times"></i>
+          Last Date: <span class="blue-text">{{ job.expired_date|date:"F d, Y" }}</span> &nbsp;&nbsp;
+          <i class="fa fa-users"></i>
+          Applicants: <span class="blue-text">{{ job.applicants.count }}</span> &nbsp;&nbsp;
+        </p>
+      </div>
+    </div>
+
+    <!-- Job Description Card -->
+    <div class="card">
+    <div class="card-body">
+      <h5>Job Description</h5>
+      {{ job.description|safe }}
+    </div>
+  </div>
+  </div>
+
+  <!-- Right Column: Job Summary -->
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Job Summary</h5>
+        <div class="d-flex gap-2">
+          {% if role == 'employee' or role == 'jobseeker' and not has_applied and job.expired_date >= today %}
+            <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#applyModal">Apply</button>
+          {% endif %}
+          {% if role == 'superadmin' or role == 'employee_admin' %}
+            <button class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#editJobModal">Edit</button>
+          {% endif %}
+        </div>
+      </div>
+      <div class="card-body">
+        <p><i class="bi bi-briefcase-fill text-primary"></i> <strong>Type:</strong> {{ job.job_type }}</p>
+        <p><i class="bi bi-currency-rupee text-primary"></i> <strong>Salary:</strong> ₹{{ job.salary_from }} – ₹{{ job.salary_to }}</p>
+        <p><i class="bi bi-bar-chart-line text-primary"></i> <strong>Experience:</strong> {{ job.experience }} yrs</p>
+        <p><i class="bi bi-people-fill text-primary"></i> <strong>Vacancies:</strong> {{ job.vacancies }}</p>
+        <p><i class="bi bi-geo-alt-fill text-primary"></i> <strong>Location:</strong> {{ job.location }}</p>
+        <hr>
+        <p><strong>Contact:</strong></p>
+        <p><i class="bi bi-telephone-fill text-primary"></i> 818-978-7102</p>
+        <p><i class="bi bi-envelope-fill text-primary"></i> example@example.com</p>
+        <p id="countdown" class="text-success"></p>
+      </div>
+    </div>
+  </div>
+
+
+<!-- Apply Modal (Only for employee) -->
+{% if role == 'employee' or role == 'jobseeker' and not has_applied and job.expired_date >= today %}
+<div class="modal fade" id="applyModal" tabindex="-1" aria-labelledby="applyModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" style="max-width: 600px; width: 100%;">
+    <form method="POST" enctype="multipart/form-data" class="modal-content p-4" action="{% url 'job_detail' job.id %}">
+      {% csrf_token %}
+      
+      <!-- Modal Header with (X) close button -->
+      <div class="modal-header border-0 pb-0">
+        <h4 class="modal-title mx-auto" id="applyModalLabel">Apply for {{ job.title }}</h4>
+        <button type="button" class="btn-close position-absolute end-0 top-0 m-3" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      
+      <!-- Modal Body -->
+      <div class="modal-body pt-0">
+        <div class="row g-3 justify-content-center">
+          <div class="col-12">
+            <label for="applicantName" class="form-label">Full Name <span class="text-danger">*</span></label>
+            <input type="text" id="applicantName" name="name" class="form-control" required value="{{ prefill_name }}">
+          </div>
+          <div class="col-12">
+            <label for="applicantEmail" class="form-label">Email <span class="text-danger">*</span></label>
+            <input type="email" id="applicantEmail" name="email" class="form-control" required value="{{ prefill_email }}">
+          </div>
+          <div class="col-12">
+            <label for="applicantPhone" class="form-label">Phone <span class="text-danger">*</span></label>
+            <input type="tel" id="applicantPhone" name="phone" class="form-control" required value="{{ prefill_phone }}">
+          </div>
+          <div class="col-12">
+            <label for="applicantResume" class="form-label">Resume <span class="text-danger">*</span></label>
+            <input type="file" id="applicantResume" name="resume" class="form-control" accept=".pdf,.doc,.docx">
+            {% if resume_url %}
+              <small class="text-muted">Existing resume: <a href="{{ resume_url }}" target="_blank">View Resume</a>. Leave blank to reuse it.</small>
+            {% else %}
+              <small class="text-danger">No resume available in your profile.</small>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      
+      <!-- Modal Footer with big Close and Submit buttons -->
+      <div class="modal-footer border-0 justify-content-center gap-3">
+        <button type="button" class="btn btn-secondary rounded-pill px-4 py-2" data-bs-dismiss="modal">Close</button>
+        <button type="submit" class="btn btn-primary rounded-pill px-4 py-2">Submit</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+
+
+
+<!-- Edit Modal (Only for superadmin and employee_admin) -->
+{% if role == 'superadmin' or role == 'employee_admin' %}
+<div class="modal fade" id="editJobModal" tabindex="-1" aria-labelledby="addJobModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <form method="POST" action="{% url 'edit_job' job.id %}" class="modal-content">
+      {% csrf_token %}
+      <div class="modal-header">
+        <h5 class="modal-title" id="addJobModalLabel">Edit Job - {{ job.title }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"><span>&times;</span></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-md-6">{{ edit_form.title.label_tag }} {{ edit_form.title }}</div>
+          <div class="col-md-6">{{ edit_form.department.label_tag }} {{ edit_form.department }}</div>
+          <div class="col-md-6">{{ edit_form.location.label_tag }} {{ edit_form.location }}</div>
+          <div class="col-md-6">{{ edit_form.vacancies.label_tag }} {{ edit_form.vacancies }}</div>
+          <div class="col-md-6">{{ edit_form.experience.label_tag }} {{ edit_form.experience }}</div>
+          <div class="col-md-6">{{ edit_form.age.label_tag }} {{ edit_form.age }}</div>
+          <div class="col-md-6">{{ edit_form.salary_from.label_tag }} {{ edit_form.salary_from }}</div>
+          <div class="col-md-6">{{ edit_form.salary_to.label_tag }} {{ edit_form.salary_to }}</div>
+          <div class="col-md-6">{{ edit_form.job_type.label_tag }} {{ edit_form.job_type }}</div>
+          <div class="col-md-6">{{ edit_form.status.label_tag }} {{ edit_form.status }}</div>
+          <div class="col-md-6">{{ edit_form.start_date.label_tag }} {{ edit_form.start_date }}</div>
+          <div class="col-md-6">{{ edit_form.expired_date.label_tag }} {{ edit_form.expired_date }}</div>
+          <div class="col-12">{{ edit_form.description.label_tag }} {{ edit_form.description }}</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<!-- Countdown Script -->
+<script>
+  const countdownEl = document.getElementById("countdown");
+  const endTime = new Date("{{ job.expired_date|date:'Y-m-d' }}T23:59:59").getTime();
+
+  function updateCountdown() {
+    const now = new Date().getTime();
+    const diff = endTime - now;
+
+    if (diff <= 0) {
+      countdownEl.innerText = "Application closed";
+      countdownEl.classList.remove("text-success");
+      countdownEl.classList.add("text-danger");
+      return;
+    }
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+    countdownEl.innerText = Application ends in ${days}d ${hours}h ${minutes}m ${seconds}s;
+  }
+
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+</script>
+
+<style>
+  .blue-text {
+    color: rgb(80, 156, 228);
+    font-weight: bold;
+  }
+</style>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Bootstrap Icons CDN (if needed) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+{% endblock %}

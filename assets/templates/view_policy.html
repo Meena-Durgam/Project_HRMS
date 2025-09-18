@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ policy.name }} | Policy{% endblock %}
+
+{% block content %}
+<style>
+    .policy-hero {
+        background-color: #61d199;
+        padding: 40px 0;
+        text-align: center;
+        color: #000;
+    }
+    .policy-title {
+        font-size: 36px;
+        font-weight: 700;
+    }
+    .effective-date {
+        margin: 20px auto;
+        text-align: center;
+        color: #6c757d;
+        font-size: 16px;
+    }
+    .policy-content {
+        max-width: 900px;
+        margin: 30px auto;
+        padding: 20px;
+        font-size: 16px;
+        line-height: 1.7;
+    }
+    .back-btn-container {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+</style>
+
+<div class="policy-hero">
+    <h1 class="policy-title">{{ policy.name }}</h1>
+</div>
+
+<div class="effective-date">
+    Effective Date: {{ policy.created_at|date:"F jS, Y" }}
+</div>
+
+<div class="policy-content">
+    {{ policy.description|safe }}
+</div>
+
+<div class="back-btn-container">
+    <a href="{% url 'manage_policies' %}" class="btn btn-secondary btn-lg rounded-pill">Back</a>
+</div>
+{% endblock %}

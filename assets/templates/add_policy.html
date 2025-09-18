@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}Add Policy{% endblock %}
+
+{% block content %}
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h4 class="modal-title mb-0">Add New Policy</h4>
+        <a href="{% url 'manage_policies' %}" class="close" style="text-decoration: none;">
+            <span>&times;</span>
+        </a>
+    </div>
+
+
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="card-body">
+        {{ form.non_field_errors }}
+
+        <div class="mb-3">
+          <label for="{{ form.name.id_for_label }}" class="form-label">
+            Policy Name <span class="text-danger">*</span>
+          </label>
+          {{ form.name }}
+        </div>
+
+        <div class="mb-3">
+          <label for="{{ form.description.id_for_label }}" class="form-label">
+            Description <span class="text-danger">*</span>
+          </label>
+          <textarea name="description" id="ckeditor5-description" class="form-control" placeholder="Enter policy description here"></textarea>
+
+        </div>
+
+      </div>
+
+      <div class="modal-footer justify-content-center">
+        <button type="submit" class="btn btn-primary rounded-pill">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    ClassicEditor
+      .create(document.querySelector('#ckeditor5-description'))
+      .catch(error => {
+        console.error(error);
+      });
+  });
+</script>
+{% endblock %}

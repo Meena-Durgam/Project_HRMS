@@ -1,0 +1,503 @@
+{% extends "base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block content %}
+
+<!-- Page Header -->
+<div class="page-header">
+  <div class="row align-items-center">
+    <div class="col">
+      <h3 class="page-title">Ticket</h3>
+      <ul class="breadcrumb">
+        <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+        <li class="breadcrumb-item active">Ticket</li>
+      </ul>
+    </div>
+  
+    <div class="col-auto float-right ml-auto">
+      <a href="#" class="btn btn-primary rounded-pill px-4 py-2" data-bs-toggle="modal" data-bs-target="#addTicketModal">
+        <i class="fa fa-plus me-1"></i> Add Ticket
+      </a>
+    </div>
+    
+  </div>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+<!-- Ticket Summary Cards -->
+<div class="row mb-4">
+  <div class="col-md-3 col-sm-6">
+    <div class="card card-box">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h6 class="mb-2">New Tickets</h6>
+            <h3 class="mb-0">{{ new_tickets }}</h3>
+          </div>
+        </div>
+        <div class="progress mt-3" style="height: 6px;">
+          <div class="progress-bar bg-primary" style="width: 100%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 col-sm-6">
+    <div class="card card-box">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h6 class="mb-2">Solved Tickets</h6>
+            <h3 class="mb-0">{{ solved_tickets }}</h3>
+          </div>
+        </div>
+        <div class="progress mt-3" style="height: 6px;">
+          <div class="progress-bar bg-success" style="width: 100%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 col-sm-6">
+    <div class="card card-box">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h6 class="mb-2">Open Tickets</h6>
+            <h3 class="mb-0">{{ open_tickets }}</h3>
+          </div>
+        </div>
+        <div class="progress mt-3" style="height: 6px;">
+          <div class="progress-bar bg-info" style="width: 100%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 col-sm-6">
+    <div class="card card-box">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h6 class="mb-2">Pending Tickets</h6>
+            <h3 class="mb-0">{{ pending_tickets }}</h3>
+          </div>
+        </div>
+        <div class="progress mt-3" style="height: 6px;">
+          <div class="progress-bar bg-warning" style="width: 100%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<form method="GET" class="row mb-3">
+  <div class="col-md-2">
+    <input type="text" name="employee" class="form-control" placeholder="Employee Name">
+  </div>
+        <div class="col-md-2 ">
+            <select name="status" class="form-control floating">
+                <option value="">-- Status -- </option>
+                <option value="Pending" {% if request.GET.status == 'Pending' %}selected{% endif %}>Pending</option>
+                <option value="Approved" {% if request.GET.status == 'Approved' %}selected{% endif %}>Approved</option>
+                <option value="Returned" {% if request.GET.status == 'Returned' %}selected{% endif %}>Returned</option>
+            </select>
+            
+        </div>
+        <div class="col-md-2 ">
+            <select name="status" class="form-control floating">
+                <option value="">-- Priority-- </option>
+                <option value="High" {% if request.GET.status == 'High' %}selected{% endif %}>High</option>
+                <option value="Low" {% if request.GET.status == 'Low' %}selected{% endif %}>Low</option>
+                <option value="Medium" {% if request.GET.status == 'Medium' %}selected{% endif %}>Medium</option>
+            </select>
+            
+        </div>
+  <div class="col-md-2">
+    <input type="date" name="from" class="form-control">
+  </div>
+  <div class="col-md-2">
+    <input type="date" name="to" class="form-control">
+  </div>
+  <div class="col-md-2">
+    <button type="submit" class="btn btn-success w-100">Search</button>
+  </div>
+</form>
+
+<!-- Ticket Table -->
+<div class="table-responsive">
+  <table class="table table-striped custom-table mb-0 datatable">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Ticket ID</th>
+        <th>Ticket Subject</th>
+        <th>Assigned Staff</th>
+        <th>Created Date</th>
+        <th>Priority</th>
+        <th>Status</th>
+        <th class="text-end">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ticket in tickets %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td><a href="{% url 'ticket_detail' ticket.id %}" class="text-primary">{{ ticket.ticket_id }}</a></td>
+        <td>{{ ticket.subject }}</td>
+        <td>
+  <h2 class="table-avatar">
+    <a href="#" class="avatar avatar-xs me-2">
+      <img src="{% if ticket.assigned_staff.employee_account.profile.profile_picture %}
+                   {{ ticket.assigned_staff.employee_account.profile.profile_picture.url }}
+               {% else %}
+                   {% static 'images/default-avatar.png' %}
+               {% endif %}"
+           alt="User Image"
+           class="rounded-circle"
+           width="30" height="30"
+           title="{{ ticket.assigned_staff.get_full_name }}">
+    </a>
+    <a href="#">{{ ticket.assigned_staff.get_full_name }}</a>
+  </h2>
+</td>
+        <td>{{ ticket.created_at|date:"d M Y h:i A" }}</td>
+        
+        <td>
+  <div class="dropdown action-label">
+    <a class="btn btn-white btn-sm btn-rounded dropdown-toggle" href="#" data-toggle="dropdown" aria-expanded="false">
+      <i class="fa fa-dot-circle-o text-{% if ticket.priority == 'High' %}danger{% elif ticket.priority == 'Medium' %}warning{% else %}success{% endif %}"></i>
+      {{ ticket.priority }}
+    </a>
+    <div class="dropdown-menu dropdown-menu-right">
+      <a class="dropdown-item" href="#"><i class="fa fa-dot-circle-o text-danger"></i> High</a>
+      <a class="dropdown-item" href="#"><i class="fa fa-dot-circle-o text-warning"></i> Medium</a>
+      <a class="dropdown-item" href="#"><i class="fa fa-dot-circle-o text-success"></i> Low</a>
+    </div>
+  </div>
+</td>
+
+<td class="text-center">
+  <div class="dropdown action-label">
+    <a class="btn btn-white btn-sm btn-rounded dropdown-toggle" href="#" data-toggle="dropdown">
+      <i class="fa fa-dot-circle-o text-{% if ticket.status == 'New' %}danger
+                             {% elif ticket.status == 'Open' %}info
+                             {% elif ticket.status == 'Reopened' %}warning
+                             {% elif ticket.status == 'Solved' %}success
+                             {% elif ticket.status == 'Pending' %}secondary
+                             {% else %}muted{% endif %}"></i>
+      {{ ticket.status }}
+    </a>
+    <div class="dropdown-menu dropdown-menu-right">
+{% for status, label in status_choices %}
+        <a class="dropdown-item update-status" href="#" data-status="{{ status }}" data-ticket-id="{{ ticket.id }}">
+          <i class="fa fa-dot-circle-o text-{% if status == 'New' %}danger
+                                       {% elif status == 'Open' %}info
+                                       {% elif status == 'Reopened' %}warning
+                                       {% elif status == 'Solved' %}success
+                                       {% elif status == 'Pending' %}secondary
+                                       {% else %}muted{% endif %}"></i>
+          {{ label }}
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</td>
+
+        <td class="text-right">
+                                <div class="dropdown dropdown-action">
+                                    <a href="#" class="action-icon dropdown-toggle" data-toggle="dropdown">
+                                        <i class="material-icons">more_vert</i>
+                                    </a>
+            <div class="dropdown-menu dropdown-menu-right">
+              <a class="dropdown-item" href="{% url 'edit_ticket' ticket.id %}"><i class="fa fa-pencil m-r-5"></i> Edit</a>
+              <a class="dropdown-item " href="{% url 'delete_ticket' ticket.id %}"><i class="fa fa-trash m-r-5"></i> Delete</a>
+            </div>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="9" class="text-center text-muted">No tickets found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Add Ticket Modal -->
+<div class="modal custom-modal fade" id="addTicketModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <form method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Add Ticket</h5>
+          <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+            <span>&times;</span>
+          </button>
+          
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="form-group col-md-6">
+              <label>Ticket Subject</label>
+              <input type="text" name="subject" class="form-control" required>
+            </div>
+            <div class="form-group col-md-6">
+              <label>Ticket ID</label>
+              <input type="text" id="ticketIdInput" name="ticket_id" class="form-control" readonly onclick="generateTicketID()" placeholder="Click to generate">
+            </div>
+            
+
+            <div class="form-group col-md-6">
+              <label>Client</label>
+              <select name="client" class="form-control">
+                {% for client in clients %}
+                <option value="{{ client.id }}">{{ client.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group col-md-6">
+  <label>Status</label>
+  <select name="status" class="form-control" required>
+    <option value="">-- Select Status --</option>
+    <option value="New">New</option>
+    <option value="Open">Open</option>
+    <option value="Reopened">Reopened</option>
+    <option value="Solved">Solved</option>
+    <option value="Pending">Pending</option>
+  </select>
+</div>
+            <div class="form-group col-md-6">
+              <label>Priority</label>
+              <select name="priority" class="form-control">
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
+              </select>
+            </div>
+            <div class="form-group col-md-6">
+              <label>CC</label>
+              <input type="email" name="cc" class="form-control">
+            </div>
+            <div class="form-group col-md-6">
+  <label>Assign</label>
+  <select id="assignedStaff1" name="assigned_staff" class="form-control">
+    <option value="">Select</option>
+    {% for user in users %}
+      {% with emp=user.employee_account %}
+        <option value="{{ user.id }}"
+          data-img-url="{% if emp and emp.profile and emp.profile.profile_picture %}
+                           {{ emp.profile.profile_picture.url }}
+                         {% else %}
+                           {% static 'images/default-avatar.png' %}
+                         {% endif %}">
+          {{ user.get_full_name }}
+        </option>
+      {% endwith %}
+    {% endfor %}
+  </select>
+</div>
+
+
+            <div class="form-group col-md-6">
+  <label>Ticket Assignee</label>
+  <div id="ticketAssignee" class="ticket-assignee mt-2"></div>
+</div>
+
+<div class="form-group col-md-6">
+  <label>Add Followers</label>
+  <select id="addFollowers" name="followers" class="form-control" multiple>
+    {% for user in users %}
+      {% with emp=user.employee_account %}
+        <option value="{{ user.id }}"
+                data-img-url="{% if emp and emp.profile and emp.profile.profile_picture %}
+                                 {{ emp.profile.profile_picture.url }}
+                               {% else %}
+                                 {% static 'images/default-avatar.png' %}
+                               {% endif %}">
+          {{ user.get_full_name }}
+        </option>
+      {% endwith %}
+    {% endfor %}
+  </select>
+</div>
+            <div class="form-group col-md-6">
+              <label>Followers</label>
+              <div id="ticketFollowers" class="ticket-followers d-flex flex-wrap mt-2 gap-2"></div>
+            </div>
+            <div class="form-group col-md-6">
+              <label>Upload Files</label>
+              <input type="file" name="file" class="form-control-file">
+            </div>
+            <div class="form-group col-md-12">
+              <label>Description</label>
+              <textarea name="description" rows="3" class="form-control"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary rounded-pill px-8 py-2">Submit </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Ticket Modals -->
+{% for ticket in tickets %}
+<div class="modal fade" id="editTicketModal{{ ticket.id }}" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-lg" role="document">
+    <form method="POST" action="{% url 'edit_ticket' ticket.id %}" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Edit Ticket</h5>
+          <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Subject</label>
+            <input type="text" name="subject" value="{{ ticket.subject }}" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label>Assign Staff</label>
+            <select name="assigned_staff" class="form-control">
+              {% for user in users %}
+              <option value="{{ user.id }}" {% if user == ticket.assigned_staff %}selected{% endif %}>{{ user.get_full_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Client</label>
+            <select name="client" class="form-control">
+              {% for client in clients %}
+              <option value="{{ client.id }}" {% if client == ticket.client %}selected{% endif %}>{{ client.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Priority</label>
+            <select name="priority" class="form-control">
+              <option value="High" {% if ticket.priority == 'High' %}selected{% endif %}>High</option>
+              <option value="Medium" {% if ticket.priority == 'Medium' %}selected{% endif %}>Medium</option>
+              <option value="Low" {% if ticket.priority == 'Low' %}selected{% endif %}>Low</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <select name="status" class="form-control">
+              <option value="New" {% if ticket.status == 'New' %}selected{% endif %}>New</option>
+              <option value="Open" {% if ticket.status == 'Open' %}selected{% endif %}>Open</option>
+              <option value="Reopened" {% if ticket.status == 'Reopened' %}selected{% endif %}>Reopened</option>
+              <option value="Solved" {% if ticket.status == 'Solved' %}selected{% endif %}>Solved</option>
+              <option value="Pending" {% if ticket.status == 'Pending' %}selected{% endif %}>Pending</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>CC</label>
+            <input type="email" name="cc" value="{{ ticket.cc }}" class="form-control">
+          </div>
+          <div class="form-group">
+            <label>Description</label>
+            <textarea name="description" class="form-control">{{ ticket.description }}</textarea>
+          </div>
+          <div class="form-group">
+            <label>Upload File</label>
+            <input type="file" name="file" class="form-control-file">
+          </div>
+          <div class="form-group">
+            <label>Followers</label>
+            <select name="followers" class="form-control" multiple>
+              {% for user in users %}
+              <option value="{{ user.id }}" {% if user in ticket.followers.all %}selected{% endif %}>{{ user.get_full_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Update</button>
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endfor %}
+{% endblock %}
+
+{% block extra_js %}
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  $(document).on('click', '.update-status', function(e) {
+    e.preventDefault();
+    const status = $(this).data('status');
+    const ticketId = $(this).data('ticket-id');
+
+    $.ajax({
+      type: 'POST',
+      url: `/tickets/${ticketId}/update-status/`,
+      data: {
+        'status': status,
+        'csrfmiddlewaretoken': '{{ csrf_token }}'
+      },
+      success: function(response) {
+        if (response.success) {
+          location.reload(); // Reload to reflect updated status
+        } else {
+          alert(response.error || 'Failed to update status');
+        }
+      },
+      error: function() {
+        alert('An error occurred while updating the status.');
+      }
+    });
+  });
+</script>
+
+<script>
+function generateTicketID() {
+  let lastId = parseInt(document.querySelectorAll('[data-ticket-id]').length || 0) + 1;
+  const paddedId = lastId.toString().padStart(3, '0');
+  const newId = 'TKT-' + paddedId;
+  document.getElementById('ticketIdInput').value = newId;
+}
+
+$(document).ready(function () {
+  $('#assignedStaff1').on('change', function () {
+    const imgUrl = $('option:selected', this).data('img-url');
+    $('#ticketAssignee').html(`<img src="${imgUrl}" class="rounded-circle" width="50" height="50">`);
+  });
+
+  $('#addFollowers').on('change', function () {
+    const selectedOptions = $(this).find('option:selected');
+    const followersHTML = [];
+
+    selectedOptions.each(function () {
+      const imgUrl = $(this).data('img-url');
+      followersHTML.push(`<img src="${imgUrl}" class="rounded-circle mr-2" width="40" height="40">`);
+    });
+
+    $('#ticketFollowers').html(followersHTML.join(''));
+  });
+
+  $('.modal').on('hidden.bs.modal', function () {
+    $(this).find('form')[0].reset();
+    $('#ticketAssignee').empty();
+    $('#ticketFollowers').empty();
+  });
+});
+</script>
+<style>
+.ticket-assignee img,
+.ticket-followers img {
+  border: 2px solid #ddd;
+  object-fit: cover;
+}
+</style>
+{% endblock %}

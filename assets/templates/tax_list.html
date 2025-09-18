@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Qubits HRMS | Taxes {% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div class="row align-items-center">
+        <div class="col">
+            <h3 class="page-title">Taxes</h3>
+            <ul class="breadcrumb">
+                <li class="breadcrumb-item"><a href="">Dashboard</a></li>
+                <li class="breadcrumb-item active">Taxes</li>
+            </ul>
+        </div>
+        <div class="col-auto float-right ml-auto">
+            <a href="#" class="btn add-btn text-white" data-toggle="modal"  data-target="#addTaxModal">
+                <i class="fa fa-plus"></i> Add Tax
+            </a>           
+        </div>
+    </div>
+</div>
+<!-- /Page Header -->
+
+{% if messages %}
+  <div class="messages mt-2">
+    {% for message in messages %}
+      <div class="alert {% if message.tags == 'error' %}alert-danger
+                       {% elif message.tags == 'success' %}alert-success
+                       {% elif message.tags == 'warning' %}alert-warning
+                       {% elif message.tags == 'info' %}alert-info
+                       {% else %}alert-secondary{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+<button type="button" class="close" data-dismiss="alert">&times;</button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="table-responsive">
+            <table class="table table-striped custom-table datatable">
+                <thead>
+                    <tr>
+                        <th>SL. No.</th>
+                        <th>Tax Name</th>
+                        <th>Percentage</th>
+                        <th>Status</th>
+                        <th class="text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tax in taxes %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td class="text-start">{{ tax.name }}</td>
+                        <td>{{ tax.percentage }}%</td>
+                        <td>
+    <span class="btn btn-white btn-sm btn-rounded  align-items-center gap-1">
+        <i class="fa fa-dot-circle-o {% if tax.status == 'Active' %}text-success{% else %}text-danger{% endif %}"></i>
+        {{ tax.status }}
+    </span>
+</td>
+                        <td class="text-center">
+                                <div class="dropdown dropdown-action">
+                                    <a href="#" class="action-icon dropdown-toggle" data-toggle="dropdown">
+                                        <i class="material-icons">more_vert</i>
+                                    </a>
+                                    <div class="dropdown-menu dropdown-menu-right">
+                                        <a class="dropdown-item" href="#" data-toggle="modal" data-target="#editTaxModal{{ tax.id }}">
+                                            <i class="fa fa-pencil m-r-5"></i> Edit
+                                        </a>
+                                        <a class="dropdown-item text-danger" 
+   href="#" 
+   data-bs-toggle="modal" 
+   data-bs-target="#deleteTaxModal{{ tax.id }}">
+    <i class="fa fa-trash-o m-r-5"></i> Delete
+</a>
+
+                                    </div>
+                                </div>
+                            </td>
+                    </tr>
+                    <div class="modal custom-modal fade" id="deleteTaxModal{{ tax.id }}" tabindex="-1" role="dialog" aria-labelledby="deleteTaxModalLabel{{ tax.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="{% url 'delete_tax' tax.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="form-header text-center">
+                        <h3>Delete Tax</h3>
+                        <p>Are you sure you want to delete <strong>{{ tax.name }}</strong> ({{ tax.percentage }}%)?</p>
+                    </div>
+                    <div class="modal-btn delete-action mt-4">
+                        <div class="row">
+                            <div class="col-6">
+                                <button type="submit" class="btn btn-outline-primary btn-block continue-btn">Delete</button>
+                            </div>
+                            <div class="col-6">
+                                <button type="button" class="btn btn-outline-secondary btn-block cancel-btn" data-bs-dismiss="modal">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Tax Modal -->
+<div class="modal custom-modal fade" role="dialog" id="addTaxModal">
+   <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+        <form id="addTaxForm" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="add_tax" value="1">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Tax</h5>
+                <button type="button" class="close" data-dismiss="modal" onclick="location.reload();">
+    <span>&times;</span>
+</button>
+
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label>
+                        Tax Name <span style="color: red;">*</span>
+                    </label>
+                    {{ form.name }}
+                </div>
+                <div class="mb-3">
+                    <label>
+                        Percentage <span style="color: red;">*</span>
+                    </label>
+                    {{ form.percentage }}
+                </div>
+                <div class="mb-3">
+                    <label>
+                        Status <span style="color: red;">*</span>
+                    </label>
+                    {{ form.status }}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">Save</button>
+            </div>
+        </form>
+    </div>
+   </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    $('#addTaxModal').on('hidden.bs.modal', function () {
+        // Fully reset form fields
+        this.querySelector('form').reset();
+
+        // Optional: Remove any validation errors if shown
+        $(this).find('.is-invalid').removeClass('is-invalid');
+        $(this).find('.invalid-feedback').remove();
+
+        // Force re-render if needed (reload the modal content from DOM)
+        $(this).html($(this).html());
+    });
+});
+</script>
+
+
+
+
+<!-- Edit Tax Modals (placed outside of the table to avoid scroll issue) -->
+{% for tax in taxes %}
+<div  class="modal custom-modal fade" role="dialog"  id="editTaxModal{{ tax.id }}" aria-labelledby="editTaxModalLabel{{ tax.id }}">
+   <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="edit_tax_id" value="{{ tax.id }}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editTaxModalLabel{{ tax.id }}">Edit Tax</h5>
+                     <button type="button" class="close" data-dismiss="modal" onclick="location.reload();">
+    <span>&times;</span>
+</button>
+
+            </button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Tax Name <span style="color: red;">*</span></label>
+                        <input type="text" name="name" value="{{ tax.name }}" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Percentage <span style="color: red;">*</span></label>
+                        <input type="number" step="0.01" name="percentage" value="{{ tax.percentage }}" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Status <span style="color: red;">*</span></label>
+                        <select name="status" class="form-control">
+                            <option value="Active" {% if tax.status == "Active" %}selected{% endif %}>Active</option>
+                            <option value="Inactive" {% if tax.status == "Inactive" %}selected{% endif %}>Inactive</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+
+{% endblock %}

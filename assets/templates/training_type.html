@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Training Type{% endblock %}
+
+{% block content %}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div class="row align-items-center">
+        <div class="col-12 col-md">
+            <h3 class="page-title">Training Type</h3>
+            <ul class="breadcrumb">
+                <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+                <li class="breadcrumb-item active">Training Type</li>
+            </ul>
+        </div>
+        {% if user.role == 'company_owner' %}
+        <div class="col-auto mt-3 mt-md-0 ml-auto">
+            <button class="btn btn-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#addTypeModal">
+                <i class="fa fa-plus me-1"></i> Add Type
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+<!-- /Page Header -->
+{% if messages %}
+  <div class="messages mt-2">
+    {% for message in messages %}
+      <div class="alert {% if message.tags == 'error' %}alert-danger
+                       {% elif message.tags == 'success' %}alert-success
+                       {% elif message.tags == 'warning' %}alert-warning
+                       {% elif message.tags == 'info' %}alert-info
+                       {% else %}alert-secondary{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+<button type="button" class="close" data-dismiss="alert">&times;</button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<!-- Table -->
+<div class="row">
+    <div class="col-12">
+    
+            
+                <div class="table-responsive">
+                    <table class="table table-striped custom-table mb-0 datatable">
+                        <thead>
+                            <tr>
+                                <th>SL.No.</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                                {% if user.role == 'company_owner' %}
+                                <th>Action</th>
+                                {% endif %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for type in training_types %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ type.type_name }}</td>
+                                <td>{{ type.description }}</td>
+                                <td>
+                                    {% if user.role == 'company_owner' %}
+                                    <div class="dropdown action-label">
+                                        <a class="btn btn-white btn-sm btn-rounded dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                            {% if type.status == "Active" %}
+                                            <i class="fa fa-dot-circle-o text-success"></i> Active
+                                            {% else %}
+                                            <i class="fa fa-dot-circle-o text-danger"></i> Inactive
+                                            {% endif %}
+                                        </a>
+                                        <div class="dropdown-menu dropdown-menu-end">
+                                            <a class="dropdown-item" href="{% url 'toggle_training_type_status' type.id 'Active' %}">
+                                                <i class="fa fa-dot-circle-o text-success"></i> Active
+                                            </a>
+                                            <a class="dropdown-item" href="{% url 'toggle_training_type_status' type.id 'Inactive' %}">
+                                                <i class="fa fa-dot-circle-o text-danger"></i> Inactive
+                                            </a>
+                                        </div>
+                                    </div>
+                                    {% else %}
+                                    <span class="badge {% if type.status == 'Active' %}bg-success{% else %}bg-danger{% endif %}">{{ type.status }}</span>
+                                    {% endif %}
+                                </td>
+
+                                {% if user.role == 'company_owner' %}
+                                <td class="text-end">
+                                    <div class="dropdown dropdown-action">
+                                        <a href="#" class="action-icon dropdown-toggle" data-toggle="dropdown">
+                                            <i class="material-icons">more_vert</i>
+                                        </a>
+                                        <div class="dropdown-menu dropdown-menu-end">
+                                            <a class="dropdown-item" data-toggle="modal" data-target="#editTypeModal{{ type.id }}">
+                                                <i class="fa fa-pencil m-r-5"></i> Edit
+                                            </a>
+                                            <a class="dropdown-item text-danger" href="#" data-toggle="modal" data-target="#deleteTypeModal{{ type.id }}">
+    <i class="fa fa-trash-o m-r-5"></i> Delete
+</a>
+
+                                        </div>
+                                    </div>
+                                </td>
+                                {% endif %}
+                            </tr>
+                            <div id="deleteTypeModal{{ type.id }}" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="deleteTypeModalLabel{{ type.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow rounded-3 p-3">
+            <form method="POST" action="{% url 'delete_training_type' type.id %}">
+                {% csrf_token %}
+                <div class="modal-body text-center">
+                    <h5 class="fw-bold mb-3">Delete Training Type</h5>
+                    <p class="text-muted mb-4">Are you sure want to delete?</p>
+                    <div class="d-flex justify-content-center gap-3">
+                        <button type="submit" class="btn btn-outline-primary rounded-pill px-4 fw-bold">
+                            Delete
+                        </button>
+                        <button type="button" class="btn btn-outline-primary rounded-pill px-4 fw-bold" data-dismiss="modal">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+                            <!-- Edit Modal -->
+                            <div id="editTypeModal{{ type.id }}" class="modal custom-modal fade" tabindex="-1" role="dialog" aria-labelledby="editTypeModalLabel{{ type.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <form method="POST" action="{% url 'edit_training_type' type.id %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editTypeModalLabel{{ type.id }}">Edit Training Type</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    {{ form.as_p }}
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa fa-save mr-1"></i> Update
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            
+    
+    </div>
+</div>
+
+<!-- Add Modal -->
+<div id="addTypeModal" class="modal custom-modal fade" tabindex="-1" role="dialog" aria-labelledby="addTypeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="add_training_type" value="1">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addTypeModalLabel">Add Training Type</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>                </div>
+                <div class="modal-body">
+                    {{ form.as_p }}
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">
+                    Save
+                    </button>
+                    
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Include Bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+{% endblock %}

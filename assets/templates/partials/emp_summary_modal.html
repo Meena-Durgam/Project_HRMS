@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="modal custom_modal show d-block" id="attendanceReportModal" tabindex="-1" aria-labelledby="reportLabel" aria-hidden="true" style="background: #f8f9fa;">
+  <div class="modal-dialog modal-dialog-centered" style="max-width: 1000px;"> <!-- Wider -->
+    <div class="modal-content border-0" style="height: auto;"> <!-- Let height adjust -->
+      <div class="modal-body" style="padding: 30px; max-height: 450px; overflow-y: auto;"> <!-- Control height -->
+      
+        <!-- Header Row -->
+        <div class="row mb-4">
+          <div class="col">
+            <strong>Date:</strong> {{ now|date:"d/m/Y" }}
+          </div>
+          <div class="col">
+            <strong>Punch In at:</strong>
+            {% if attendance_today.check_in_time %}
+              {{ attendance_today.check_in_time|time:"h:i A" }}
+            {% else %}
+              --
+            {% endif %}
+          </div>
+          <div class="col">
+            <strong>Punch Out at:</strong>
+            {% if attendance_today.check_out_time %}
+              {{ attendance_today.check_out_time|time:"h:i A" }}
+            {% else %}
+              --
+            {% endif %}
+          </div>
+          <div class="col">
+            <strong>Status:</strong> {{ records.0.status|default:"--" }}
+          </div>
+        </div>
+
+        <!-- Summary Row -->
+        <div class="row text-center mb-4">
+          <div class="col">
+            <h6>Total Working Hours</h6>
+            <span class="fw-bold text-dark">{{ total_hours_today_display }}</span>
+          </div>
+          <div class="col">
+            <h6>Productive Hours</h6>
+            <span class="fw-bold text-success">{{ productive_hours_display }}</span>
+          </div>
+          <div class="col">
+            <h6>Break Hours</h6>
+            <span class="fw-bold text-warning">{{ format_break_time }}</span>
+          </div>
+          <div class="col">
+            <h6>Overtime</h6>
+            <span class="fw-bold text-primary">{{ overtime_today_display }}</span>
+          </div>
+        </div>
+
+        <!-- Timeline Bar -->
+        <div class="d-flex align-items-center mt-3" style="height: 10px;">
+          {% for segment in timeline_segments %}
+            <div class="{{ segment.color_class }}" style="width: {{ segment.width }}%; height: 100%;"></div>
+          {% endfor %}
+        </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,548 @@
+{% extends 'base_superadmin.html' %}
+{% load static %}
+{% block title %}Packages List{% endblock %}
+
+{% block content %}
+<style>
+/* Hide default arrow */
+
+.select-arrow-spacing {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+
+  background-image: url("data:image/svg+xml;utf8,<svg fill='gray' height='30' viewBox='0 0 24 24' width='30' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+  background-repeat: no-repeat;
+
+  /* 👇 Arrow spacing from the right */
+  background-position: right 14px center;
+
+  /* 👇 Add right padding so text doesn't collide with the arrow */
+  padding-right: 38px;
+
+  background-size: 24px;
+}
+</style>
+
+
+<div class="content container-fluid">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="row">
+      <div class="col">
+        <h3 class="page-title">Packages</h3>
+        <ul class="breadcrumb">
+          <li class="breadcrumb-item">Superadmin</li>
+          <li class="breadcrumb-item active">Packages List</li>
+        </ul>
+      </div>
+      <div class="col-auto d-flex align-items-center">
+        <div class="view-icons me-3">
+  <button id="toggleCardView" class="btn btn-outline-dark me-2"><i class="fa fa-th"></i></button>
+  <button id="toggleTableView" class="btn btn-outline-dark"><i class="fa fa-bars"></i></button>
+</div>
+                <button class="btn btn-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#addPlanModal">
+  <i class="fas fa-plus"></i> Add New Plan
+</button>
+
+  </div>
+    </div>
+    
+
+  </div>
+  </div>
+<!-- Flash Messages -->
+{% if messages %}
+  <div class="messages mt-2">
+    {% for message in messages %}
+      <div class="alert {% if message.tags == 'error' %}alert-danger
+                       {% elif message.tags == 'success' %}alert-success
+                       {% elif message.tags == 'warning' %}alert-warning
+                       {% elif message.tags == 'info' %}alert-info
+                       {% else %}alert-secondary{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+<button type="button" class="close" data-dismiss="alert">&times;</button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+  <!-- Summary Cards -->
+  <div class="row">
+    <div class="col-md-3">
+      <div class="card mini-stat">
+        <div class="card-body">
+          <h6>Total Plans</h6>
+          <h3>{{ total_plans }}</h3>
+          <div class="icon text-orange"><i class="la la-cube"></i></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card mini-stat">
+        <div class="card-body">
+          <h6>Active Plans</h6>
+          <h3>{{ active_plans }}</h3>
+          <div class="icon text-success"><i class="la la-signal"></i></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card mini-stat">
+        <div class="card-body">
+          <h6>Inactive Plans</h6>
+          <h3>{{ inactive_plans }}</h3>
+          <div class="icon text-danger"><i class="la la-ban"></i></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card mini-stat">
+        <div class="card-body">
+          <h6>No of Plan Types</h6>
+          <h3>{{ plan_types }}</h3>
+          <div class="icon text-info"><i class="la la-th-large"></i></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+  .form-control,
+  .form-select,
+  .btn {
+    height: 45px !important;
+    font-size: 14px;
+  }
+</style>
+
+<form method="get">
+  <div class="row mb-3 align-items-end">
+    <div class="col-md-3">
+      <input type="date" name="date" class="form-control text-uppercase" value="{{ filter_date|default:'' }}">
+    </div>
+
+    <div class="col-md-2">
+      <select name="plan_type" class="form-control form-select text-uppercase custom-select-padding select-arrow-spacing">
+        <option>Select Plan</option>
+        {% for type in plan_type_choices %}
+          <option value="{{ type }}" {% if filter_plan_type == type %}selected{% endif %}>{{ type }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-2">
+      <select name="status" class="form-control form-select text-uppercase custom-select-padding select-arrow-spacing">
+        <option>Select Status</option>
+        <option value="active" {% if filter_status == 'active' %}selected{% endif %}>Active</option>
+        <option value="inactive" {% if filter_status == 'inactive' %}selected{% endif %}>Inactive</option>
+      </select>
+    </div>
+
+    <div class="col-md-3">
+      <select name="sort_by" class="form-control form-select text-uppercase custom-select-padding select-arrow-spacing">
+        <option>Sort By: Last 7 Days</option>
+        <option value="latest" {% if sort_by == 'latest' %}selected{% endif %}>Latest</option>
+        <option value="oldest" {% if sort_by == 'oldest' %}selected{% endif %}>Oldest</option>
+      </select>
+    </div>
+
+    <div class="col-md-2">
+      <button type="submit" class="btn btn-primary w-100">
+         Search
+      </button>
+    </div>
+  </div>
+</form>
+
+<ul class="nav nav-pills mb-3 justify-content-end" id="planTypeTabs">
+  <li class="nav-item">
+    <a class="nav-link active" href="#" data-plan-type="Monthly">Monthly</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="#" data-plan-type="Yearly">Yearly</a>
+  </li>
+</ul>
+
+
+<div id="cardView" class="row g-4">
+  {% for plan in plans %}
+  <div class="col-md-3 plan-card-wrapper" data-plan-type="{{ plan.plan_type }}">
+    <div class="card plan-card shadow-sm h-100">
+      <div class="card-body d-flex flex-column justify-content-between">
+        <div>
+          <h5 class="fw-bold mb-1">{{ plan.name }}</h5>
+          <h4 class="text-primary">${{ plan.amount }} <small class="text-muted fs-6">/{{ plan.plan_type|lower }}</small></h4>
+          <hr>
+          <p class="mb-1 fw-semibold">Features Includes</p>
+          <ul class="list-unstyled">
+            <li><i class="fa fa-check-circle text-success me-2"></i>{{ plan.number_of_users }} Employees</li>
+            <li><i class="fa fa-check-circle text-success me-2"></i>{{ plan.number_of_projects }} Projects</li>
+            <li><i class="fa fa-check-circle text-success me-2"></i>{{ plan.storage_space }} GB Storage</li>
+            <li>
+              {% if plan.voice_video %}
+              <i class="fa fa-check-circle text-success me-2"></i>Voice & Video Chat
+              {% else %}
+              <i class="fa fa-times-circle text-danger me-2"></i>Voice & Video Chat
+              {% endif %}
+            </li>
+            <li>
+              {% if plan.crm %}
+              <i class="fa fa-check-circle text-success me-2"></i>CRM
+              {% else %}
+              <i class="fa fa-times-circle text-danger me-2"></i>CRM
+              {% endif %}
+            </li>
+          </ul>
+        </div>
+        <div class="mt-3">
+          <a href="#" class="btn btn-dark w-100" data-bs-toggle="modal" data-bs-target="#editPlanModal{{ plan.id }}">Edit</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+  
+
+<div id="tableView">
+    <div class="table-responsive">
+      <table class="table table-hover table-striped align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Plan Name</th>
+            <th>Plan Type</th>
+            <th>Created At</th>
+            <th>Price</th>
+            <th>Total Subscribers</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for plan in plans %}
+          <tr>
+            <td>{{ plan.name }}</td>
+            <td>{{ plan.plan_type }}</td>
+            <td>{{ plan.created_date|date:"d M Y" }}</td>
+            <td>₹ {{ plan.amount }}</td>
+            <td>{{ plan.subscribers_count|default:"-" }}</td>
+            <td class="text-left">
+    <div class="dropdown dropdown-action">
+      <a href="#" class="action-icon dropdown-toggle" data-bs-toggle="dropdown">
+        <i class="material-icons">more_vert</i>
+      </a>
+      <ul class="dropdown-menu dropdown-menu-end">
+        <li>
+          <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#editPlanModal{{ plan.id }}">
+            <i class="fa fa-pencil me-2"></i> Edit
+          </a>
+        </li>
+        <li>
+          <a class="dropdown-item text-danger" href="#" data-bs-toggle="modal" data-bs-target="#deletePlanModal{{ plan.id }}">
+            <i class="fa fa-trash-o me-2"></i> Delete
+          </a>
+        </li>
+      </ul>
+    </div>
+  </td>
+</tr>
+<!-- Edit Plan Modal -->
+<div class="modal custom-modal fade" id="editPlanModal{{ plan.id }}" tabindex="-1" aria-labelledby="editPlanModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form method="POST" action="{% url 'edit_plan' plan.id %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="editPlanModalLabel">Edit Plan</h5>
+          <button type="button" class="close close-edit-package" data-bs-dismiss="modal" aria-label="Close"><span>&times;</span></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label>Plan Name <span class="text-danger">*</span></label>
+              <input type="text" name="name" class="form-control" value="{{ plan.name }}" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label>Plan Amount <span class="text-danger">*</span></label>
+              <input type="number" name="amount" class="form-control" step="0.01" value="{{ plan.amount }}" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label>Plan Type <span class="text-danger">*</span></label>
+              <select name="plan_type" class="form-control custom-select-padding select-arrow-spacing" required>
+                <option value="">Select</option>
+                <option value="Monthly" {% if plan.plan_type == 'Monthly' %}selected{% endif %}>Monthly</option>
+                <option value="Yearly" {% if plan.plan_type == 'Yearly' %}selected{% endif %}>Yearly</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label>No. of Users <span class="text-danger">*</span></label>
+              <input type="number" name="number_of_users" class="form-control" value="{{ plan.number_of_users }}" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label>No. of Projects <span class="text-danger">*</span></label>
+              <input type="number" name="number_of_projects" class="form-control" value="{{ plan.number_of_projects }}" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label>Storage Space (GB) <span class="text-danger">*</span></label>
+              <input type="number" name="storage_space" class="form-control" value="{{ plan.storage_space }}" required>
+            </div>
+            <div class="col-md-12 mb-3">
+              <label>Description</label>
+              <textarea name="description" class="form-control" rows="3">{{ plan.description }}</textarea>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label>Status</label>
+              <select name="status" class="form-control custom-select-padding select-arrow-spacing">
+                <option value="1" {% if plan.status == 1 %}selected{% endif %}>Active</option>
+                <option value="0" {% if plan.status == 0 %}selected{% endif %}>Inactive</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          
+          <button type="submit" class="btn btn-primary">Update Plan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<!-- Delete Plan Modal -->
+<div class="modal custom-modal fade" id="deletePlanModal{{ plan.id }}" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content text-center p-4 rounded-4">
+      <div class="modal-body">
+        <h3 class="mb-2 fw-semibold text-dark">Delete Plan</h3>
+        <p class="text-muted mb-4" style="font-size: 14px;">
+          Are you sure you want to delete the plan <strong>{{ plan.name }}</strong>?
+        </p>
+        <form method="POST" action="{% url 'delete_plan' plan.id %}">
+          {% csrf_token %}
+          <div class="d-flex justify-content-center gap-6">
+            <button type="submit" class="btn border border-primary text-primary fw-semibold rounded-pill px-4 py-2 mx-4" style="min-width: 200px; background-color: transparent;">
+              Delete
+            </button>
+            <button type="button" class="btn border border-primary text-primary fw-semibold rounded-pill px-4 py-2" style="min-width: 200px; background-color: transparent;" data-bs-dismiss="modal">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+          {% empty %}
+          <tr>
+            <td colspan="6" class="text-center text-muted">No plans available.</td>
+          </tr>
+          
+
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+ </div>
+ 
+
+  <!-- Add Plan Modal -->
+<div class="modal custom-modal fade" id="addPlanModal" tabindex="-1" aria-labelledby="addPlanModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form method="POST">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="addPlanModalLabel">Add New Plan</h5>
+          <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span>&times;</span></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label>Plan Name <span class="text-danger">*</span></label>
+              <input type="text" name="name" class="form-control" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label>Plan Amount <span class="text-danger">*</span></label>
+              <input type="number" name="amount" class="form-control" step="0.01" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label>Plan Type <span class="text-danger">*</span></label>
+              <select name="plan_type" class="form-control custom-select-padding select-arrow-spacing" required>
+                <option value="">Select</option>
+                <option value="Monthly">Monthly</option>
+                <option value="Yearly">Yearly</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label>No. of Users <span class="text-danger">*</span></label>
+              <input type="number" name="number_of_users" class="form-control" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label>No. of Projects <span class="text-danger">*</span></label>
+              <input type="number" name="number_of_projects" class="form-control" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label>Storage Space (GB) <span class="text-danger">*</span></label>
+              <input type="number" name="storage_space" class="form-control" required>
+            </div>
+            <div class="col-md-12 mb-3">
+              <label>Description</label>
+              <textarea name="description" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label>Status</label>
+              <select name="status" class="form-control custom-select-padding select-arrow-spacing">
+                <option value="1">Active</option>
+                <option value="0">Inactive</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          
+          <button type="submit" class="btn btn-primary">Add Plan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Clear Add Designation form whenever modal is closed
+  $('#addPlanModal').on('hidden.bs.modal', function () {
+      $(this).find('form')[0].reset();
+  });
+  // Reset Edit Designation form on modal close or close button click
+  $('[id^="editPlanModal"]').on('hidden.bs.modal', function () {
+      $(this).find('form')[0].reset();
+  });
+
+  $(document).on('click', '.close-edit-package', function () {
+      const modal = $(this).closest('.modal');
+      modal.find('form')[0].reset();
+  });
+
+</script>
+
+<script>
+  const cardView = document.getElementById('cardView');
+  const tableView = document.getElementById('tableView');
+  const cardBtn = document.getElementById('toggleCardView');
+  const tableBtn = document.getElementById('toggleTableView');
+
+  // Show Table View by default
+  cardView.style.display = 'none';
+  tableView.style.display = 'block';
+
+  cardBtn.addEventListener('click', () => {
+    cardView.style.display = 'flex';
+    tableView.style.display = 'none';
+  });
+
+  tableBtn.addEventListener('click', () => {
+    tableView.style.display = 'block';
+    cardView.style.display = 'none';
+  });
+
+  // Plan type tab filtering
+  document.querySelectorAll('#planTypeTabs .nav-link').forEach(tab => {
+    tab.addEventListener('click', function (e) {
+      e.preventDefault();
+
+      // Set active tab
+      document.querySelectorAll('#planTypeTabs .nav-link').forEach(t => t.classList.remove('active'));
+      this.classList.add('active');
+
+      const selectedType = this.getAttribute('data-plan-type');
+
+      // Show only cards matching plan_type
+      document.querySelectorAll('#cardView .plan-card').forEach(card => {
+        if (card.getAttribute('data-plan-type') === selectedType) {
+          card.style.display = 'block';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    });
+  });
+
+  // Trigger Monthly tab by default
+  
+</script>
+<script>
+  document.querySelectorAll('#planTypeTabs .nav-link').forEach(tab => {
+    tab.addEventListener('click', function (e) {
+      e.preventDefault();
+
+      // Set active tab
+      document.querySelectorAll('#planTypeTabs .nav-link').forEach(t => t.classList.remove('active'));
+      this.classList.add('active');
+
+      const selectedType = this.getAttribute('data-plan-type');
+
+      // Show cards that match selected type
+      document.querySelectorAll('.plan-card-wrapper').forEach(card => {
+        if (card.getAttribute('data-plan-type') === selectedType) {
+          card.style.display = 'block';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    });
+  });
+
+  // Show Monthly plans by default
+  window.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.plan-card-wrapper').forEach(card => {
+      if (card.getAttribute('data-plan-type') === 'Monthly') {
+        card.style.display = 'block';
+      } else {
+        card.style.display = 'none';
+      }
+    });
+  });
+</script>
+
+<style>
+  .nav-pills .nav-link.active {
+    background-color: #4b7bec;
+    color: white;
+    font-weight: 600;
+  }
+  .plan-card {
+  border-radius: 12px;
+  border: 1px solid #e3e3e3;
+  transition: all 0.3s ease;
+}
+
+.plan-card:hover {
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.08);
+}
+
+.plan-card h5 {
+  font-size: 18px;
+}
+
+.plan-card h4 {
+  font-size: 22px;
+}
+
+.plan-card ul li {
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+</style>
+
+{% endblock %}
