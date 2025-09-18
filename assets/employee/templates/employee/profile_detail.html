@@ -1,0 +1,2458 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+{% load custom_filters %}
+{% load form_extras %}
+{% load experience_tags %}
+{% load math_filters %}
+
+{% block title %}Employee Profile{% endblock %}
+
+{% block content %}
+<style>
+  .pro-edit {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+}
+
+.edit-icon i {
+  color: #007bff;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+</style>
+<div class="page-header">
+    <div class="row align-items-center">
+        <div class="col-12 col-md">
+            <h3 class="page-title">Profile</h3>
+            <ul class="breadcrumb">
+                <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+                <li class="breadcrumb-item active">profile</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% if messages %}
+  <div class="messages mt-2">
+    {% for message in messages %}
+      <div class="alert {% if message.tags == 'error' %}alert-danger
+                       {% elif message.tags == 'success' %}alert-success
+                       {% elif message.tags == 'warning' %}alert-warning
+                       {% elif message.tags == 'info' %}alert-info
+                       {% else %}alert-secondary{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+<button type="button" class="close" data-bs-dismiss="alert">&times;</button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="card mb-0">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="profile-view">
+
+                        <!-- Profile Image -->
+                        <div class="profile-img-wrap">
+                            <div class="profile-img">
+                                <a href="#">
+                                    {% if profile.profile_picture %}
+                                        <img src="{{ profile.profile_picture.url }}" alt="Profile Picture">
+                                    {% else %}
+                                        <img src="{% static 'assets/img/user.jpg' %}" alt="Default Avatar">
+                                    {% endif %}
+                                </a>
+                            </div>
+                        </div>
+                        <!-- Profile Basic -->
+                        <div class="profile-basic">
+                            <div class="row">
+
+                                <!-- Left Column -->
+                                <div class="col-md-5">
+                                    <div class="profile-info-left">
+                                        <h3 class="user-name m-t-0 mb-0">
+                                            {{ profile.employee.first_name }} {{ profile.employee.last_name }}
+                                        </h3>
+                                        <h6 class="text-muted">
+                                            {{ profile.employee.department.name|default:"Department Not Assigned" }}
+                                        </h6>
+                                        <small class="text-muted">
+                                            {{ profile.employee.designation.name|default:"Designation Not Assigned" }}
+                                        </small>
+                                        <div class="staff-id">
+                                            Employee ID : {{ profile.employee.employee_id }}
+                                        </div>
+                                        <div class="small doj text-muted">
+                                            Date of Join : {{ profile.employee.joining_date|date:"jS M Y" }}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Right Column -->
+                                <div class="col-md-7">
+                                    <ul class="personal-info">
+
+                                        <li>
+                                            <div class="title">Phone:</div>
+                                            <div class="text">
+                                                {% if profile.phone %}
+                                                    <a href="tel:{{ profile.phone }}">{{ profile.phone }}</a>
+                                                {% else %}
+                                                    Not Provided
+                                                {% endif %}
+                                            </div>
+                                        </li>
+
+                                        <li>
+                                            <div class="title">Email:</div>
+                                            <div class="text">
+                                                <a href="mailto:{{ profile.email|default:profile.employee.email }}">
+                                                    {{ profile.email|default:profile.employee.email }}
+                                                </a>
+                                            </div>
+                                        </li>
+
+                                        <li>
+                                            <div class="title">Birthday:</div>
+                                            <div class="text">
+                                                {% if profile.birthday %}
+                                                    {{ profile.birthday|date:"jS F" }}
+                                                {% else %}
+                                                    Not Provided
+                                                {% endif %}
+                                            </div>
+                                        </li>
+
+                                        <li>
+                                            <div class="title">Address:</div>
+                                            <div class="text">
+                                                {{ profile.address|default:"Not Provided" }}
+                                            </div>
+                                        </li>
+
+                                        <li>
+                                            <div class="title">Gender:</div>
+                                            <div class="text">
+                                                {{ profile.gender|default:"Not Specified" }}
+                                            </div>
+                                        </li>
+
+                                        <li>
+                                            <div class="title">Reports to:</div>
+                                            <div class="text">
+                                                {% if profile.employee.reporting_manager %}
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar avatar-xs me-2">
+                                                            {% if profile.employee.reporting_manager.profile.profile_picture %}
+                                                                <img src="{{ profile.employee.reporting_manager.profile.profile_picture.url }}" class="rounded-circle" alt="Manager">
+                                                            {% else %}
+                                                                <img src="{% static 'images/default-avatar.png' %}" class="rounded-circle" alt="Manager">
+                                                            {% endif %}
+                                                        </div>
+                                                        <a href="{% url 'employee_profile' profile.employee.reporting_manager.id %}">
+                                                            {{ profile.employee.reporting_manager.get_full_name }}
+                                                        </a>
+                                                    </div>
+                                                {% else %}
+                                                    Not Assigned
+                                                {% endif %}
+                                            </div>
+                                        </li>
+
+                                    </ul>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <!-- Edit Icon -->
+                        <div class="pro-edit">
+  <a href="#" class="edit-icon" onclick="new bootstrap.Modal(document.getElementById('personalInfoModal')).show();">
+                <i class="fa fa-pencil"></i>
+              </a>
+</div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="card tab-box mb-4">
+        <div class="row user-tabs">
+            <div class="col-12 line-tabs">
+                <ul class="nav nav-tabs nav-tabs-bottom">
+                   <li class="nav-item">
+    <a href="#emp_profile" class="nav-link active" data-bs-toggle="tab">Profile</a>
+</li>
+
+                    <li class="nav-item">
+  <a href="#emp_projects" data-bs-toggle="tab" class="nav-link">Projects</a>
+</li>
+<li class="nav-item">
+        <a href="#emp_documents" class="nav-link" data-bs-toggle="tab">Documents</a>
+    </li>
+                    <li class="nav-item">
+    <a href="#bank_statutory" data-bs-toggle="tab" class="nav-link text-danger">
+        Bank & Statutory <small class="text-danger">(Admin Only)</small>
+    </a>
+</li>
+
+                </ul>
+            </div>
+        </div>
+    </div>
+
+
+<div class="tab-content">
+  <!-- Profile Info Tab -->
+  <div id="emp_profile" class="pro-overview tab-pane fade show active">
+  <div class="row">
+
+    <!-- Personal Information -->
+    <div class="col-md-6 d-flex mb-4">
+      <div class="card profile-box flex-fill">
+        <div class="card-body">
+          <h3 class="card-title">
+            Personal Information
+            <a href="#" class="edit-icon" onclick="new bootstrap.Modal(document.getElementById('personalInfoModal')).show();">
+              <i class="fa fa-pencil"></i>
+            </a>
+          </h3>
+          <ul class="personal-info">
+            <li><div class="title">Passport No.</div><div class="text">{{ profile.passport_no }}</div></li>
+            <li><div class="title">Passport Exp Date</div><div class="text">{{ profile.passport_expiry }}</div></li>
+            <li><div class="title">Nationality</div><div class="text">{{ profile.nationality }}</div></li>
+            <li><div class="title">Religion</div><div class="text">{{ profile.religion }}</div></li>
+            <li><div class="title">Marital Status</div><div class="text">{{ profile.marital_status }}</div></li>
+            <li><div class="title">No. of Children</div><div class="text">{{ profile.number_of_children }}</div></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Emergency Contact -->
+    <div class="col-md-6 d-flex mb-4">
+      <div class="card profile-box flex-fill">
+        <div class="card-body">
+          <h3 class="card-title">
+            Emergency Contacts
+          <a href="#" class="edit-icon" data-bs-toggle="modal" data-bs-target="#emergencyContactModal">
+  <i class="fa fa-pencil"></i>
+</a>
+
+
+          </h3>
+          {% for contact in employee.emergency_contacts.all %}
+            <h5 class="section-title">{{ forloop.first|yesno:"Primary,Secondary" }} Contact</h5>
+            <ul class="personal-info">
+              <li><div class="title">Name</div><div class="text">{{ contact.name }}</div></li>
+              <li><div class="title">Relationship</div><div class="text">{{ contact.relationship }}</div></li>
+              <li><div class="title">Phone</div><div class="text">{{ contact.phone }}</div></li>
+            </ul>
+            {% if not forloop.last %}<hr>{% endif %}
+          {% empty %}
+            <p>No emergency contacts added.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+<div class="col-md-6 d-flex mb-4">
+  <div class="card shadow-sm flex-fill">
+    <div class="card-body">
+      <!-- Header -->
+      <div class="d-flex justify-content-between align-items-center mb-0">
+        <h4 class="card-title mb-0">Bank Information</h4>
+        <a href="#" class="edit-icon" onclick="new bootstrap.Modal(document.getElementById('bankModal')).show();">
+          <i class="fa fa-pencil fa-lg text-primary"></i>
+        </a>
+      </div>
+
+      <!-- Add padding between header and data -->
+      <div class="py-3"></div>
+
+      {% if bank %}
+      <!-- Bank Information Display -->
+      <div class="row mb-2">
+        <div class="col-sm-5 font-weight-bold text-dark">Bank Name</div>
+        <div class="col-sm-7 text-muted">{{ bank.bank_name }}</div>
+      </div>
+      <div class="row mb-2">
+        <div class="col-sm-5 font-weight-bold text-dark">Bank Account No.</div>
+        <div class="col-sm-7 text-muted">{{ bank.account_no }}</div>
+      </div>
+      <div class="row mb-2">
+        <div class="col-sm-5 font-weight-bold text-dark">IFSC Code</div>
+        <div class="col-sm-7 text-muted">{{ bank.ifsc_code }}</div>
+      </div>
+      {% else %}
+      <div class="text-muted">No bank details available.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+
+<!-- Family Information -->
+<div class="col-md-6 d-flex mb-4">
+  <div class="card profile-box flex-fill">
+    <div class="card-body">
+      <h3 class="card-title d-flex justify-content-between align-items-center">
+        Family Information
+        <a href="#" class="edit-icon" onclick="new bootstrap.Modal(document.getElementById('familyModal')).show();">
+          <i class="fa fa-pencil"></i>
+        </a>
+      </h3>
+
+      {% if employee.family_members.exists %}
+      <div class="table-responsive">
+        <table class="table table-striped custom-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Relationship</th>
+              <th>Date Of Birth</th>
+              <th>Occupation</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for family in employee.family_members.all %}
+            <tr>
+              <td>{{ family.name }}</td>
+              <td>{{ family.relationship }}</td>
+              <td>{{ family.date_of_birth|date:"M jS, Y" }}</td>
+              <td>{{ family.occupation }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+        <p class="text-muted">No family details available.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+
+    <!-- Education -->
+    <div class="col-md-6 d-flex mb-4">
+      <div class="card profile-box flex-fill">
+        <div class="card-body">
+          <h3 class="card-title">
+            Education Information
+            <a href="#" class="edit-icon" onclick="new bootstrap.Modal(document.getElementById('educationModal')).show();">
+              <i class="fa fa-pencil"></i>
+            </a>
+          </h3>
+          <div class="experience-box">
+            <ul class="experience-list">
+              {% for edu in employee.education.all %}
+              <li>
+                <div class="experience-user"><div class="before-circle"></div></div>
+                <div class="experience-content">
+                  <div class="timeline-content">
+                    <a href="#" class="name">{{ edu.institution_name }}</a>
+                    <div>{{ edu.degree_type }}</div>
+                    {% if edu.stream %}<div>{{ edu.stream }}</div>{% endif %}
+                    <span class="time">{{ edu.from_year }} - {{ edu.to_year }}</span>
+                  </div>
+                </div>
+              </li>
+              {% empty %}
+              <li><div class="timeline-content">No education details available.</div></li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Experience -->
+    <div class="col-md-6 d-flex mb-4">
+      <div class="card profile-box flex-fill">
+        <div class="card-body">
+          <h3 class="card-title">
+            Experience
+            <a href="#" class="edit-icon" onclick="new bootstrap.Modal(document.getElementById('experienceModal')).show();">
+              <i class="fa fa-pencil"></i>
+            </a>
+          </h3>
+          <div class="experience-box">
+            <ul class="experience-list">
+{% for exp in employee.experiences.all|sort_experiences_by_date %}
+  <li>
+    <div class="experience-user"><div class="before-circle"></div></div>
+    <div class="experience-content">
+      <div class="timeline-content">
+        <a href="#" class="name">{{ exp.title }} at {{ exp.company }}</a>
+        <span class="time">{{ exp.start_date }} - {{ exp.end_date|default:"Present" }}</span>
+        <span class="mb-0">Duration:{{exp.duration}}</span>
+      </div>
+    </div>
+  </li>
+{% empty %}
+  <li><div class="timeline-content">No experience records available.</div></li>
+{% endfor %}
+
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- Personal Info Modal -->
+<!-- ========== MODALS ========== -->
+
+<!-- PERSONAL INFO MODAL -->
+<div class="modal custom-modal fade" id="personalInfoModal" tabindex="-1" role="dialog" aria-labelledby="personalInfoModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title" id="personalInfoModalLabel">Personal Information</h5>
+                  <button type="button" class="close" data-bs-dismiss="modal" onclick="location.reload();">
+    <span>&times;</span>
+</button> 
+      </div>
+
+      <div class="modal-body">
+        <form id="personalInfoForm" method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          <input type="hidden" name="submit_type" value="personal_info">
+{% if not form.profile_picture_uploaded %}
+  <!-- Show file input if not uploaded -->
+  <div class="mb-3">
+    {{ form.profile_picture.label_tag }}
+    {{ form.profile_picture|add_class:"form-control w-100" }}  <!-- full width -->
+    <div id="profile-error" class="text-danger mt-1"></div>
+    {% if form.profile_picture.errors %}
+      <div class="text-danger">{{ form.profile_picture.errors.0 }}</div>
+    {% endif %}
+  </div>
+{% else %}
+  <!-- Profile Picture Preview with Edit Pencil -->
+  <div class="mb-3">
+    <label class="d-block mb-2">Profile Picture:</label>
+    <div class="position-relative" style="width: 140px;" id="profilePicContainer">
+      <img src="{{ form.instance.profile_picture.url }}" 
+           alt="Profile Picture" 
+           class="img-thumbnail w-100" 
+           id="profileImageDisplay">
+      <button type="button" 
+              id="editProfilePicBtn" 
+              class="btn btn-sm btn-light position-absolute" 
+              style="top: 5px; right: 5px; border-radius: 50%; padding: 5px;"
+              title="Edit Picture">
+        <i class="fas fa-pencil-alt"></i>
+      </button>
+    </div>
+    <p class="text-muted mt-2">Profile picture already uploaded.</p>
+  </div>
+
+  <!-- Hidden file input -->
+  <div class="mb-3" id="profilePictureUploadField" style="display: none;">
+    <label for="id_profile_picture">Change Profile Picture:</label>
+    <input type="file" id="id_profile_picture" name="profile_picture" accept=".jpeg,.png" class="form-control w-100"> <!-- full width -->
+    <div id="profile-error" class="text-danger mt-1"></div>
+    {% if form.profile_picture.errors %}
+      <div class="text-danger">{{ form.profile_picture.errors.0 }}</div>
+    {% endif %}
+  </div>
+{% endif %}
+
+
+          <!-- Phone -->
+          <div class="mb-3">
+            {{ form.phone.label_tag }}
+            {{ form.phone }}
+            <div id="phone-error" class="text-danger mt-1"></div>
+            {% if form.phone.errors %}
+              <div class="text-danger">{{ form.phone.errors.0 }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Birthday -->
+          <div class="mb-3">
+            {{ form.birthday.label_tag }}
+            {{ form.birthday }}
+            {% if form.birthday.errors %}
+              <div class="text-danger">{{ form.birthday.errors.0 }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Address -->
+          <div class="mb-3">
+            {{ form.address.label_tag }}
+            {{ form.address }}
+            {% if form.address.errors %}
+              <div class="text-danger">{{ form.address.errors.0 }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Gender -->
+          <div class="mb-3">
+            {{ form.gender.label_tag }}
+            {{ form.gender}}
+            {% if form.gender.errors %}
+              <div class="text-danger">{{ form.gender.errors.0 }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Nationality -->
+          <div class="mb-3">
+            {{ form.nationality.label_tag }}
+            {{ form.nationality}}
+            {% if form.nationality.errors %}
+              <div class="text-danger">{{ form.nationality.errors.0 }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Religion -->
+          <div class="mb-3">
+            {{ form.religion.label_tag }}
+            {{ form.religion}}
+            {% if form.religion.errors %}
+              <div class="text-danger">{{ form.religion.errors.0 }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Marital Status -->
+          <div class="mb-3">
+            {{ form.marital_status.label_tag }}
+            {{ form.marital_status}}
+            {% if form.marital_status.errors %}
+              <div class="text-danger">{{ form.marital_status.errors.0 }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Aadhaar Number -->
+          <div class="mb-3">
+            {{ form.aadhaar_number.label_tag }}
+            {{ form.aadhaar_number }}
+            <div id="aadhaar-error" class="text-danger mt-1"></div>
+            {% if form.aadhaar_number.errors %}
+              <div class="text-danger">{{ form.aadhaar_number.errors.0 }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Passport No -->
+          <div class="mb-3">
+            {{ form.passport_no.label_tag }}
+            {{ form.passport_no }}
+            {% if form.passport_no.errors %}
+              <div class="text-danger">{{ form.passport_no.errors.0 }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Passport Expiry -->
+          <div class="mb-3">
+            {{ form.passport_expiry.label_tag }}
+            {{ form.passport_expiry }}
+            {% if form.passport_expiry.errors %}
+              <div class="text-danger">{{ form.passport_expiry.errors.0 }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Children -->
+          <div class="mb-3" id="childrenFieldContainer" style="display: none;">
+  {{ form.number_of_children.label_tag }}
+  {{ form.number_of_children }}
+  {% if form.number_of_children.errors %}
+    <div class="text-danger">{{ form.number_of_children.errors.0 }}</div>
+  {% endif %}
+</div>
+
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary">Save</button>
+          </div>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- STYLES -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
+
+<!-- SCRIPTS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Elements
+    const maritalStatus = document.querySelector('[name="marital_status"]');
+    const childrenField = document.querySelector('[name="number_of_children"]');
+    const childrenContainer = document.getElementById('childrenFieldContainer');
+    const editBtn = document.getElementById('editProfilePicBtn');
+    const uploadField = document.getElementById('profilePictureUploadField');
+    const imageDisplay = document.getElementById('profileImageDisplay');
+    const profilePicContainer = document.getElementById('profilePicContainer');
+    const phoneField = document.getElementById("id_phone");
+    const aadhaarField = document.getElementById("id_aadhaar_number");
+    const profilePicField = document.getElementById("id_profile_picture");
+
+    // === Toggle Number of Children Field Based on Marital Status ===
+    function toggleChildrenRequirement() {
+        const value = maritalStatus?.value?.toLowerCase();
+
+        if (value === 'married') {
+            childrenContainer.style.display = 'block';
+            childrenField.required = true;
+        } else {
+            childrenContainer.style.display = 'none';
+            childrenField.required = false;
+            childrenField.value = 0;  // Reset to 0 for unmarried or other statuses
+        }
+    }
+
+    if (maritalStatus && childrenField && childrenContainer) {
+        maritalStatus.addEventListener('change', toggleChildrenRequirement);
+        toggleChildrenRequirement(); // Initial check
+    }
+
+    // === Edit Profile Picture Button ===
+    if (editBtn && uploadField && imageDisplay) {
+        editBtn.addEventListener('click', function () {
+            uploadField.style.display = 'block';
+            imageDisplay.style.display = 'none';
+            editBtn.style.display = 'none';
+        });
+    }
+// Profile Picture Validation (Only JPEG and PNG)
+const profilePicInput = document.getElementById("id_profile_picture");
+if (profilePicInput) {
+    profilePicInput.addEventListener("change", function () {
+        const file = this.files[0];
+        const error = document.getElementById("profile-error");
+
+        if (file) {
+            const allowedTypes = ["image/jpeg", "image/png"];
+            if (!allowedTypes.includes(file.type)) {
+                error.textContent = "Only JPEG and PNG files are allowed.";
+                this.value = ""; // clear invalid file
+            } else {
+                error.textContent = "";
+            }
+        } else {
+            error.textContent = "";
+        }
+    });
+}
+
+    // === Datepicker Initialization ===
+    $('.datepicker').datepicker({
+        format: 'dd/mm/yyyy',
+        autoclose: true,
+        todayHighlight: true,
+        orientation: "bottom auto",
+        startView: 2,
+        clearBtn: true
+    });
+
+    // === Real-Time Validation ===
+
+    // Phone
+    if (phoneField) {
+        phoneField.addEventListener("input", function () {
+            const phone = phoneField.value;
+            const error = document.getElementById("phone-error");
+            if (!/^\d{0,10}$/.test(phone)) {
+                error.textContent = "Phone number must be digits only.";
+            } else if (phone.length > 0 && phone.length !== 10) {
+                error.textContent = "Phone number must be exactly 10 digits.";
+            } else {
+                error.textContent = "";
+            }
+        });
+    }
+
+    // Aadhaar validation
+if (aadhaarField) {
+    aadhaarField.addEventListener("input", function () {
+        const aadhaar = aadhaarField.value.trim();
+        const error = document.getElementById("aadhaar-error");
+
+        if (!/^\d*$/.test(aadhaar)) {
+            error.textContent = "Aadhaar number must contain digits only.";
+        } else if (aadhaar.length === 0) {
+            error.textContent = "";
+        } else if (aadhaar.length < 12) {
+            error.textContent = "Aadhaar number must be 12 digits. (" + aadhaar.length + "/12 entered)";
+        } else if (aadhaar.length > 12) {
+            error.textContent = "Aadhaar number cannot exceed 12 digits.";
+        } else {
+            error.textContent = "✅ Aadhaar number is valid.";
+        }
+    });
+}
+
+// Prevent form submit if Aadhaar is invalid
+const form = document.getElementById("your-form-id"); // replace with your form ID
+if (form && aadhaarField) {
+    form.addEventListener("submit", function (event) {
+        const aadhaar = aadhaarField.value.trim();
+        const error = document.getElementById("aadhaar-error");
+
+        if (!/^\d{12}$/.test(aadhaar)) {
+            event.preventDefault(); // stop form submission
+            error.textContent = "Please enter a valid 12-digit Aadhaar number before submitting.";
+            aadhaarField.focus();
+        }
+    });
+}
+
+
+    // Profile Picture
+    if (profilePicField) {
+        profilePicField.addEventListener("change", function () {
+            const file = profilePicField.files[0];
+            const error = document.getElementById("profile-error");
+            if (file) {
+                const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+                if (!allowedTypes.includes(file.type)) {
+                    error.textContent = "Only JPG, JPEG, and PNG files are allowed.";
+                } else {
+                    error.textContent = "";
+                }
+            }
+        });
+    }
+
+    // === Form Reset on Modal Close ===
+    function resetPersonalInfoForm() {
+        const form = document.getElementById("personalInfoForm");
+        if (form) {
+            form.reset();
+
+            // Clear error messages except persistent ones
+            form.querySelectorAll(".text-danger").forEach(div => {
+                if (!div.classList.contains("persist-error")) {
+                    div.textContent = "";
+                }
+            });
+
+            // Remove 'is-invalid' class
+            form.querySelectorAll(".form-control").forEach(input => {
+                input.classList.remove("is-invalid");
+            });
+
+            // Reset children field visibility & value
+            toggleChildrenRequirement();
+        }
+    }
+
+    document.getElementById("closePersonalInfoModalTop")?.addEventListener("click", resetPersonalInfoForm);
+    document.getElementById("closePersonalInfoModalBottom")?.addEventListener("click", resetPersonalInfoForm);
+});
+</script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+
+<!-- FAMILY INFORMATION MODAL -->
+<div class="modal custom-modal fade" id="familyModal" tabindex="-1" aria-labelledby="familyModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <form method="POST" id="familyForm">
+        {% csrf_token %}
+        <input type="hidden" name="submit_type" value="family">
+
+        <div class="modal-header">
+          <h5 class="modal-title" id="familyModalLabel">Family Information</h5>
+                   <button type="button" class="close" data-bs-dismiss="modal" onclick="location.reload();">
+    <span>&times;</span>
+</button> 
+        </div>
+
+        <div class="modal-body">
+          {{ family_formset.management_form }}
+
+          <div id="family-forms-container">
+            {% for form in family_formset %}
+              <div class="rounded p-3 mb-3 family-form-block bg-light position-relative">
+                {% for hidden in form.hidden_fields %}
+                  {{ hidden }}
+                {% endfor %}
+
+                <div class="mb-2">
+                  <label class="form-label">Name <span class="text-danger">*</span></label>
+                  {{ form.name }}
+                </div>
+
+                <div class="mb-2">
+                  <label class="form-label">Relationship <span class="text-danger">*</span></label>
+                  {{ form.relationship }}
+                </div>
+
+                <div class="mb-2">
+                  <label class="form-label">Date Of Birth <span class="text-danger">*</span></label>
+                  {{ form.date_of_birth }}
+                </div>
+
+                <div class="mb-2">
+                  <label class="form-label">Occupation <span class="text-danger">*</span></label>
+                  {{ form.occupation }}
+                </div>
+
+                <div class="mb-2">
+                  <label class="form-label">Address <span class="text-danger">*</span></label>
+                  {{ form.address }}
+                </div>
+
+                <div class="mb-2">
+                  <label class="form-label">Dependent <span class="text-danger">*</span></label>
+                  {{ form.dependent }}
+                </div>
+
+                <div class="d-flex justify-content-end align-items-center mt-3">
+                  {% if form.instance.pk %}
+                    <div class="form-check">
+                      {{ form.DELETE }} <label class="form-check-label" for="{{ form.DELETE.id_for_label }}">Delete</label>
+                    </div>
+                  {% else %}
+                    <button type="button" class="btn btn-sm btn-danger remove-family-btn" title="Remove">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  {% endif %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+
+          <div class="d-flex justify-content-end mb-3">
+            <button type="button" class="btn btn-secondary btn-sm" id="add-family-row">+ Add More</button>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const addBtn = document.getElementById("add-family-row");
+    const container = document.getElementById("family-forms-container");
+    const totalForms = document.getElementById("id_family-TOTAL_FORMS");  // <-- Important
+
+    addBtn.addEventListener("click", function () {
+      const currentCount = parseInt(totalForms.value);
+      const firstForm = container.querySelector(".family-form-block");
+      const newForm = firstForm.cloneNode(true);
+
+      newForm.querySelectorAll("input, select, textarea").forEach((el) => {
+        if (el.name) {
+          const newName = el.name.replace(/family-\d+-/, `family-${currentCount}-`);
+          const newId = el.id ? el.id.replace(/family-\d+-/, `family-${currentCount}-`) : null;
+
+          el.name = newName;
+          if (newId) el.id = newId;
+
+          if (el.type === "checkbox") {
+            el.checked = false;
+          } else {
+            el.value = "";
+          }
+        }
+      });
+
+      // Remove hidden input values (like IDs), reset delete checkbox
+      newForm.querySelectorAll("input[type=hidden]").forEach(el => el.value = "");
+      const deleteDiv = newForm.querySelector(".form-check");
+      if (deleteDiv) deleteDiv.remove();
+
+      container.appendChild(newForm);
+      totalForms.value = currentCount + 1;
+    });
+
+    container.addEventListener("click", function (e) {
+      if (e.target.closest(".remove-family-btn")) {
+        const blocks = container.querySelectorAll(".family-form-block");
+        if (blocks.length > 1) {
+          e.target.closest(".family-form-block").remove();
+          totalForms.value = container.querySelectorAll(".family-form-block").length;
+        }
+      }
+    });
+  });
+</script>
+
+<!-- Education Modal -->
+<div class="modal custom-modal fade" id="educationModal" tabindex="-1" aria-labelledby="educationModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h5 class="modal-title">Education Details</h5>
+                  <button type="button" class="close" data-bs-dismiss="modal" onclick="location.reload();">
+    <span>&times;</span>
+</button> 
+      </div>
+
+      <!-- Form Start -->
+      <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="submit_type" value="education">
+
+        <div class="modal-body">
+
+          <!-- SSLC -->
+          <div class="card mb-4">
+            <div class="card-header">SSLC Details</div>
+            <div class="card-body">
+              <div class="row g-3">
+                {% for field in sslc_form %}
+                <div class="col-md-6 mb-2">
+                  <label for="{{ field.id_for_label }}">
+                    {{ field.label }}
+                    {% if field.field.required %}
+                      <span class="text-danger">*</span>
+                    {% endif %}
+                  </label>
+                  {{ field }}
+                  {% if field.errors %}
+                    <div class="text-danger small">{{ field.errors|striptags }}</div>
+                  {% endif %}
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+
+          <!-- Higher Education -->
+          <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <h6 class="mb-0">Higher Education</h6>
+              <button type="button" class="btn btn-light btn-sm" id="addEducationRow">
+                <i class="bi bi-plus-circle"></i> Add Education
+              </button>
+            </div>
+            <div class="card-body">
+              {{ education_formset.management_form }}
+              <div id="education-formset">
+                {% for form in education_formset %}
+                  <div class="education-row border rounded p-3 mb-3">
+                    {{ form.id }}
+                    <div class="row g-3">
+                      <div class="col-md-6 mb-2">
+                        <label>{{ form.degree_type.label }} {% if form.degree_type.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                        {{ form.degree_type }}
+                      </div>
+                      <div class="col-md-6 mb-2">
+                        <label>{{ form.institution_name.label }} {% if form.institution_name.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                        {{ form.institution_name }}
+                      </div>
+                      <div class="col-md-6 mb-2">
+                        <label>{{ form.program.label }} {% if form.program.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                        {{ form.program }}
+                      </div>
+                      <div class="col-md-6 mb-2">
+                        <label>{{ form.stream.label }} {% if form.stream.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                        {{ form.stream }}
+                      </div>
+                      <div class="col-md-6 mb-2">
+                        <label>{{ form.from_year.label }} {% if form.from_year.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                        {{ form.from_year }}
+                      </div>
+                      <div class="col-md-6 mb-2">
+                        <label>{{ form.to_year.label }} {% if form.to_year.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                        {{ form.to_year }}
+                      </div>
+                    </div>
+
+                    <div class="mt-3 d-flex justify-content-end">
+                      {% if form.instance.pk %}
+                        <div class="form-check">
+                          {{ form.DELETE }} {{ form.DELETE.label_tag }}
+                        </div>
+                      {% else %}
+                        <button type="button" class="btn btn-danger btn-sm remove-edu-row">
+                          <i class="bi bi-trash"></i> Remove
+                        </button>
+                      {% endif %}
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<!-- Empty Form Template (Use with __prefix__) -->
+<script type="text/template" id="empty-edu-form-template">
+  <div class="education-row border rounded p-3 mb-3">
+    {{ empty_education_form.id }}
+    <div class="row g-3">
+      <div class="col-md-6 mb-2">
+        <label>{{ empty_education_form.degree_type.label }}
+          {% if empty_education_form.degree_type.field.required %}
+            <span class="text-danger">*</span>
+          {% endif %}
+        </label>
+        {{ empty_education_form.degree_type }}
+      </div>
+      <div class="col-md-6 mb-2">
+        <label>{{ empty_education_form.institution_name.label }}
+          {% if empty_education_form.institution_name.field.required %}
+            <span class="text-danger">*</span>
+          {% endif %}
+        </label>
+        {{ empty_education_form.institution_name }}
+      </div>
+      <div class="col-md-6 mb-2">
+        <label>{{ empty_education_form.program.label }}
+          {% if empty_education_form.program.field.required %}
+            <span class="text-danger">*</span>
+          {% endif %}
+        </label>
+        {{ empty_education_form.program }}
+      </div>
+      <div class="col-md-6 mb-2">
+        <label>{{ empty_education_form.stream.label }}
+          {% if empty_education_form.stream.field.required %}
+            <span class="text-danger">*</span>
+          {% endif %}
+        </label>
+        {{ empty_education_form.stream }}
+      </div>
+      <div class="col-md-6 mb-2">
+        <label>{{ empty_education_form.from_year.label }}
+          {% if empty_education_form.from_year.field.required %}
+            <span class="text-danger">*</span>
+          {% endif %}
+        </label>
+        {{ empty_education_form.from_year }}
+      </div>
+      <div class="col-md-6 mb-2">
+        <label>{{ empty_education_form.to_year.label }}
+          {% if empty_education_form.to_year.field.required %}
+            <span class="text-danger">*</span>
+          {% endif %}
+        </label>
+        {{ empty_education_form.to_year }}
+      </div>
+    </div>
+
+    <div class="mt-3 d-flex justify-content-end">
+      <button type="button" class="btn btn-danger btn-sm remove-edu-row">
+        <i class="bi bi-trash"></i> Remove
+      </button>
+    </div>
+  </div>
+</script>
+
+<!-- JavaScript for Dynamic Formset Handling -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const formsetDiv = document.getElementById("education-formset");
+  const addBtn = document.getElementById("addEducationRow");
+  const totalFormsInput = document.querySelector("#id_edu-TOTAL_FORMS");
+
+  const HIDDEN_DEGREES = ['SSLC'];  // 🔒 Degrees to permanently hide
+
+  // Function to update degree type options across all forms
+  function updateDegreeTypeOptions() {
+    const selectedValues = Array.from(formsetDiv.querySelectorAll("select[name$='-degree_type']"))
+      .map(select => select.value)
+      .filter(val => val);
+
+    const allSelects = formsetDiv.querySelectorAll("select[name$='-degree_type']");
+
+    allSelects.forEach(select => {
+      const currentValue = select.value;
+      Array.from(select.options).forEach(option => {
+        const val = option.value;
+        // Disable if selected elsewhere and not current OR in hidden list
+        option.disabled = (selectedValues.includes(val) && val !== currentValue) || HIDDEN_DEGREES.includes(val);
+      });
+    });
+  }
+
+  // Handle change in any degree type
+  formsetDiv.addEventListener("change", function (e) {
+    if (e.target && e.target.matches("select[name$='-degree_type']")) {
+      updateDegreeTypeOptions();
+    }
+  });
+
+  // Add new education form dynamically
+  addBtn.addEventListener("click", function () {
+    const totalForms = parseInt(totalFormsInput.value);
+    let template = document.getElementById("empty-edu-form-template").innerHTML;
+
+    template = template.replace(/__prefix__/g, totalForms);
+    formsetDiv.insertAdjacentHTML("beforeend", template);
+    totalFormsInput.value = totalForms + 1;
+
+    updateDegreeTypeOptions();
+  });
+
+  // Remove form row
+  formsetDiv.addEventListener("click", function (e) {
+    if (e.target.closest(".remove-edu-row")) {
+      const row = e.target.closest(".education-row");
+      row.remove();
+      updateDegreeTypeOptions();
+    }
+  });
+
+  updateDegreeTypeOptions();
+});
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  function validateYearRange(fromSelect, toSelect, errorContainer) {
+    const fromYear = fromSelect.value;
+    const toYear = toSelect.value;
+
+    if (fromYear && toYear) {
+      if (parseInt(fromYear) > parseInt(toYear)) {
+        errorContainer.textContent = "To Year must be after From Year.";
+        toSelect.classList.add("is-invalid");
+      } else {
+        errorContainer.textContent = "";
+        toSelect.classList.remove("is-invalid");
+      }
+    } else {
+      errorContainer.textContent = "";
+      toSelect.classList.remove("is-invalid");
+    }
+  }
+
+  // Attach validation for all education rows
+  function attachYearValidation(row) {
+    const fromSelect = row.querySelector("select[name$='-from_year']");
+    const toSelect = row.querySelector("select[name$='-to_year']");
+
+    if (fromSelect && toSelect) {
+      // Create or find error container
+      let errorContainer = row.querySelector(".year-error-msg");
+      if (!errorContainer) {
+        errorContainer = document.createElement("div");
+        errorContainer.className = "text-danger small year-error-msg";
+        toSelect.insertAdjacentElement("afterend", errorContainer);
+      }
+
+      fromSelect.addEventListener("change", () =>
+        validateYearRange(fromSelect, toSelect, errorContainer)
+      );
+      toSelect.addEventListener("change", () =>
+        validateYearRange(fromSelect, toSelect, errorContainer)
+      );
+    }
+  }
+
+  // Apply to existing rows
+  document.querySelectorAll(".education-row").forEach(attachYearValidation);
+
+  // When new form is added dynamically
+  document.addEventListener("click", function (e) {
+    if (e.target.closest("#addEducationRow")) {
+      setTimeout(() => {
+        const newRows = document.querySelectorAll(".education-row");
+        attachYearValidation(newRows[newRows.length - 1]);
+      }, 200);
+    }
+  });
+});
+</script>
+
+<!-- Optional Styling -->
+<style>
+.modal-dialog-scrollable .modal-body {
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+  padding-right: 15px;
+}
+</style>
+
+<!-- Experience Modal -->
+<div class="modal custom-modal fade" id="experienceModal" tabindex="-1" aria-labelledby="experienceModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <form method="POST" id="experienceForm">
+        {% csrf_token %}
+        <input type="hidden" name="submit_type" value="experience">
+
+        <div class="modal-header">
+          <h5 class="modal-title" id="experienceModalLabel">Work Experience</h5>
+                    <button type="button" class="close" data-bs-dismiss="modal" onclick="location.reload();">
+    <span>&times;</span>
+</button> 
+        </div>
+
+        <div class="modal-body">
+          {{ experience_formset.management_form }}
+          <div id="experienceFormContainer">
+            {% for form in experience_formset %}
+              <div class="experience-block p-3 rounded mb-3 position-relative">
+                {% if form.id %}{{ form.id }}{% endif %}
+
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Job Title <span class="text-danger">*</span></label>
+                    {{ form.title }}
+                    {% if form.title.errors %}
+                      <div class="text-danger small">{{ form.title.errors.0 }}</div>
+                    {% endif %}
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Company <span class="text-danger">*</span></label>
+                    {{ form.company }}
+                    {% if form.company.errors %}
+                      <div class="text-danger small">{{ form.company.errors.0 }}</div>
+                    {% endif %}
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label mt-3">Start Date <span class="text-danger">*</span></label>
+                    {{ form.start_date }}
+                    {% if form.start_date.errors %}
+                      <div class="text-danger small">{{ form.start_date.errors.0 }}</div>
+                    {% endif %}
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label mt-3">End Date</label>
+                    {{ form.end_date }}
+                    {% if form.end_date.errors %}
+                      <div class="text-danger small">{{ form.end_date.errors.0 }}</div>
+                    {% endif %}
+                  </div>
+                </div>
+
+                <div class="d-flex justify-content-end align-items-center mt-3">
+                  {% if form.instance.pk %}
+                    <div class="form-check me-2">
+                      <label class="form-check-label" for="{{ form.DELETE.id_for_label }}">
+                        {{ form.DELETE }} Delete
+                      </label>
+                    </div>
+                  {% else %}
+                    <button type="button" class="btn btn-sm btn-danger remove-experience-btn" title="Remove Experience">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  {% endif %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+
+          <!-- Hidden Template -->
+          <template id="experience-empty-form-template">
+  <div class="experience-block p-3 rounded mb-3 position-relative">
+    <div class="row g-3">
+      
+      <!-- Job Title -->
+      <div class="col-md-6">
+        <label class="form-label">Job Title <span class="text-danger">*</span></label>
+        <input type="text" 
+               name="experience-__prefix__-title" 
+               class="form-control" 
+               placeholder="Enter Job Title" 
+               required>
+      </div>
+
+      <!-- Company Name -->
+      <div class="col-md-6">
+        <label class="form-label">Company <span class="text-danger">*</span></label>
+        <input type="text" 
+               name="experience-__prefix__-company" 
+               class="form-control" 
+               placeholder="Enter Company Name" 
+               required>
+      </div>
+
+      <!-- Start Date -->
+      <div class="col-md-6">
+        <label class="form-label mt-3">Start Date <span class="text-danger">*</span></label>
+        <input type="date" 
+               name="experience-__prefix__-start_date" 
+               class="form-control text-uppercase" 
+               required>
+      </div>
+
+      <!-- End Date -->
+      <div class="col-md-6">
+        <label class="form-label mt-3">End Date</label>
+        <input type="date" 
+               name="experience-__prefix__-end_date" 
+               class="form-control text-uppercase">
+      </div>
+
+    </div>
+
+    <!-- Hidden delete input for formset -->
+    <input type="hidden" name="experience-__prefix__-DELETE">
+
+    <!-- Remove button -->
+    <div class="d-flex justify-content-end align-items-center mt-3">
+      <button type="button" class="btn btn-sm btn-danger remove-experience-btn" title="Remove Experience">
+        <i class="bi bi-trash"></i>
+      </button>
+    </div>
+  </div>
+</template>
+
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-success" id="addExperienceBtn">+ Add Experience</button>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Script -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const addBtn = document.getElementById("addExperienceBtn");
+    const container = document.getElementById("experienceFormContainer");
+    const emptyTemplate = document.getElementById("experience-empty-form-template").innerHTML;
+    const totalForms = document.querySelector("#id_experience-TOTAL_FORMS");
+    const form = document.getElementById("experienceForm");
+    const closeBtn = document.getElementById("closeExperienceModal");
+    const modal = document.getElementById("experienceModal");
+
+    let originalExperienceFormHTML = "";
+
+    // ✅ Automatically add 1 blank form when modal opens
+    modal.addEventListener("show.bs.modal", function () {
+      // Save original form content (so we can restore later)
+      originalExperienceFormHTML = container.innerHTML;
+
+      const formCount = parseInt(totalForms.value);
+      const newFormHtml = emptyTemplate.replace(/__prefix__/g, formCount);
+      const div = document.createElement("div");
+      div.innerHTML = newFormHtml;
+      container.appendChild(div);
+      totalForms.value = formCount + 1;
+    });
+
+    // ✅ Restore form to original state on modal close
+    modal.addEventListener("hidden.bs.modal", function () {
+      container.innerHTML = originalExperienceFormHTML;
+
+      // Update management form count after restore
+      const newCount = container.querySelectorAll('.experience-block').length;
+      totalForms.value = newCount;
+    });
+
+    // ✅ + Add Experience button → ALWAYS adds a blank form
+    addBtn.addEventListener("click", function () {
+      const formCount = parseInt(totalForms.value);
+      const newFormHtml = emptyTemplate.replace(/__prefix__/g, formCount);
+      const div = document.createElement("div");
+      div.innerHTML = newFormHtml;
+      container.appendChild(div);
+      totalForms.value = formCount + 1;
+    });
+
+    // ✅ Remove Experience Form block
+    container.addEventListener("click", function (e) {
+      if (e.target.closest('.remove-experience-btn')) {
+        const block = e.target.closest('.experience-block');
+        const deleteInput = block.querySelector('input[name$="-DELETE"]');
+        const hasIdField = block.querySelector('input[name$="-id"]');
+
+        if (hasIdField && deleteInput) {
+          // Mark for deletion if it's an existing form
+          deleteInput.checked = true;
+          block.style.display = 'none';
+        } else {
+          // Remove new form entirely
+          block.remove();
+          totalForms.value = parseInt(totalForms.value) - 1;
+        }
+      }
+    });
+
+    // ✅ Validation on submit
+    form.addEventListener("submit", function (e) {
+      let isValid = true;
+      form.querySelectorAll('.client-error').forEach(el => el.remove());
+
+      const blocks = form.querySelectorAll('.experience-block');
+      blocks.forEach(block => {
+        if (block.style.display === 'none') return;
+
+        const title = block.querySelector('input[name$="-title"]');
+        const company = block.querySelector('input[name$="-company"]');
+        const startDate = block.querySelector('input[name$="-start_date"]');
+        const endDate = block.querySelector('input[name$="-end_date"]');
+
+        const showError = (input, message) => {
+          const error = document.createElement('div');
+          error.classList.add('text-danger', 'small', 'client-error');
+          error.innerText = message;
+          input.parentElement.appendChild(error);
+          isValid = false;
+        };
+
+        if (!title.value.trim()) showError(title, "This field is required.");
+        if (!company.value.trim()) showError(company, "This field is required.");
+        if (!startDate.value) showError(startDate, "This field is required.");
+
+        if (startDate.value && endDate.value) {
+          const start = new Date(startDate.value);
+          const end = new Date(endDate.value);
+          if (end < start) showError(endDate, "End date cannot be before start date.");
+        }
+      });
+
+      if (!isValid) e.preventDefault();
+    });
+
+    // ✅ Manual reset via close button
+    closeBtn.addEventListener("click", function () {
+      form.reset();
+      form.querySelectorAll('.client-error').forEach(el => el.remove());
+      totalForms.value = form.querySelectorAll('.experience-block input[name$="-id"]').length;
+
+      const blocks = form.querySelectorAll('.experience-block');
+      blocks.forEach(block => {
+        const idField = block.querySelector('input[name$="-id"]');
+        const deleteField = block.querySelector('input[name$="-DELETE"]');
+        if (idField) {
+          block.style.display = 'block';
+          if (deleteField) deleteField.checked = false;
+        } else {
+          block.remove();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+<!-- Bank Details Modal -->
+<div class="modal custom-modal fade" id="bankModal" tabindex="-1" aria-labelledby="bankModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-md">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h5 class="modal-title" id="bankModalLabel">Bank Details</h5>
+       <button type="button" class="close" data-bs-dismiss="modal" onclick="location.reload();">
+    <span>&times;</span>
+</button> 
+      </div>
+
+      <!-- Modal Form -->
+      <form method="post" id="bankForm">
+        {% csrf_token %}
+        <input type="hidden" name="submit_type" value="bank">
+
+        <div class="modal-body">
+          <div class="row">
+            
+            <!-- Bank Name -->
+            <div class="col-md-12 mb-3">
+              <label for="id_bank_name" class="form-label">Bank Name <span class="text-danger">*</span></label>
+              {{ bank_form.bank_name }}
+              {% for error in bank_form.bank_name.errors %}
+                <div class="text-danger small">{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <!-- Account Number -->
+            <div class="col-md-12 mb-3">
+              <label for="id_account_no" class="form-label">Account Number <span class="text-danger">*</span></label>
+              {{ bank_form.account_no }}
+              {% for error in bank_form.account_no.errors %}
+                <div class="text-danger small">{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <!-- IFSC Code (plain text, no uppercase, no validation) -->
+            <div class="col-md-12 mb-3">
+              <label for="id_ifsc_code" class="form-label">IFSC Code <span class="text-danger">*</span></label>
+              {{ bank_form.ifsc_code }}
+              {% for error in bank_form.ifsc_code.errors %}
+                <div class="text-danger small">{{ error }}</div>
+              {% endfor %}
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const bankForm = document.getElementById('bankForm');
+
+    // Reset form when modal is closed
+    $('#bankModal').on('hidden.bs.modal', function () {
+      if (bankForm) {
+        bankForm.reset();
+        bankForm.querySelectorAll('.text-danger').forEach(el => el.remove());
+        bankForm.querySelectorAll('.form-control').forEach(input => {
+          input.classList.remove('is-invalid');
+        });
+      }
+    });
+
+    // Realtime validation for Account Number only
+    const accountInput = document.getElementById("id_account_no");
+
+    if (accountInput) {
+      // Block characters before they appear
+      accountInput.addEventListener("keypress", function (e) {
+        if (!/[0-9]/.test(e.key)) {
+          e.preventDefault();
+        }
+      });
+
+      // Handle paste or autofill
+      accountInput.addEventListener("input", function () {
+        this.value = this.value.replace(/\D/g, ""); // remove non-digits
+        if (this.value.length > 18) {
+          this.value = this.value.slice(0, 18); // limit to 18 digits
+        }
+      });
+    }
+
+    // ✅ No uppercase/validation for IFSC
+    // const ifscInput = document.getElementById("id_ifsc_code");
+    // Removed all uppercase logic here
+  });
+</script>
+
+
+
+
+<!-- Emergency Contact Modal -->
+<!-- Emergency Contact Modal -->
+<div class="modal custom-modal fade" id="emergencyContactModal" tabindex="-1" aria-labelledby="emergencyContactModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg">
+    <div class="modal-content">
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="submit_type" value="emergency">
+        <div class="modal-header">
+          <h5 class="modal-title" id="emergencyContactModalLabel">Emergency Contact Information</h5>
+                    <button type="button" class="close" data-bs-dismiss="modal" onclick="location.reload();">
+    <span>&times;</span>
+</button> 
+        </div>
+
+        <div class="modal-body">
+          {{ emergency_formset.management_form }}
+          {% for form in emergency_formset %}
+            <div class="card mb-3 shadow-sm p-3 bg-light border rounded">
+              <div class="row">
+                <div class="col-md-4">
+                  <label class="form-label">
+                    Name <span class="text-danger">*</span>
+                  </label>
+                  {{ form.name }}
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">
+                    Relationship <span class="text-danger">*</span>
+                  </label>
+                  {{ form.relationship }}
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">
+                    Phone <span class="text-danger">*</span>
+                    <small class="text-danger phone-error" style="display:none;">Enter a valid 10-digit phone number.</small>
+
+                  </label>
+                  {{ form.phone }}
+                </div>
+              </div>
+             {% if form.DELETE %}
+<div class="form-check mt-2 ms-auto" style="text-align: right;">
+    <label class="form-check-label">
+        {{ form.DELETE }} Delete
+    </label>
+</div>
+{% endif %}
+
+              {{ form.id }}
+            </div>
+          {% endfor %}
+
+          <div class="alert alert-info mt-3">
+            <strong>Note:</strong> You can add up to 2 emergency contacts only.
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.querySelector('#emergencyContactModal form');
+
+    function validatePhone(input) {
+        const phoneValue = input.value.trim();
+        const errorEl = input.closest('.col-md-4').querySelector('.phone-error');
+
+        if (!/^\d{10}$/.test(phoneValue)) {
+            input.classList.add('is-invalid');
+            if (errorEl) errorEl.style.display = 'block';
+            return false;
+        } else {
+            input.classList.remove('is-invalid');
+            if (errorEl) errorEl.style.display = 'none';
+            return true;
+        }
+    }
+
+    // Attach logic to all phone input fields
+    form.querySelectorAll('input[name$="phone"]').forEach(input => {
+        // Add a class for identification (if not already in HTML)
+        input.classList.add('phone-input');
+
+        // Remove non-digits in real-time on input
+        input.addEventListener('input', function () {
+            this.value = this.value.replace(/\D/g, '');  // allow only digits
+        });
+
+        // Prevent non-digit characters on keydown
+        input.addEventListener('keydown', function (e) {
+            const allowedKeys = ['Backspace', 'ArrowLeft', 'ArrowRight', 'Tab', 'Delete'];
+            if (!/^\d$/.test(e.key) && !allowedKeys.includes(e.key)) {
+                e.preventDefault();
+            }
+        });
+
+        // Prevent paste of non-digits
+        input.addEventListener('paste', function (e) {
+            const pasted = (e.clipboardData || window.clipboardData).getData('text');
+            if (!/^\d+$/.test(pasted)) {
+                e.preventDefault();
+            }
+        });
+    });
+
+    // Validate all phones before form submit
+    form.addEventListener('submit', function (e) {
+        let valid = true;
+        form.querySelectorAll('.phone-input').forEach(input => {
+            if (!validatePhone(input)) {
+                valid = false;
+            }
+        });
+
+        if (!valid) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+<div class="tab-pane fade" id="emp_documents" role="tabpanel">
+
+  <!-- =================== Education Documents Table =================== -->
+  <div class="card mb-4 shadow-sm">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0"><i class="fa fa-graduation-cap me-1"></i> Education Documents</h5>
+      <button class="btn btn-outline-primary"
+              data-bs-toggle="modal"
+              data-bs-target="#educationDocumentModal">
+        <i class="fa fa-upload me-1"></i> Upload
+      </button>
+    </div>
+    <div class="card-body">
+      {% if education_documents %}
+        <div class="table-responsive">
+          <table class="table table-bordered table-hover align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>SL.No.</th>
+                <th>Degree Type</th>
+                <th>Uploaded On</th>
+                <th class="text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for doc in education_documents %}
+              <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>
+                  {% if doc.document_type == "Other" %}
+                    {{ doc.other_document_type }}
+                  {% else %}
+                    {{ doc.document_type }}
+                  {% endif %}
+                </td>
+                <td>{{ doc.uploaded_at|date:"Y-m-d H:i" }}</td>
+                <td class="text-center">
+                  <!-- View -->
+                  <a href="{{ doc.document_file.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                    <i class="fa fa-eye"></i>
+                  </a>
+                  <!-- Edit -->
+                  <button class="btn btn-sm btn-outline-primary"
+                          data-bs-toggle="modal"
+                          data-bs-target="#educationDocumentModal"
+                          data-id="{{ doc.id }}"
+                          data-type="{{ doc.document_type }}"
+                          data-other="{{ doc.other_document_type }}"
+                          data-file-url="{{ doc.document_file.url }}">
+                    <i class="fa fa-pencil-alt"></i>
+                  </button>
+                  <!-- Delete -->
+                  <button type="button" class="btn btn-sm btn-outline-danger"
+                          data-bs-toggle="modal"
+                          data-bs-target="#deleteEducationDocModal{{ doc.id }}">
+                    <i class="fa fa-trash"></i>
+                  </button>
+                </td>
+              </tr>
+
+              <!-- Delete Modal -->
+              <div class="modal custom-modal fade" id="deleteEducationDocModal{{ doc.id }}" tabindex="-1" role="dialog" aria-labelledby="deleteEducationDocModalLabel{{ doc.id }}" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="submit_type" value="delete_educationdocument">
+        <input type="hidden" name="document_id" value="{{ doc.id }}">
+        
+        <div class="modal-body">
+          <div class="form-header text-center">
+            <h3>Delete Document</h3>
+            <p>Are you sure you want to delete this education document?</p>
+          </div>
+
+          <div class="modal-btn delete-action mt-4">
+            <div class="row">
+              <div class="col-6">
+                <button type="submit" class="btn btn-outline-primary btn-block continue-btn">Delete</button>
+              </div>
+              <div class="col-6">
+                <button type="button" class="btn btn-outline-secondary btn-block cancel-btn" data-bs-dismiss="modal">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="text-muted mb-0">No education documents uploaded yet.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- =================== Government Documents Table =================== -->
+  <div class="card mb-4 shadow-sm">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0"><i class="fa fa-id-card me-1"></i> Government Documents</h5>
+      <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#govtDocumentModal">
+        <i class="fa fa-upload me-1"></i> Upload
+      </button>
+    </div>
+    <div class="card-body">
+      {% if government_documents %}
+        <div class="table-responsive">
+          <table class="table table-bordered table-hover align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>SL.No.</th>
+                <th>Document Type</th>
+                <th>Uploaded On</th>
+                <th class="text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for doc in government_documents %}
+              <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>
+                  {% if doc.document_type == "Other" %}
+                    {{ doc.other_document_type }}
+                  {% else %}
+                    {{ doc.document_type }}
+                  {% endif %}
+                </td>
+                <td>{{ doc.uploaded_at|date:"Y-m-d H:i" }}</td>
+                <td class="text-center">
+                  <!-- View -->
+                  <a href="{{ doc.document_file.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                    <i class="fa fa-eye"></i>
+                  </a>
+                  <!-- Edit -->
+                  <button class="btn btn-sm btn-outline-primary"
+                          data-bs-toggle="modal"
+                          data-bs-target="#govtDocumentModal"
+                          data-id="{{ doc.id }}"
+                          data-type="{{ doc.document_type }}"
+                          data-other="{{ doc.other_document_type }}"
+                          data-file-url="{{ doc.document_file.url }}">
+                    <i class="fa fa-pencil-alt"></i>
+                  </button>
+                  <!-- Delete -->
+                  <button type="button" class="btn btn-sm btn-outline-danger"
+                          data-bs-toggle="modal"
+                          data-bs-target="#deleteGovDocModal{{ doc.id }}">
+                    <i class="fa fa-trash"></i>
+                  </button>
+                </td>
+              </tr>
+
+              <!-- Delete Modal -->
+              <!-- Delete Modal -->
+<div class="modal custom-modal fade" id="deleteGovDocModal{{ doc.id }}" tabindex="-1" role="dialog" aria-labelledby="deleteGovDocModalLabel{{ doc.id }}" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="POST" action="{% url 'employee_profile' %}">
+        {% csrf_token %}
+        <input type="hidden" name="submit_type" value="government">
+        <input type="hidden" name="action" value="delete">
+        <input type="hidden" name="document_id" value="{{ doc.id }}">
+
+        <div class="modal-body">
+          <div class="form-header text-center">
+            <h3>Delete Government Document</h3>
+            <p>Are you sure you want to delete this document?</p>
+          </div>
+
+          <div class="modal-btn delete-action mt-4">
+            <div class="row">
+              <div class="col-6">
+                <button type="submit" class="btn btn-outline-primary btn-block continue-btn">Delete</button>
+              </div>
+              <div class="col-6">
+                <button type="button" class="btn btn-outline-secondary btn-block cancel-btn" data-bs-dismiss="modal">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="text-muted mb-0">No government documents uploaded yet.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- =================== Education Document Modal =================== -->
+<div class="modal custom-modal fade" id="educationDocumentModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-md">
+    <div class="modal-content">
+      <form method="post" action="{% url 'employee_profile' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="submit_type" value="educationdocument">
+        <input type="hidden" name="document_id" id="edu-doc-id">
+        <div class="modal-header">
+          <h5 class="modal-title" id="eduModalTitle">Upload Education Document</h5>
+          <button type="button" class="close" data-bs-dismiss="modal">
+    <span>&times;</span>
+</button> 
+        </div>
+        <div class="modal-body">
+          <div class="form-group mb-3">
+            <label>Degree Type <span class="text-danger">*</span></label>
+            {{ edu_form.document_type|add_class:"form-control" }}
+          </div>
+          <div class="form-group mb-3" id="edu-other-type-field" style="display:none;">
+            <label>Specify Other <span class="text-danger">*</span></label>
+            {{ edu_form.other_document_type|add_class:"form-control" }}
+          </div>
+          <div class="form-group mb-3">
+            <label>Upload Document <span class="text-danger">*</span></label>
+            {{ edu_form.document_file|add_class:"form-control mt-2"|attr:"onchange:previewEduFile(this)" }}
+            <small id="edu-file-error" class="text-danger d-block mt-1"></small>
+          </div>
+          <div id="edu-file-preview" class="mt-3 text-center"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary" id="edu-doc-submit-btn">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- =================== Government Document Modal =================== -->
+<div class="modal custom-modal fade" id="govtDocumentModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-md">
+    <div class="modal-content">
+      <form method="post" action="{% url 'employee_profile' %}" enctype="multipart/form-data" onsubmit="return setDocumentTypeIfOther();">
+        {% csrf_token %}
+        <input type="hidden" name="submit_type" value="government">
+        <input type="hidden" name="action" id="gov_action" value="upload">
+        <input type="hidden" name="document_id" id="gov_document_id">
+        <div class="modal-header">
+          <h5 class="modal-title" id="govModalTitle">Upload Government Document</h5>
+         <button type="button" class="close" data-bs-dismiss="modal">
+    <span>&times;</span>
+</button> 
+        </div>
+        <div class="modal-body">
+          <div class="form-group mb-3">
+            <label>Document Type <span class="text-danger">*</span></label>
+            {{ gov_form.document_type|add_class:"form-control"|attr:"id:gov_document_type" }}
+          </div>
+          <div class="form-group mb-3" id="gov-other-type-field" style="display:none;">
+            <label>Specify Other Document <span class="text-danger">*</span></label>
+            {{ gov_form.other_document_type|add_class:"form-control"|attr:"id:gov_other_document_type" }}
+          </div>
+          <div class="form-group mb-3">
+            <label>Upload Document <span class="text-danger">*</span></label>
+            {{ gov_form.document_file|add_class:"form-control mt-2"|attr:"id:gov_document_file"|attr:"onchange:previewGovFile(this)" }}
+            <small id="gov-file-error" class="text-danger d-block mt-1"></small>
+          </div>
+          <div id="gov-file-preview" class="mt-3 text-center"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary" id="gov_submit_btn">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- =================== JS =================== -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  // ================= Education Modal =================
+  const eduModal = document.getElementById("educationDocumentModal");
+  eduModal.addEventListener("show.bs.modal", e => {
+    const btn = e.relatedTarget;
+    const docId = btn.getAttribute("data-id") || "";
+    const docType = btn.getAttribute("data-type") || "";
+    const otherType = btn.getAttribute("data-other") || "";
+    const fileURL = btn.getAttribute("data-file-url") || "";
+
+    document.getElementById("edu-doc-id").value = docId;
+    const docTypeSelect = document.getElementById("id_document_type");
+    const otherInput = document.getElementById("id_other_document_type");
+
+    Array.from(docTypeSelect.options).forEach(opt => {
+      opt.selected = (opt.value === docType);
+    });
+
+    if (docType === "Other") {
+      document.getElementById("edu-other-type-field").style.display = "block";
+      otherInput.value = otherType;
+    } else {
+      document.getElementById("edu-other-type-field").style.display = "none";
+      otherInput.value = "";
+    }
+
+    document.getElementById("id_document_file").value = "";
+    const previewArea = document.getElementById("edu-file-preview");
+    previewArea.innerHTML = "";
+    if (fileURL) showPreviewFromURL(fileURL, previewArea);
+
+    document.getElementById("edu-doc-submit-btn").textContent = docId ? "Save" : "Save";
+  });
+
+  // Toggle "Other" field in education
+  const eduTypeSelect = document.getElementById("id_document_type");
+  eduTypeSelect.addEventListener("change", () => {
+    document.getElementById("edu-other-type-field").style.display = eduTypeSelect.value === "Other" ? "block" : "none";
+  });
+
+  // ================= Government Modal =================
+  const govModal = document.getElementById("govtDocumentModal");
+  govModal.addEventListener("show.bs.modal", e => {
+    const btn = e.relatedTarget;
+    const docId = btn.getAttribute("data-id");
+    if (docId) {
+      openEditGovernmentDocument(
+        docId,
+        btn.getAttribute("data-type"),
+        btn.getAttribute("data-other"),
+        btn.getAttribute("data-file-url")
+      );
+    } else {
+      openUploadGovernmentDocument();
+    }
+  });
+
+  // Toggle "Other" field in government
+  const govTypeSelect = document.getElementById("gov_document_type");
+  govTypeSelect.addEventListener("change", () => {
+    document.getElementById("gov-other-type-field").style.display = govTypeSelect.value === "Other" ? "block" : "none";
+  });
+});
+// Shared Preview Helper
+function showPreviewFromFile(file, previewArea) {
+  const ext = file.name.split('.').pop().toLowerCase();
+
+  if (["jpg", "jpeg", "png"].includes(ext)) {
+    // Image preview
+    const fileURL = URL.createObjectURL(file);
+    previewArea.innerHTML = `
+      <img src="${fileURL}" 
+           class="img-fluid rounded border" 
+           style="max-height:300px" 
+           alt="Document Preview">
+    `;
+  } else if (ext === "pdf") {
+    // PDF preview
+    const fileURL = URL.createObjectURL(file);
+    previewArea.innerHTML = `
+      <iframe src="${fileURL}#toolbar=0" 
+              width="100%" height="300px" 
+              class="border"></iframe>
+    `;
+  } else {
+    previewArea.textContent = "Preview not supported for this file type.";
+  }
+}
+
+// ================= Education File Preview =================
+function previewEduFile(input) {
+  const previewArea = document.getElementById("edu-file-preview");
+  const errorField = document.getElementById("edu-file-error");
+  previewArea.innerHTML = "";
+  errorField.textContent = "";
+
+  if (input.files && input.files[0]) {
+    const file = input.files[0];
+    const ext = file.name.split(".").pop().toLowerCase();
+
+    if (!["pdf", "jpg", "jpeg", "png"].includes(ext)) {
+      errorField.textContent = "Invalid file format. Only PDF, JPG, JPEG, PNG allowed.";
+      input.value = "";
+      return;
+    }
+
+    showPreviewFromFile(file, previewArea);
+  }
+}
+
+// ================= Government File Preview =================
+function previewGovFile(input) {
+  const previewArea = document.getElementById("gov-file-preview");
+  const errorField = document.getElementById("gov-file-error");
+  previewArea.innerHTML = "";
+  errorField.textContent = "";
+
+  if (input.files && input.files[0]) {
+    const file = input.files[0];
+    const ext = file.name.split(".").pop().toLowerCase();
+
+    if (!["pdf", "jpg", "jpeg", "png"].includes(ext)) {
+      errorField.textContent = "Invalid file format. Only PDF, JPG, JPEG, PNG allowed.";
+      input.value = "";
+      return;
+    }
+
+    showPreviewFromFile(file, previewArea);
+  }
+}
+
+// Show preview from existing server file (edit mode)
+function showPreviewFromURL(fileURL, previewArea) {
+  const ext = fileURL.split('.').pop().toLowerCase();
+
+  if (["jpg", "jpeg", "png"].includes(ext)) {
+    // Image preview
+    previewArea.innerHTML = `
+      <img src="${fileURL}" 
+           class="img-fluid rounded border" 
+           style="max-height:300px" 
+           alt="Document Preview">
+    `;
+  } else if (ext === "pdf") {
+    // PDF preview
+    previewArea.innerHTML = `
+      <iframe src="${fileURL}#toolbar=0" 
+              width="100%" height="300px" 
+              class="border"></iframe>
+    `;
+  } else {
+    previewArea.textContent = "Preview not supported for this file type.";
+  }
+}
+
+// Government modal edit/upload logic
+function openEditGovernmentDocument(docId, docType, otherDocType, fileUrl) {
+  document.getElementById("gov_action").value = "edit";
+  document.getElementById("gov_document_id").value = docId;
+  document.getElementById("govModalTitle").textContent = "Edit Government Document";
+  document.getElementById("gov_submit_btn").textContent = "Update";
+
+  const docTypeSelect = document.getElementById("gov_document_type");
+  const otherInput = document.getElementById("gov_other_document_type");
+  docTypeSelect.value = docType;
+  docTypeSelect.dispatchEvent(new Event("change"));
+  otherInput.value = (docType === "Other") ? otherDocType : "";
+
+  const previewArea = document.getElementById("gov-file-preview");
+  previewArea.innerHTML = "";
+  if (fileUrl) showPreviewFromURL(fileUrl, previewArea);
+
+  // Also reset file input so user can select new file
+  document.getElementById("gov_document_file").value = "";
+}
+
+function openUploadGovernmentDocument() {
+  document.getElementById("gov_action").value = "upload";
+  document.getElementById("gov_document_id").value = "";
+  document.getElementById("govModalTitle").textContent = "Upload Government Document";
+  document.getElementById("gov_submit_btn").textContent = "Save";
+
+  document.getElementById("gov_document_type").value = "";
+  document.getElementById("gov_other_document_type").value = "";
+  document.getElementById("gov_document_file").value = "";
+  document.getElementById("gov-file-preview").innerHTML = "";
+}
+
+// Government modal edit/upload logic
+function openEditGovernmentDocument(docId, docType, otherDocType, fileUrl) {
+  document.getElementById("gov_action").value = "edit";
+  document.getElementById("gov_document_id").value = docId;
+  document.getElementById("govModalTitle").textContent = "Edit Government Document";
+  document.getElementById("gov_submit_btn").textContent = "Save";
+
+  const docTypeSelect = document.getElementById("gov_document_type");
+  const otherInput = document.getElementById("gov_other_document_type");
+  docTypeSelect.value = docType;
+  docTypeSelect.dispatchEvent(new Event("change"));
+  otherInput.value = (docType === "Other") ? otherDocType : "";
+
+  const previewArea = document.getElementById("gov-file-preview");
+  previewArea.innerHTML = "";
+  if (fileUrl) showPreviewFromURL(fileUrl, previewArea);
+}
+
+function openUploadGovernmentDocument() {
+  document.getElementById("gov_action").value = "upload";
+  document.getElementById("gov_document_id").value = "";
+  document.getElementById("govModalTitle").textContent = "Upload Government Document";
+  document.getElementById("gov_submit_btn").textContent = "Save";
+  document.getElementById("gov_document_type").value = "";
+  document.getElementById("gov_other_document_type").value = "";
+  document.getElementById("gov_document_file").value = "";
+  document.getElementById("gov-file-preview").innerHTML = "";
+}
+
+// Ensure "Other" works on submit
+function setDocumentTypeIfOther() {
+  const docTypeSelect = document.getElementById("gov_document_type");
+  const otherInput = document.getElementById("gov_other_document_type");
+  if (docTypeSelect.value === "Other" && !otherInput.value.trim()) {
+    alert("Please enter the document name.");
+    return false;
+  }
+  return true;
+}
+</script>
+
+<div class="tab-pane fade" id="emp_projects">
+
+  {% if project_stats %}
+    <div class="row">
+      {% for stat in project_stats %}
+        {% with project=stat.project %}
+        <div class="col-lg-4 col-sm-6 col-md-4 col-xl-3">
+          <div class="card p-3 mb-4 shadow-sm rounded border">
+
+            <!-- Project Title -->
+            <h4 class="project-title">
+              <a href="{% url 'project_view' project.id %}">{{ project.name }}</a>
+            </h4>
+
+            <!-- Client Name -->
+            <p class="text-muted mb-1">
+              <strong>Client:</strong> {{ project.client.client_name }}
+            </p>
+
+            <!-- Task Stats -->
+            <small class="block text-ellipsis mb-2">
+              <span class="text-xs">{{ stat.todo_tasks|default:0 }}</span>
+              <span class="text-muted">to do,</span>
+              <span class="text-xs">{{ stat.in_progress_tasks|default:0 }}</span>
+              <span class="text-muted">in progress,</span>
+              <span class="text-xs">{{ stat.completed_tasks|default:0 }}</span>
+              <span class="text-muted">completed</span>
+            </small>
+
+            <!-- Description -->
+            <p class="text-muted">{{ project.description|safe|truncatewords:20 }}</p>
+
+            <!-- Deadline -->
+            <div class="pro-deadline mb-2">
+              <div class="sub-title">Deadline:</div>
+              <div class="text-muted">{{ project.end_date|date:"M. d, Y" }}</div>
+            </div>
+
+            <!-- Project Leader -->
+            <div class="project-members mb-2">
+              <div>Project Leader:</div>
+              <ul class="team-members">
+                <li>
+                  <a href="#" data-toggle="tooltip" title="{{ project.team_leader.first_name }} {{ project.team_leader.last_name }}">
+                    <img alt="" src="{{ project.team_leader.profile.profile_picture.url|default:'assets/img/profiles/default.jpg' }}">
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Team Members -->
+            <div class="project-members mb-2">
+              <div>Team:</div>
+              <ul class="team-members">
+                {% for member in project.team_members.all|slice:":4" %}
+                  <li>
+                    <a href="#" data-toggle="tooltip" title="{{ member.first_name }} {{ member.last_name }}">
+                      <img alt="" src="{{ member.profile.profile_picture.url|default:'assets/img/profiles/default.jpg' }}">
+                    </a>
+                  </li>
+                {% endfor %}
+                {% if project.team_members.count > 4 %}
+                  <li class="dropdown avatar-dropdown">
+                    <a href="#" class="all-users dropdown-toggle" data-toggle="dropdown">+{{ project.team_members.count|add:"-4" }}</a>
+                    <div class="dropdown-menu dropdown-menu-right">
+                      <div class="avatar-group">
+                        {% for member in project.team_members.all|slice:"4:" %}
+                          <a class="avatar avatar-xs" href="#" data-toggle="tooltip" title="{{ member.first_name }} {{ member.last_name }}">
+                            <img alt="" src="{{ member.profile.profile_picture.url|default:'assets/img/profiles/default.jpg' }}">
+                          </a>
+                        {% endfor %}
+                      </div>
+                    </div>
+                  </li>
+                {% endif %}
+              </ul>
+            </div>
+
+            <!-- Progress -->
+            <p class="mb-1">
+              Progress
+              <span class="text-success float-end">
+                {{ stat.percent_complete|default:"0" }}%
+              </span>
+            </p>
+            <div class="progress progress-xs mb-0">
+              <div class="progress-bar bg-success"
+                   role="progressbar"
+                   style="width: {{ stat.percent_complete|default:"0" }}%"
+                   title="{{ stat.percent_complete|default:"0" }}%">
+              </div>
+            </div>
+
+          </div>
+        </div>
+        {% endwith %}
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-muted">No projects assigned.</p>
+  {% endif %}
+</div>
+
+
+
+<div class="tab-pane fade" id="bank_statutory">
+    {% if request.user.is_company_admin %}
+        <form method="POST" action="{% url 'admin_update_financial_info' employee.id %}">
+            {% csrf_token %}
+            <div class="row">
+                {% for field in statutory_form %}
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="text-danger">{{ field.errors }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="text-end">
+                <button type="submit" class="btn btn-primary">Update Financial Info</button>
+            </div>
+        </form>
+    {% else %}
+        <p class="text-danger">You are not authorized to view this section.</p>
+    {% endif %}
+</div>
+
+</div>
+<style>
+  input[name*="ifsc"], input[name*="IFSC"] {
+    text-transform: uppercase;
+  }
+</style>
+<script>
+function addDegreeRow() {
+  const container = document.getElementById('degree-section');
+  const row = document.createElement('div');
+  row.className = 'row g-2 mb-2 align-items-center';
+
+  row.innerHTML = `
+    <div class="col-md-6">
+      <select name="degree_type[]" class="form-select" required>
+        <option value="">Select Degree</option>
+        <option value="BTech">Bachelor of Technology</option>
+        <option value="BSc">Bachelor of Science</option>
+        <option value="BA">Bachelor of Arts</option>
+        <option value="BCom">Bachelor of Commerce</option>
+        <option value="BBA">Bachelor of Business Administration</option>
+        <option value="LLB">Bachelor of Laws</option>
+        <option value="MBA">Master of Business Administration</option>
+        <option value="MTech">Master of Technology</option>
+        <option value="MSc">Master of Science</option>
+        <option value="MPhil">Master of Philosophy</option>
+        <option value="PhD">Doctor of Philosophy</option>
+        <option value="MD">Doctor of Medicine</option>
+        <option value="DSc">Doctor of Science</option>
+      </select>
+    </div>
+    <div class="col-md-6">
+      <input type="file" name="degree_file[]" class="form-control" required />
+    </div>
+  `;
+  container.appendChild(row);
+}
+
+function addOtherDocRow() {
+  const container = document.getElementById('other-doc-section');
+  const row = document.createElement('div');
+  row.className = 'row g-2 mb-2 align-items-center';
+
+  row.innerHTML = `
+    <div class="col-md-6">
+      <input type="text" name="other_doc_name[]" class="form-control" placeholder="Document Name" required />
+    </div>
+    <div class="col-md-6">
+      <input type="file" name="other_doc_file[]" class="form-control" required />
+    </div>
+  `;
+  container.appendChild(row);
+}
+document.addEventListener("DOMContentLoaded", function () {
+    const phoneInput = document.querySelector('input[name="phone"]');
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'text-danger mt-1';
+    phoneInput.parentNode.appendChild(errorDiv);
+
+    phoneInput.addEventListener("input", function () {
+        const value = phoneInput.value;
+        if (!/^\d*$/.test(value)) {
+            errorDiv.textContent = "Only digits are allowed in phone number.";
+            phoneInput.classList.add("is-invalid");
+        } else {
+            errorDiv.textContent = "";
+            phoneInput.classList.remove("is-invalid");
+        }
+    });
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+    const aadhaarInput = document.querySelector('input[name="aadhaar_number"]');
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'text-danger mt-1';
+    aadhaarInput.parentNode.appendChild(errorDiv);
+
+    aadhaarInput.addEventListener("input", function () {
+        const value = aadhaarInput.value;
+        if (!/^\d*$/.test(value)) {
+            errorDiv.textContent = "Only digits allowed in Aadhaar number.";
+            aadhaarInput.classList.add("is-invalid");
+        } else {
+            errorDiv.textContent = "";
+            aadhaarInput.classList.remove("is-invalid");
+        }
+    });
+});
+document.addEventListener("DOMContentLoaded", function () {
+    const phoneInputs = document.querySelectorAll('input[name="phone"]');
+
+    phoneInputs.forEach(function (input) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'text-danger mt-1';
+        input.parentNode.appendChild(errorDiv);
+
+        input.addEventListener("input", function () {
+            const value = input.value.replace(/\D/g, '');
+            input.value = value;  // Remove non-digits in real-time
+
+            if (value.length === 0) {
+                errorDiv.textContent = "";
+                input.classList.remove("is-invalid");
+            } else if (!/^\d+$/.test(value)) {
+                errorDiv.textContent = "Only digits are allowed in phone number.";
+                input.classList.add("is-invalid");
+            } else if (value.length !== 10) {
+                errorDiv.textContent = "Phone Number must be exactly 10 digits.";
+                input.classList.add("is-invalid");
+            } else {
+                errorDiv.textContent = "";
+                input.classList.remove("is-invalid");
+            }
+        });
+    });
+});
+document.getElementById('id_start_date').addEventListener('change', function () {
+    const startDate = this.value;
+    const endDateField = document.getElementById('id_end_date');
+    endDateField.min = startDate;
+});
+
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+{% endblock %}

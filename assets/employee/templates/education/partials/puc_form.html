@@ -1,0 +1,25 @@
+<div class="card border-warning shadow-sm mb-4">
+  <div class="card-header bg-warning text-dark fw-bold">PUC (12th)</div>
+  <div class="card-body row g-3">
+    {{ puc_form.degree_type.as_hidden }}
+    {% if puc_form.non_field_errors %}
+      <div class="text-danger small px-3">{{ puc_form.non_field_errors }}</div>
+    {% endif %}
+    <div class="col-md-6">
+      {{ puc_form.institution_name.label_tag }} {{ puc_form.institution_name }}
+      {{ puc_form.institution_name.errors }}
+    </div>
+    <div class="col-md-3">
+      {{ puc_form.stream.label_tag }} {{ puc_form.stream }}
+      {{ puc_form.stream.errors }}
+    </div>
+    <div class="col-md-3">
+      {{ puc_form.from_year.label_tag }} {{ puc_form.from_year }}
+      {{ puc_form.from_year.errors }}
+    </div>
+    <div class="col-md-3">
+      {{ puc_form.to_year.label_tag }} {{ puc_form.to_year }}
+      {{ puc_form.to_year.errors }}
+    </div>
+  </div>
+</div>

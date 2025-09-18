@@ -1,0 +1,40 @@
+<div class="card border-primary shadow-sm mb-4">
+  <div class="card-header bg-primary text-white fw-bold">Post Graduate</div>
+  <div class="card-body row g-3">
+    {{ pg_form.degree_type.as_hidden }}
+
+    {% if pg_form.non_field_errors %}
+      <div class="col-12 text-danger small px-2">{{ pg_form.non_field_errors }}</div>
+    {% endif %}
+
+    <div class="col-md-6">
+      {{ pg_form.institution_name.label_tag }} 
+      {{ pg_form.institution_name }}
+      {{ pg_form.institution_name.errors }}
+    </div>
+
+    <div class="col-md-3">
+      {{ pg_form.program.label_tag }} 
+      {{ pg_form.program }}
+      {{ pg_form.program.errors }}
+    </div>
+
+    <div class="col-md-3">
+      {{ pg_form.stream.label_tag }} 
+      {{ pg_form.stream }}
+      {{ pg_form.stream.errors }}
+    </div>
+
+    <div class="col-md-3">
+      {{ pg_form.from_year.label_tag }} 
+      {{ pg_form.from_year }}
+      {{ pg_form.from_year.errors }}
+    </div>
+
+    <div class="col-md-3">
+      {{ pg_form.to_year.label_tag }} 
+      {{ pg_form.to_year }}
+      {{ pg_form.to_year.errors }}
+    </div>
+  </div>
+</div>

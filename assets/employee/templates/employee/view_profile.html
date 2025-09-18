@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Employee Profile{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <!-- Profile Header -->
+  <div class="card p-4 mb-4">
+    <div class="row align-items-center">
+      <div class="col-md-2 text-center">
+        {% if profile.profile_picture %}
+          <img src="{{ profile.profile_picture.url }}" class="rounded-circle img-fluid" style="width: 120px;">
+        {% else %}
+          <img src="{% static 'images/default_profile.png' %}" class="rounded-circle img-fluid" style="width: 120px;">
+        {% endif %}
+      </div>
+      <div class="col-md-7">
+        <h4 class="fw-bold mb-0">{{ emp.first_name }} {{ emp.last_name }}</h4>
+        <small class="text-muted">{{ emp.designation|default:"Web Designer" }}</small>
+        <p class="mb-1">Employee ID: <strong>{{ emp.employee_id }}</strong></p>
+        <p>Date of Join: {{ emp.joining_date }}</p>
+      </div>
+      <div class="col-md-3 text-end">
+        <a href="#" class="btn btn-primary">Send Message</a>
+      </div>
+    </div>
+    <div class="row mt-3">
+      <div class="col-sm-6"><strong>Phone:</strong> {{ profile.phone }}</div>
+      <div class="col-sm-6"><strong>Email:</strong> {{ emp.email }}</div>
+      <div class="col-sm-6"><strong>Birthday:</strong> {{ profile.birthday|date:"jS M Y" }}</div>
+      <div class="col-sm-6"><strong>Address:</strong> {{ profile.address }}</div>
+      <div class="col-sm-6"><strong>Gender:</strong> {{ profile.gender|default:"N/A" }}</div>
+      <div class="col-sm-6"><strong>Reports to:</strong> {{ profile.reports_to|default:"N/A" }}</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+      <a class="nav-link active" data-bs-toggle="tab" href="#profile-tab">Profile</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" data-bs-toggle="tab" href="#projects-tab">Projects</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" data-bs-toggle="tab" href="#bank-tab">Bank & Statutory <span class="text-danger">(Admin Only)</span></a>
+    </li>
+  </ul>
+
+  <div class="tab-content">
+    <div class="tab-pane fade show active" id="profile-tab">
+      <!-- Grid for Info Sections -->
+      <div class="row g-4">
+        <!-- Personal & Emergency Contact -->
+        <div class="col-md-6">
+          <div class="card p-3 h-100">
+            <h5>Personal Information</h5>
+            <p><strong>Nationality:</strong> {{ profile.nationality }}</p>
+            <p><strong>Religion:</strong> {{ profile.religion }}</p>
+            <p><strong>Marital Status:</strong> {{ profile.marital_status }}</p>
+            <p><strong>No. of Children:</strong> {{ profile.no_of_children }}</p>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card p-3 h-100">
+            <h5>Emergency Contact</h5>
+            {% for contact in emergency_contacts %}
+              <p><strong>{{ contact.name }}</strong> - {{ contact.relationship }} - {{ contact.phone }}</p>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Bank & Family -->
+        <div class="col-md-6">
+          <div class="card p-3 h-100">
+            <h5>Bank Information</h5>
+            {% if emp.bankdetails %}
+              <p><strong>Bank:</strong> {{ emp.bankdetails.bank_name }}</p>
+              <p><strong>Account No:</strong> {{ emp.bankdetails.account_no }}</p>
+              <p><strong>IFSC:</strong> {{ emp.bankdetails.ifsc_code }}</p>
+              <p><strong>PAN:</strong> {{ emp.bankdetails.pan_no }}</p>
+            {% endif %}
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card p-3 h-100">
+            <h5>Family Information</h5>
+            {% for member in family_members %}
+              <p><strong>{{ member.name }}</strong> ({{ member.relationship }}) - {{ member.date_of_birth }} - {{ member.phone }}</p>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Education & Experience -->
+        <div class="col-md-6">
+          <div class="card p-3 h-100">
+            <h5>Education</h5>
+            {% for edu in educations %}
+              <p>{{ edu.degree }} at {{ edu.institution }} ({{ edu.start_year }} - {{ edu.end_year }})</p>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card p-3 h-100">
+            <h5>Experience</h5>
+            {% for exp in experiences %}
+              <p>{{ exp.title }} at {{ exp.company }} ({{ exp.start_date }} - {{ exp.end_date|default:"Present" }})</p>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Placeholder tabs -->
+    <div class="tab-pane fade" id="projects-tab">
+      <div class="alert alert-info">Projects section coming soon.</div>
+    </div>
+    <div class="tab-pane fade" id="bank-tab">
+      {% if emp.salaryandstatutory %}
+        <div class="card p-4">
+          <h5>Salary & Statutory Information</h5>
+          <p><strong>Salary Basis:</strong> {{ emp.salaryandstatutory.salary_basis }}</p>
+          <p><strong>Amount:</strong> ₹{{ emp.salaryandstatutory.salary_amount }}</p>
+          <p><strong>PF Number:</strong> {{ emp.salaryandstatutory.pf_number }}</p>
+          <p><strong>ESI Number:</strong> {{ emp.salaryandstatutory.esi_number }}</p>
+        </div>
+      {% else %}
+        <div class="alert alert-warning">No statutory info available.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<style>
+  .card h5 {
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+</style>
+{% endblock %}

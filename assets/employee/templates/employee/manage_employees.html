@@ -1,0 +1,751 @@
+{% extends "base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+{% load emp_filters %}
+
+{% block content %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+/* Hide default arrow */
+.ribbon {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 10;
+    overflow: hidden;
+    width: 75px;
+    height: 75px;
+}
+
+.ribbon span {
+    position: absolute;
+    display: block;
+    width: 100px;
+    padding: 5px 0;
+    background-color: #28a745; /* Green for Active */
+    color: white;
+    font-size: 12px;
+    text-align: center;
+    transform: rotate(-45deg);
+    top: 19px;
+    left: -23px;
+    box-shadow: 0 3px 10px -5px rgba(0, 0, 0, 0.3);
+}
+
+.ribbon.inactive span {
+    background-color: #6c757d; /* Gray for Inactive */
+}
+
+.ribbon.pending span {
+    background-color: #ffc107; /* Yellow for Pending */
+    color: black;
+}
+
+/* ✅ Customize the backdrop (make it slightly dark) */
+.modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.2) !important; /* Adjust the last value (0.2) for more or less darkness */
+}
+
+/* ✅ Optional: soften modal background (not necessary if it's fine already) */
+.modal-content {
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+}
+
+/* ✅ Optional: prevent page from scrolling */
+body.modal-open {
+  overflow: hidden;
+}
+
+.select-arrow-spacing {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+
+  background-image: url("data:image/svg+xml;utf8,<svg fill='gray' height='30' viewBox='0 0 24 24' width='30' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+  background-repeat: no-repeat;
+
+  /* 👇 Arrow spacing from the right */
+  background-position: right 14px center;
+
+  /* 👇 Add right padding so text doesn't collide with the arrow */
+  padding-right: 38px;
+
+  background-size: 24px;
+}
+</style>
+<style>
+  .entry-selector-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+  }
+
+  .entry-input {
+    width: 60px;
+    padding: 4px 8px;
+    font-size: 14px;
+    text-align: center;
+    border: 1px solid #ccc;
+    border-radius: 2px;
+    box-shadow: none;
+  }
+
+  .entry-input::-webkit-outer-spin-button,
+  .entry-input::-webkit-inner-spin-button {
+    opacity: 1;
+  }
+
+  .entry-input[type="number"] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+  }
+</style>
+<!-- 🔝 Page Header -->
+<div class="page-header mb-4">
+    <div class="row align-items-center">
+        <div class="col">
+            <h3 class="page-title">Employees</h3>
+            <ul class="breadcrumb">
+                <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+                <li class="breadcrumb-item active">Employees</li>
+            </ul>
+        </div>
+        <div class="col-auto d-flex align-items-center">
+            <div class="view-icons me-3">
+                <a href="#" class="grid-view btn btn-link active" id="gridViewBtn"><i class="fa fa-th"></i></a>
+                <a href="#" class="list-view btn btn-link" id="tableViewBtn"><i class="fa fa-bars"></i></a>
+            </div>
+            <button type="button" class="btn btn-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#addEmployeeModal">
+    <i class="fa fa-plus mr-1"></i> Add Employee
+</button>
+
+        </div>
+    </div>
+</div>
+{% if messages %}
+  <div class="messages mt-2">
+    {% for message in messages %}
+      <div class="alert {% if message.tags == 'error' %}alert-danger
+                       {% elif message.tags == 'success' %}alert-success
+                       {% elif message.tags == 'warning' %}alert-warning
+                       {% elif message.tags == 'info' %}alert-info
+                       {% else %}alert-secondary{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+<button type="button" class="close" data-bs-dismiss="alert">&times;</button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<!-- 🔍 Filter Form -->
+<form method="get" action="{% url 'employee_manage_modal' %}" class="mb-4"> <!-- ⬅ Add mb-4 here -->
+  <div class="row g-2 align-items-end">
+
+    <div class="col-md-3">
+      <input type="text" name="employee_id" class="form-control" placeholder="Enter Employee ID" value="{{ filters.employee_id }}">
+    </div>
+
+    <div class="col-md-3">
+      <input type="text" name="employee_name" class="form-control" placeholder="Enter Employee Name" value="{{ filters.employee_name }}">
+    </div>
+
+    <div class="col-md-3">
+<select name="designation" class="form-control custom-select-padding select-arrow-spacing">
+  <option value="">All Designations</option>
+  {% for desig in designations %}
+    <option value="{{ desig.id }}" {% if filters.designation == desig.id|stringformat:"s" %}selected{% endif %}>
+      {{ desig.department.name }} - {{ desig.name }}
+    </option>
+  {% endfor %}
+</select>
+
+</div>
+
+
+    <div class="col-md-3">
+  <button type="submit" class="btn btn-primary w-100" style="height: 45px; font-size: 1.1rem;">Search</button>
+</div>
+  </div>
+</form>
+<!-- Entries per page selector for Table View -->
+<form method="get" class="entry-selector-wrapper mb-2 d-flex align-items-center">
+    <!-- Preserve filters -->
+    <input type="hidden" name="employee_id" value="{{ filters.employee_id }}">
+    <input type="hidden" name="employee_name" value="{{ filters.employee_name }}">
+    <input type="hidden" name="designation" value="{{ filters.designation }}">
+    <input type="hidden" name="view_mode" value="table">
+    <input type="hidden" name="table_page" value="{{ employees_table.number }}">
+
+    <label for="per_page" class="me-2">Show
+       <select id="per_page" name="table_page_size" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+           <option value="5" {% if table_page_size|stringformat:"s" == "5" %}selected{% endif %}>5</option>
+           <option value="10" {% if table_page_size|stringformat:"s" == "10" %}selected{% endif %}>10</option>
+           <option value="15" {% if table_page_size|stringformat:"s" == "15" %}selected{% endif %}>15</option>
+           <option value="20" {% if table_page_size|stringformat:"s" == "20" %}selected{% endif %}>20</option>
+       </select>
+       entries
+    </label>
+</form>
+<div class="row g-4" id="gridView">
+  {% for emp in employees %}
+  <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-4">
+    <div class="card shadow-sm text-center p-3 position-relative h-100 pb-4">
+
+      <!-- Status Ribbon -->
+      <div class="ribbon 
+        {% if emp.status == 'active' %}active
+        {% elif emp.status == 'inactive' %}inactive
+        {% else %}pending{% endif %}">
+        <span>{{ emp.status|title }}</span>
+      </div>
+
+      <!-- Dropdown -->
+      <div class="dropdown position-absolute" style="top: 10px; right: 10px;">
+        <a href="#" class="text-muted" data-bs-toggle="dropdown"><i class="fa fa-ellipsis-v"></i></a>
+        <ul class="dropdown-menu dropdown-menu-end">
+          {% if emp.profile and emp.profile.is_completed %}
+            <li>
+              <a class="dropdown-item" href="{% url 'view_profile' emp.id %}">
+                <i class="fa fa-eye me-2"></i> View
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item text-success" href="{% url 'toggle_employee_profile_approval' emp.id %}">
+                {% if emp.profile.is_approved %}
+                  <i class="fa fa-times-circle me-2"></i> Unapprove
+                {% else %}
+                  <i class="fa fa-check-circle me-2"></i> Approve
+                {% endif %}
+              </a>
+            </li>
+          {% endif %}
+          <li>
+            <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#editEmployeeModal_{{ emp.id }}">
+              <i class="bi bi-pencil me-2"></i> Edit
+            </a>
+          </li>
+          <li>
+            <a href="#" class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#deleteEmployeeModal{{ emp.id }}">
+              <i class="fa fa-trash me-2"></i> Delete
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Profile Picture -->
+      <img src="{% if emp.profile.profile_picture %}{{ emp.profile.profile_picture.url }}{% else %}{% static 'assets/img/user.jpg' %}{% endif %}"
+        class="rounded-circle mx-auto mb-2" width="80" height="80" style="object-fit: cover;">
+
+      <!-- Name and Designation -->
+      <h6 class="fw-bold mb-1">{{ emp.first_name }} {{ emp.last_name }}</h6>
+      <span class="badge text-secondary px-2 py-1">{{ emp.designation.name }}</span>
+
+      <!-- Employee ID -->
+      <p class="mb-1 mt-2"><small>ID:</small> {{ emp.employee_id }}</p>
+    </div>
+  </div>
+
+  {% empty %}
+  <div class="col-12 text-center text-muted">No Employees Found.</div>
+  {% endfor %}
+</div>
+
+<!-- 📋 Table View -->
+<div id="tableView" class="d-none">
+  <div class="col-12">
+    <div class="table-responsive">
+      <table class="table table-striped custom-table mb-0 datatable">
+        <thead class="bg-light">
+          <tr>
+            <th>SL.No.</th>
+            <th>Full Name</th>
+            <th>Email</th>
+            <th>Department</th>
+            <th>Designation</th>
+            <th>Profile</th>
+            <th class="text-center">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+                {% for emp in employees_table %}
+          <tr data-id="{{ emp.id }}">
+            <!-- Correct row number -->
+            <td>{{ forloop.counter|add:employees_table.start_index|add:-1 }}</td>
+
+            <td>{{ emp.first_name }} {{ emp.last_name }}</td>
+            <td>{{ emp.email }}</td>
+            <td>{{ emp.department }}</td>
+            <td>{{ emp.designation.name }}</td>
+
+            <!-- Profile Status -->
+            <td>
+              <div class="dropdown action-label">
+                <a class="btn btn-white btn-sm btn-rounded">
+                  <i class="fa fa-dot-circle-o
+                    {% if emp.profile %}
+                      {% if emp.profile.is_completed %}
+                        {% if emp.profile.is_approved %} text-success
+                        {% else %} text-warning
+                        {% endif %}
+                      {% else %} text-danger
+                      {% endif %}
+                    {% else %} text-secondary
+                    {% endif %}
+                  "></i>
+                  {% if emp.profile %}
+                    {% if emp.profile.is_completed %}
+                      {% if emp.profile.is_approved %} Completed
+                      {% else %} Submitted
+                      {% endif %}
+                    {% else %} Incomplete
+                    {% endif %}
+                  {% else %} Not Started
+                  {% endif %}
+                </a>
+              </div>
+            </td>
+
+            <!-- Action Dropdown -->
+            <td class="text-center">
+              <div class="dropdown">
+                <a href="#" class="text-muted" data-bs-toggle="dropdown">
+                  <i class="fa fa-ellipsis-v"></i>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  {% if emp.profile and emp.profile.is_completed %}
+                    <li>
+                      <a class="dropdown-item" href="{% url 'view_profile' emp.id %}">
+                        <i class="fa fa-eye me-2"></i> View
+                      </a>
+                    </li>
+                    <li>
+                      <a class="dropdown-item text-success" href="{% url 'toggle_employee_profile_approval' emp.id %}">
+                        {% if emp.profile.is_approved %}
+                          <i class="fa fa-times-circle me-2"></i> Unapprove
+                        {% else %}
+                          <i class="fa fa-check-circle me-2"></i> Approve
+                        {% endif %}
+                      </a>
+                    </li>
+                  {% endif %}
+                  <li>
+                    <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#editEmployeeModal_{{ emp.id }}">
+                      <i class="bi bi-pencil me-2"></i> Edit
+                    </a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item text-danger" href="#" data-bs-toggle="modal" data-bs-target="#deleteEmployeeModal{{ emp.id }}">
+                      <i class="fa fa-trash me-2"></i> Delete
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" class="text-center text-muted">No Employees Found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+ <!-- Pagination -->
+    <div class="d-flex justify-content-between align-items-center mt-3">
+        <div>
+            Showing {{ employees_table.start_index }} to {{ employees_table.end_index }} of {{ employees_table.paginator.count }} entries
+        </div>
+        <nav>
+            <ul class="pagination mb-0">
+                {% if employees_table.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?view_mode=table&table_page={{ employees_table.previous_page_number }}&table_page_size={{ table_page_size }}{% for key, val in filters.items %}&{{ key }}={{ val }}{% endfor %}">Previous</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                {% endif %}
+
+                {% for i in employees_table.paginator.page_range %}
+                <li class="page-item {% if i == employees_table.number %}active{% endif %}">
+                    <a class="page-link" href="?view_mode=table&table_page={{ i }}&table_page_size={{ table_page_size }}{% for key, val in filters.items %}&{{ key }}={{ val }}{% endfor %}">{{ i }}</a>
+                </li>
+                {% endfor %}
+
+                {% if employees_table.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?view_mode=table&table_page={{ employees_table.next_page_number }}&table_page_size={{ table_page_size }}{% for key, val in filters.items %}&{{ key }}={{ val }}{% endfor %}">Next</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">Next</span></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    </div>
+</div>
+
+
+<!-- 🧩 Add/Edit Employee Modal -->
+<div class="modal custom-modal fade" id="addEmployeeModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="addEmployeeForm" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Employee</h5>
+                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="row">
+                        {% for field in form.visible_fields %}
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ field.label }}
+                                    {% if field.field.required %}
+                                        <span class="text-danger">*</span>
+                                    {% endif %}
+                                </label>
+
+                                {% if field.name == 'password' %}
+                                    <div class="input-group">
+                                        {{ field|add_class:"form-control" }}
+                                       <button class="btn btn-outline-secondary toggle-password" type="button">
+        <i class="bi bi-eye-slash"></i>
+    </button>
+                                    </div>
+                                {% else %}
+                                    {{ field|add_class:"form-control" }}
+                                {% endif %}
+
+                                {% if field.errors %}
+                                    <div class="text-danger small">{{ field.errors|striptags }}</div>
+                                {% else %}
+                                    <div class="text-danger small" id="{{ field.name }}-error"></div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% for emp in employees %}
+<div class="modal custom-modal fade" id="editEmployeeModal_{{ emp.id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form method="post" class="edit-employee-form">
+        {% csrf_token %}
+        <input type="hidden" name="id" value="{{ emp.id }}">
+
+        <div class="modal-header">
+          <h5 class="modal-title">Edit Employee</h5>
+          <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          {% with form=edit_forms|dict_get:emp.id %}
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">First Name <span class="text-danger">*</span></label>
+              {{ form.first_name|add_class:"form-control" }}
+              {% if form.first_name.errors %}
+                <div class="text-danger">{{ form.first_name.errors }}</div>
+              {% endif %}
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Last Name</label>
+              {{ form.last_name|add_class:"form-control" }}
+              {% if form.last_name.errors %}
+                <div class="text-danger">{{ form.last_name.errors }}</div>
+              {% endif %}
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label pt-2">Email <span class="text-danger">*</span></label>
+              {{ form.email|add_class:"form-control" }}
+              {% if form.email.errors %}
+                <div class="text-danger">{{ form.email.errors }}</div>
+              {% endif %}
+            </div>
+              <div class="col-md-6">
+  <label class="form-label pt-2">Password <span class="text-danger">*</span></label>
+  <div class="input-group">
+    {{ form.password|add_class:"form-control" }}
+    <button class="btn btn-outline-secondary toggle-password" type="button">
+      <i class="bi bi-eye-slash"></i>
+    </button>
+  </div>
+  {% if form.password.errors %}
+    <div class="text-danger">{{ form.password.errors }}</div>
+  {% endif %}
+</div>
+
+            <div class="col-md-6">
+              <label class="form-label pt-2">Department <span class="text-danger">*</span></label>
+              {{ form.department|add_class:"form-control" }}
+              {% if form.department.errors %}
+                <div class="text-danger">{{ form.department.errors }}</div>
+              {% endif %}
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label pt-2">Designation <span class="text-danger">*</span></label>
+              {{ form.designation|add_class:"form-control" }}
+              {% if form.designation.errors %}
+                <div class="text-danger">{{ form.designation.errors }}</div>
+              {% endif %}
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label pt-2">Joining Date</label>
+              {{ form.joining_date|add_class:"form-control" }}
+              {% if form.joining_date.errors %}
+                <div class="text-danger">{{ form.joining_date.errors }}</div>
+              {% endif %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label pt-2">Status <span class="text-danger">*</span></label>
+              {{ form.status|add_class:"form-control" }}
+              {% if form.status.errors %}
+                <div class="text-danger">{{ form.status.errors }}</div>
+              {% endif %}
+            </div>
+          </div>
+          {% endwith %}
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal custom-modal fade" id="deleteEmployeeModal{{ emp.id }}" tabindex="-1" aria-labelledby="deleteEmployeeLabel{{ emp.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="{% url 'employee_delete' emp.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="form-header text-center">
+                        <h3>Delete Employee</h3>
+                        <p>Are you sure you want to delete <strong>{{ emp.first_name }} {{ emp.last_name }} ({{ emp.employee_id }})</strong>?</p>
+                    </div>
+                    <div class="modal-btn delete-action mt-4">
+                        <div class="row">
+                            <div class="col-6">
+                                <button type="submit" class="btn btn-outline-primary btn-block continue-btn">Delete</button>
+                            </div>
+                            <div class="col-6">
+                                <button type="button" class="btn btn-outline-secondary btn-block cancel-btn" data-bs-dismiss="modal">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const today = new Date().toISOString().split('T')[0];
+
+  // ---------- ELEMENTS ----------
+  const emailField = document.querySelector('#id_email');
+  const passwordField = document.querySelector('#id_password');
+
+  const gridView = document.getElementById("gridView");
+  const tableView = document.getElementById("tableView");
+  const gridViewBtn = document.getElementById("gridViewBtn");
+  const tableViewBtn = document.getElementById("tableViewBtn");
+
+  // ---------- SET DEFAULT VIEW BASED ON URL ----------
+  const urlParams = new URLSearchParams(window.location.search);
+  const viewMode = urlParams.get('view_mode') || 'grid'; // default grid
+
+  function showGrid() {
+    gridView.classList.remove("d-none");
+    tableView.classList.add("d-none");
+    gridViewBtn.classList.add("active");
+    tableViewBtn.classList.remove("active");
+  }
+
+  function showTable() {
+    tableView.classList.remove("d-none");
+    gridView.classList.add("d-none");
+    tableViewBtn.classList.add("active");
+    gridViewBtn.classList.remove("active");
+  }
+
+  if (gridView && tableView && gridViewBtn && tableViewBtn) {
+    // Set initial view
+    if (viewMode === 'table') {
+      showTable();
+    } else {
+      showGrid();
+    }
+
+    // ---------- CLICK HANDLERS ----------
+    gridViewBtn.addEventListener("click", function(e){
+      e.preventDefault();
+      showGrid();
+      updateURLParam('view_mode', 'grid');
+    });
+
+    tableViewBtn.addEventListener("click", function(e){
+      e.preventDefault();
+      showTable();
+      updateURLParam('view_mode', 'table');
+    });
+  }
+
+  // ---------- HELPER TO UPDATE URL PARAM WITHOUT RELOAD ----------
+  function updateURLParam(key, value) {
+    const params = new URLSearchParams(window.location.search);
+    params.set(key, value);
+    const newUrl = window.location.pathname + '?' + params.toString();
+    window.history.replaceState({}, '', newUrl);
+  }
+
+  // ---------- EMAIL UNIQUE CHECK ----------
+  if (emailField) {
+    emailField.addEventListener('blur', function () {
+      const email = emailField.value;
+      if (email) {
+        $.ajax({
+          url: '/employee/ajax/check-email/',
+          data: { email: email },
+          success: function (data) {
+            const errorDiv = document.querySelector('#email-error');
+            if(errorDiv) errorDiv.textContent = data.exists ? 'This email is already registered.' : '';
+          }
+        });
+      }
+    });
+  }
+
+  // ---------- PASSWORD VALIDATION ----------
+  if (passwordField) {
+    passwordField.addEventListener('input', function () {
+      const value = passwordField.value;
+      const errorDiv = document.querySelector('#password-error');
+      const email = document.querySelector('#id_email')?.value.toLowerCase() || '';
+      const firstName = document.querySelector('#id_first_name')?.value.toLowerCase() || '';
+      const lastName = document.querySelector('#id_last_name')?.value.toLowerCase() || '';
+      const emailUser = email.split('@')[0];
+
+      let errors = [];
+      if (value.length < 8) errors.push("Minimum 8 characters");
+      if (!/[A-Z]/.test(value)) errors.push("At least 1 uppercase letter");
+      if (!/[a-z]/.test(value)) errors.push("At least 1 lowercase letter");
+      if (!/[0-9]/.test(value)) errors.push("At least 1 digit");
+      if (!/[^A-Za-z0-9]/.test(value)) errors.push("At least 1 special character");
+      if (firstName && value.includes(firstName)) errors.push("Shouldn't contain first name");
+      if (lastName && value.includes(lastName)) errors.push("Shouldn't contain last name");
+      if (emailUser && value.includes(emailUser)) errors.push("Shouldn't contain email username");
+
+      if(errorDiv) errorDiv.textContent = errors.join(', ');
+
+      // Real-time rule indicators
+      const rules = {
+        length: value.length >= 8,
+        uppercase: /[A-Z]/.test(value),
+        lowercase: /[a-z]/.test(value),
+        number: /[0-9]/.test(value),
+        symbol: /[^A-Za-z0-9]/.test(value)
+      };
+
+      for (const [key, passed] of Object.entries(rules)) {
+        const element = document.getElementById(key);
+        if (element) {
+          element.classList.remove('valid', 'invalid');
+          element.classList.add(passed ? 'valid' : 'invalid');
+          element.innerHTML = (passed ? '✅ ' : '❌ ') + element.textContent.slice(2);
+        }
+      }
+    });
+  }
+
+  // ---------- DEPARTMENT -> DESIGNATION ----------
+  $(document).on('change', 'select[name="department"]', function () {
+    const $form = $(this).closest('form');
+    const deptId = $(this).val();
+    const $desig = $form.find('select[name="designation"]');
+
+    $.ajax({
+      url: "{% url 'ajax_load_designations' %}",
+      data: { department_id: deptId },
+      success: function (data) {
+        $desig.empty().append('<option value="">Select Designation</option>');
+        data.designations.forEach(function (item) {
+          $desig.append(new Option(item.name, item.id));
+        });
+      }
+    });
+  });
+
+  // ---------- MODAL PASSWORD TOGGLE ----------
+  document.querySelectorAll('.toggle-password').forEach(function (button) {
+    button.addEventListener('click', function () {
+      const input = this.closest('.input-group').querySelector('input');
+      const icon = this.querySelector('i');
+
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('bi-eye-slash');
+        icon.classList.add('bi-eye');
+      } else {
+        input.type = 'password';
+        icon.classList.remove('bi-eye');
+        icon.classList.add('bi-eye-slash');
+      }
+    });
+  });
+
+  // ---------- SHOW ADD MODAL IF FLAG SET ----------
+  {% if show_add_modal %}
+    const addModal = new bootstrap.Modal(document.getElementById('addEmployeeModal'));
+    addModal.show();
+  {% endif %}
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- ✅ jQuery (required for AJAX) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- ✅ Bootstrap 5 JS Bundle (includes Popper.js) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- ✅ Font Awesome or Bootstrap Icons if used -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+<!-- Edit Modal (Same as Before) -->
+ 
+
+<!-- jQuery and Bootstrap 5 JS Bundle (includes Popper.js) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+{% endblock %}

@@ -1,0 +1,37 @@
+<div class="border rounded p-3 mb-3">
+  <div class="row g-3 align-items-end">
+    
+    <!-- Institution Name -->
+    <div class="col-md-3">
+      {{ form.institution_name.label_tag }} {{ form.institution_name }}
+    </div>
+
+    <!-- Program -->
+    <div class="col-md-2">
+      {{ form.program.label_tag }} {{ form.program }}
+    </div>
+
+    <!-- Stream -->
+    <div class="col-md-2">
+      {{ form.stream.label_tag }} {{ form.stream }}
+    </div>
+
+    <!-- From Year -->
+    <div class="col-md-2">
+      {{ form.from_year.label_tag }} {{ form.from_year }}
+    </div>
+
+    <!-- To Year -->
+    <div class="col-md-2">
+      {{ form.to_year.label_tag }} {{ form.to_year }}
+    </div>
+
+    <!-- Add More Button -->
+    <div class="col-md-1 text-center">
+      <button type="button" class="btn btn-outline-primary rounded-circle add-entry-btn" title="Add More">
+        <i class="bi bi-plus-lg"></i>
+      </button>
+    </div>
+
+  </div>
+</div>

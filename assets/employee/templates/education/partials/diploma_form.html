@@ -1,0 +1,34 @@
+<div class="card border-secondary shadow-sm mb-4">
+  <div class="card-header bg-secondary text-white fw-bold">Diploma</div>
+  <div class="card-body row g-3">
+    {{ diploma_form.degree_type.as_hidden }}
+
+    {% if diploma_form.non_field_errors %}
+      <div class="col-12 text-danger small px-2">{{ diploma_form.non_field_errors }}</div>
+    {% endif %}
+
+    <div class="col-md-6">
+      {{ diploma_form.institution_name.label_tag }} 
+      {{ diploma_form.institution_name }}
+      {{ diploma_form.institution_name.errors }}
+    </div>
+
+    <div class="col-md-3">
+      {{ diploma_form.stream.label_tag }} 
+      {{ diploma_form.stream }}
+      {{ diploma_form.stream.errors }}
+    </div>
+
+    <div class="col-md-3">
+      {{ diploma_form.from_year.label_tag }} 
+      {{ diploma_form.from_year }}
+      {{ diploma_form.from_year.errors }}
+    </div>
+
+    <div class="col-md-3">
+      {{ diploma_form.to_year.label_tag }} 
+      {{ diploma_form.to_year }}
+      {{ diploma_form.to_year.errors }}
+    </div>
+  </div>
+</div>

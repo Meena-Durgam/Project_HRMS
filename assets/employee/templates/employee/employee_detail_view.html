@@ -1,0 +1,501 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}Employee Profile{% endblock %}
+
+{% block content %}
+<style>
+  .section-heading {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #555;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 6px;
+    margin-bottom: 12px;
+  }
+</style>
+
+<!-- ================= Profile Header ================= -->
+<div class="card mb-0">
+  <div class="card-body">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="profile-view">
+          <div class="profile-img-wrap">
+            <div class="profile-img">
+              <a href="#">
+                {% if profile.profile_picture %}
+                  <img src="{{ profile.profile_picture.url }}" alt="Profile Picture">
+                {% else %}
+                  <img src="{% static 'assets/img/user.jpg' %}" alt="Default Avatar">
+                {% endif %}
+              </a>
+            </div>
+          </div>
+          <div class="profile-basic">
+            <div class="row">
+              <div class="col-md-5">
+                <div class="profile-info-left">
+                  <h3 class="user-name m-t-0 mb-0">{{ profile.employee.first_name }} {{ profile.employee.last_name }}</h3>
+                  <h6 class="text-muted">{{ profile.employee.department.name|default:"Department Not Assigned" }}</h6>
+                  <small class="text-muted">{{ profile.employee.designation.name|default:"Designation Not Assigned" }}</small>
+                  <div class="staff-id">Employee ID : {{ profile.employee.employee_id }}</div>
+                  <div class="small doj text-muted">Date of Join : {{ profile.employee.joining_date|date:"jS M Y" }}</div>
+                 
+                </div>
+              </div>
+              <div class="col-md-7">
+                <ul class="personal-info">
+                  <li><div class="title">Phone:</div><div class="text">{{ profile.phone|default:"Not Provided" }}</div></li>
+                  <li><div class="title">Email:</div><div class="text">{{ profile.email|default:"Not Provided" }}</div></li>
+                  <li><div class="title">Birthday:</div><div class="text">{{ profile.birthday|date:"jS F"|default:"Not Provided" }}</div></li>
+                  <li><div class="title">Address:</div><div class="text">{{ profile.address|default:"Not Provided" }}</div></li>
+                  <li><div class="title">Gender:</div><div class="text">{{ profile.gender|default:"Not Specified" }}</div></li>
+                  <li>
+                    <div class="title">Reports to:</div>
+                    <div class="text">
+                      {% if profile.employee.reporting_manager %}
+                        <div class="d-flex align-items-center">
+                          <div class="avatar avatar-xs me-2">
+                            {% if profile.employee.reporting_manager.profile.profile_picture %}
+                              <img src="{{ profile.employee.reporting_manager.profile.profile_picture.url }}" class="rounded-circle">
+                            {% else %}
+                              <img src="{% static 'assets/img/user.jpg' %}" class="rounded-circle">
+                            {% endif %}
+                          </div>
+                          <a href="{% url 'employee_profile' profile.employee.reporting_manager.id %}">
+                            {{ profile.employee.reporting_manager.get_full_name|default:"N/A" }}
+                          </a>
+                        </div>
+                      {% else %}
+                        Not Assigned
+                      {% endif %}
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= Tabs ================= -->
+<div class="card tab-box mb-4">
+  <div class="row user-tabs">
+    <div class="col-12 line-tabs">
+      <ul class="nav nav-tabs nav-tabs-bottom">
+        <li class="nav-item"><a href="#emp_profile" class="nav-link active" data-bs-toggle="tab">Profile</a></li>
+        <li class="nav-item"><a href="#emp_documents" class="nav-link" data-bs-toggle="tab">Documents</a></li>
+        <li class="nav-item"><a href="#bank_statutory" class="nav-link text-danger" data-bs-toggle="tab">Bank & Statutory <small class="text-danger">(Admin Only)</small></a></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ================= Tab Content ================= -->
+<div class="tab-content">
+
+ <!-- ✅ Profile Tab -->
+<div class="tab-pane fade show active" id="emp_profile">
+  <div class="row">
+
+    <!-- Personal Information -->
+    <div class="col-md-6 mb-4 d-flex">
+      <div class="card profile-box flex-fill h-100">
+        <div class="card-body">
+          <h3 class="card-title">Personal Information</h3>
+          <ul class="personal-info">
+            <li><div class="title">Passport No.</div><div class="text">{{ profile.passport_no|default:"None" }}</div></li>
+            <li><div class="title">Nationality</div><div class="text">{{ profile.nationality|default:"Not Provided" }}</div></li>
+            <li><div class="title">Religion</div><div class="text">{{ profile.religion|default:"Not Provided" }}</div></li>
+            <li><div class="title">Marital Status</div><div class="text">{{ profile.marital_status|default:"Not Provided" }}</div></li>
+            <li><div class="title">No. of Children</div><div class="text">{{ profile.number_of_children|default:"0" }}</div></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Emergency Contacts -->
+    <div class="col-md-6 mb-4 d-flex">
+      <div class="card profile-box flex-fill h-100">
+        <div class="card-body">
+          <h3 class="card-title">Emergency Contacts</h3>
+          {% if profile.employee.emergency_contacts.exists %}
+            {% for contact in profile.employee.emergency_contacts.all %}
+              <h5>{{ forloop.first|yesno:"Primary,Secondary" }} Contact</h5>
+              <ul class="personal-info">
+                <li><div class="title">Name</div><div class="text">{{ contact.name }}</div></li>
+                <li><div class="title">Relationship</div><div class="text">{{ contact.relationship }}</div></li>
+                <li><div class="title">Phone</div><div class="text">{{ contact.phone }}</div></li>
+              </ul>
+              {% if not forloop.last %}<hr>{% endif %}
+            {% endfor %}
+          {% else %}
+            <p>No emergency contacts added.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Bank Details -->
+    <div class="col-md-6 mb-4 d-flex">
+      <div class="card shadow-sm flex-fill h-100">
+        <div class="card-body">
+          <h4 class="card-title mb-3">Bank Details</h4>
+          {% if bank %}
+            <p><strong>Bank Name:</strong> {{ bank.bank_name }}</p>
+            <p><strong>Bank Account No.:</strong> {{ bank.account_no }}</p>
+            <p><strong>IFSC Code:</strong> {{ bank.ifsc_code }}</p>
+          {% else %}
+            <div class="text-muted">No bank details available.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Family Info -->
+    <div class="col-md-6 mb-4 d-flex">
+      <div class="card profile-box flex-fill h-100">
+        <div class="card-body">
+          <h3 class="card-title">Family Information</h3>
+          {% if family_members %}
+            <table class="table table-striped custom-table">
+              <thead><tr><th>Name</th><th>Relationship</th><th>DOB</th><th>Occupation</th></tr></thead>
+              <tbody>
+                {% for member in family_members %}
+                  <tr>
+                    <td>{{ member.name }}</td>
+                    <td>{{ member.relationship }}</td>
+                    <td>{{ member.date_of_birth|date:"d M Y" }}</td>
+                    <td>{{ member.occupation }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% else %}
+            <p class="text-muted">No family details available.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Education -->
+    <div class="col-md-6 mb-4 d-flex">
+      <div class="card profile-box flex-fill h-100">
+        <div class="card-body">
+          <h3 class="card-title">Education</h3>
+          <div class="experience-box">
+            <ul class="experience-list">
+              {% for edu in educations %}
+                <li>
+                  <div class="experience-user"><div class="before-circle"></div></div>
+                  <div class="experience-content">
+                    <div class="timeline-content">
+                      <a class="name">{{ edu.institution_name }}</a>
+                      <div>{{ edu.degree_type }}</div>
+                      {% if edu.stream %}<div>{{ edu.stream }}</div>{% endif %}
+                      <span class="time">{{ edu.from_year }} - {{ edu.to_year }}</span>
+                    </div>
+                  </div>
+                </li>
+              {% empty %}
+                <li><div class="timeline-content">No education details available.</div></li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Experience -->
+    <div class="col-md-6 mb-4 d-flex">
+      <div class="card profile-box flex-fill h-100">
+        <div class="card-body">
+          <h3 class="card-title">Experience</h3>
+          <div class="experience-box">
+            <ul class="experience-list">
+              {% for exp in experiences %}
+                <li>
+                  <div class="experience-user"><div class="before-circle"></div></div>
+                  <div class="experience-content">
+                    <div class="timeline-content">
+                      <a class="name">{{ exp.title }} at {{ exp.company }}</a>
+                      <span class="time">{{ exp.start_date|date:"d M Y" }} - {{ exp.end_date|date:"d M Y"|default:"Present" }}</span>
+                    </div>
+                  </div>
+                </li>
+              {% empty %}
+                <li><div class="timeline-content">No experience records available.</div></li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ✅ Documents Tab -->
+<div class="tab-pane fade" id="emp_documents">
+
+  <!-- Education Documents -->
+  <div class="card mb-4 shadow-sm">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0"><i class="fa fa-graduation-cap me-1"></i> Education Documents</h5>
+    </div>
+    <div class="card-body">
+      {% if education_documents %}
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th scope="col">SL No.</th>
+              <th scope="col">Degree Type</th>
+              <th scope="col">Uploaded On</th>
+              <th scope="col" class="text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for doc in education_documents %}
+            <tr>
+              <td>{{ forloop.counter }}</td>
+              <td>
+                {% if doc.document_type == "Other" %}
+                  {{ doc.other_document_type }}
+                {% else %}
+                  {{ doc.document_type }}
+                {% endif %}
+              </td>
+              <td>{{ doc.uploaded_at|date:"Y-m-d H:i" }}</td>
+              <td class="text-center">
+                <a href="{{ doc.document_file.url }}" target="_blank" class="btn btn-sm btn-outline-secondary" title="View Document">
+                  <i class="fa fa-eye"></i>
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="text-muted mb-0">No education documents uploaded yet.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Government Documents -->
+  <div class="card mb-4 shadow-sm">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0"><i class="fa fa-id-card me-1"></i> Government Documents</h5>
+    </div>
+    <div class="card-body">
+      {% if government_documents %}
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th scope="col">SL No.</th>
+              <th scope="col">Document Type</th>
+              <th scope="col">Uploaded On</th>
+              <th scope="col" class="text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for doc in government_documents %}
+            <tr>
+              <td>{{ forloop.counter }}</td>
+              <td>
+                {% if doc.document_type == "Other" %}
+                  {{ doc.other_document_type }}
+                {% else %}
+                  {{ doc.document_type }}
+                {% endif %}
+              </td>
+              <td>{{ doc.uploaded_at|date:"Y-m-d H:i" }}</td>
+              <td class="text-center">
+                <a href="{{ doc.document_file.url }}" target="_blank" class="btn btn-sm btn-outline-secondary" title="View Document">
+                  <i class="fa fa-eye"></i>
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="text-muted mb-0">No government documents uploaded yet.</p>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
+<!-- ✅ Bank & Statutory Tab -->
+<div class="tab-pane fade" id="bank_statutory">
+  <div class="card card-body">
+    <h5 class="card-title">Salary & Statutory Details</h5>
+
+    <form method="post" action="{% url 'admin_update_financial_info' emp.id %}">
+      {% csrf_token %}
+
+      {% if salary_form.errors %}
+      <div class="alert alert-danger">
+        <ul>
+          {% for field in salary_form %}
+            {% for error in field.errors %}
+              <li>{{ field.label }}: {{ error }}</li>
+            {% endfor %}
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      <!-- Basic Salary Info -->
+      <h5 class="mt-3">Basic Salary Information</h5>
+      <div class="row">
+        <div class="col-md-4">
+          <div class="form-group">
+            {{ salary_form.salary_basis.label_tag }}
+            {{ salary_form.salary_basis|add_class:"form-select"|attr:"id:salary_basis" }}
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            {{ salary_form.salary_amount.label_tag }}
+            <div class="input-group">
+              <span class="input-group-text">Rs.</span>
+              {{ salary_form.salary_amount|add_class:"form-control"|attr:"id:salary_amount" }}
+              <span class="input-group-text">per month</span>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            {{ salary_form.payment_type.label_tag }}
+            {{ salary_form.payment_type|add_class:"form-select"|attr:"id:payment_type" }}
+          </div>
+        </div>
+      </div>
+
+      <!-- PF Info -->
+      <h5 class="mt-4">PF Information</h5>
+      <div class="row">
+        <div class="col-md-4">
+          <div class="form-group">
+            {{ salary_form.pf_contribution.label_tag }}
+            {{ salary_form.pf_contribution|add_class:"form-select"|attr:"id:pf_contribution" }}
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            {{ salary_form.pf_number.label_tag }}
+            {{ salary_form.pf_number|add_class:"form-control"|attr:"id:pf_number" }}
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            {{ salary_form.employee_pf_rate.label_tag }}
+            {{ salary_form.employee_pf_rate|add_class:"form-select"|attr:"id:employee_pf_rate" }}
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            {{ salary_form.additional_pf_rate.label_tag }}
+            {{ salary_form.additional_pf_rate|add_class:"form-select"|attr:"id:additional_pf_rate" }}
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            {{ salary_form.total_pf_rate.label_tag }}
+            <input type="text" id="total_pf_rate" name="total_pf_rate" class="form-control" readonly>
+          </div>
+        </div>
+      </div>
+
+      <!-- ESI Info -->
+      <h5 class="mt-4">ESI Information</h5>
+      <div class="row">
+        <div class="col-md-4">
+          <div class="form-group">
+            {{ salary_form.esi_contribution.label_tag }}
+            {{ salary_form.esi_contribution|add_class:"form-select"|attr:"id:esi_contribution" }}
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            {{ salary_form.esi_number.label_tag }}
+            {{ salary_form.esi_number|add_class:"form-control"|attr:"id:esi_number" }}
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            {{ salary_form.employee_esi_rate.label_tag }}
+            {{ salary_form.employee_esi_rate|add_class:"form-select"|attr:"id:employee_esi_rate" }}
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            {{ salary_form.additional_esi_rate.label_tag }}
+            {{ salary_form.additional_esi_rate|add_class:"form-select"|attr:"id:additional_esi_rate" }}
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            {{ salary_form.total_esi_rate.label_tag }}
+            <input type="text" id="total_esi_rate" name="total_esi_rate" class="form-control" readonly>
+          </div>
+        </div>
+      </div>
+
+<!-- Approval -->
+<div class="row mt-4 p-2">
+  <div class="col-md-4">
+    <div class="form-check d-flex align-items-center">
+      
+      <label for="is_approved" class="form-check-label ms-2">
+        {{ salary_form.is_approved }}
+        {{ salary_form.is_approved.label }}
+      </label>
+    </div>
+  </div>
+</div>
+
+
+      <!-- Submit -->
+      <div class="mt-4">
+        <button type="submit" class="btn btn-primary w-25">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ✅ JavaScript -->
+<script>
+  function calculateTotalRate(id1, id2, outputId) {
+    const val1 = parseInt(document.getElementById(id1).value.replace('%', '') || 0);
+    const val2 = parseInt(document.getElementById(id2).value.replace('%', '') || 0);
+    const total = val1 + val2;
+    document.getElementById(outputId).value = isNaN(total) ? '' : total + '%';
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const fields = [
+      ["employee_pf_rate", "additional_pf_rate", "total_pf_rate"],
+      ["employee_esi_rate", "additional_esi_rate", "total_esi_rate"]
+    ];
+
+    fields.forEach(([id1, id2, output]) => {
+      document.getElementById(id1).addEventListener('change', () => calculateTotalRate(id1, id2, output));
+      document.getElementById(id2).addEventListener('change', () => calculateTotalRate(id1, id2, output));
+      calculateTotalRate(id1, id2, output); // Initial run
+    });
+  });
+</script>
+</div>
+{% endblock %}

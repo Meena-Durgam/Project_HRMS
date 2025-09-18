@@ -1,0 +1,15 @@
+<!-- ug_form.html -->
+<div class="card border-success mb-3">
+  <div class="card-header bg-success text-white">Undergraduate</div>
+  <div class="card-body row g-3">
+    {{ ug_form.degree_type.as_hidden }}
+    {% if ug_form.non_field_errors %}
+      <div class="text-danger small">{{ ug_form.non_field_errors }}</div>
+    {% endif %}
+    <div class="col-md-6">{{ ug_form.institution_name.label_tag }} {{ ug_form.institution_name }}</div>
+    <div class="col-md-3">{{ ug_form.program.label_tag }} {{ ug_form.program }}</div>
+    <div class="col-md-3">{{ ug_form.stream.label_tag }} {{ ug_form.stream }}</div>
+    <div class="col-md-3">{{ ug_form.from_year.label_tag }} {{ ug_form.from_year }}</div>
+    <div class="col-md-3">{{ ug_form.to_year.label_tag }} {{ ug_form.to_year }}</div>
+  </div>
+</div>
