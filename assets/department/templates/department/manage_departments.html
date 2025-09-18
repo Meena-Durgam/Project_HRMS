@@ -1,0 +1,398 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Department{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+<style>
+    .select-arrow-spacing {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+
+  background-image: url("data:image/svg+xml;utf8,<svg fill='gray' height='30' viewBox='0 0 24 24' width='30' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+  background-repeat: no-repeat;
+
+  /* 👇 Arrow spacing from the right */
+  background-position: right 14px center;
+
+  /* 👇 Add right padding so text doesn't collide with the arrow */
+  padding-right: 38px;
+
+  background-size: 24px;
+}
+    .add-btn {
+        float: right;
+        margin-top: -10px;
+        margin-bottom: 20px;
+    }
+    .table td {
+        vertical-align: middle;
+    }
+    div.dataTables_wrapper div.dataTables_filter input,
+    div.dataTables_wrapper div.dataTables_length select {
+        border-radius: 20px;
+    }
+</style>
+<style>
+  .entry-selector-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+  }
+
+  .entry-input {
+    width: 60px;
+    padding: 4px 8px;
+    font-size: 14px;
+    text-align: center;
+    border: 1px solid #ccc;
+    border-radius: 2px;
+    box-shadow: none;
+  }
+
+  .entry-input::-webkit-outer-spin-button,
+  .entry-input::-webkit-inner-spin-button {
+    opacity: 1;
+  }
+
+  .entry-input[type="number"] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+  }
+</style>
+
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="row align-items-center">
+        <div class="col-12 col-md">
+            <h3 class="page-title">Department</h3>
+            <ul class="breadcrumb">
+                <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+                <li class="breadcrumb-item active">Department</li>
+            </ul>
+        </div>
+        <button class="btn btn-primary rounded-pill add-btn" data-toggle="modal" data-target="#add_department">
+            <i class="fa fa-plus me-1"></i> Add Department
+        </button>
+    </div>
+</div>
+
+{% if messages %}
+  <div class="messages mt-2">
+    {% for message in messages %}
+      <div class="alert {% if message.tags == 'error' %}alert-danger
+                       {% elif message.tags == 'success' %}alert-success
+                       {% elif message.tags == 'warning' %}alert-warning
+                       {% elif message.tags == 'info' %}alert-info
+                       {% else %}alert-secondary{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+<button type="button" class="close" data-dismiss="alert">&times;</button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<form method="get" action="{% url 'manage_departments' %}">
+  <div class="row mb-3">
+    <div class="col-md-4 mb-2">
+      <input type="text" name="name" class="form-control w-100" 
+             placeholder="Department Name" value="{{ request.GET.name }}" 
+             style="height: 42px;">
+    </div>
+    <div class="col-md-4 mb-2">
+      <select name="status" class="form-control custom-select-padding select-arrow-spacing w-100" style="height: 42px;">
+        <option value="">Select Status</option>
+        <option value="Active" {% if request.GET.status == "Active" %}selected{% endif %}>Active</option>
+        <option value="Inactive" {% if request.GET.status == "Inactive" %}selected{% endif %}>Inactive</option>
+      </select>
+    </div>
+    <div class="col-md-4 mb-2">
+      <button type="submit" class="btn btn-primary w-100" style="height: 41px;">Search</button>
+    </div>
+  </div>
+</form>
+
+<form method="get" class="entry-selector-wrapper mb-2 d-flex align-items-center">
+  <!-- Retain existing filters when changing page size -->
+  <input type="hidden" name="name" value="{{ search_name }}">
+  <input type="hidden" name="status" value="{{ search_status }}">
+  <input type="hidden" name="sort" value="{{ request.GET.sort }}">
+
+  <label for="per_page" class="me-2">Show
+     <select id="per_page" name="page_size" class="form-select form-select-sm w-auto"
+          onchange="this.form.submit()">
+      <option value="5" {% if page_size == 5 %}selected{% endif %}>5</option>
+      <option value="10" {% if page_size == 10 %}selected{% endif %}>10</option>
+      <option value="15" {% if page_size == 15 %}selected{% endif %}>15</option>
+      <option value="20" {% if page_size == 20 %}selected{% endif %}>20</option>
+  </select>
+    entries
+  </label>
+</form>
+
+
+<div class="table-responsive">
+    <table id="departmentTable" class="table table-striped custom-table">
+        <thead>
+            <tr>
+                <th>SL.No.</th>
+                <th>Department Name</th>
+                <th>Status</th>
+                <th class="no-sort text-center">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if departments %}
+            {% for dept in departments %}
+            <tr>
+<td >{{ forloop.counter0|add:departments.start_index }}</td>
+                <td>{{ dept.name }}</td>
+                <td>{{ dept.status }}</td>
+                <td class="text-center">
+                    <div class="dropdown dropdown-action">
+                        <a href="#" class="action-icon dropdown-toggle" data-toggle="dropdown"><i class="material-icons">more_vert</i></a>
+                        <div class="dropdown-menu dropdown-menu-end">
+                            <a class="dropdown-item " href="#" data-toggle="modal" data-target="#editDeptModal{{ dept.id }}">
+                                <i class="fa fa-pencil me-2"></i> Edit
+                            </a>
+                            <a class="dropdown-item delete-btn text-danger"
+   href="#"
+   data-url="{% url 'delete_department' dept.id %}"
+   data-bs-toggle="modal"
+   data-bs-target="#globalDeleteModal">
+   <i class="fa fa-trash-o me-2"></i> Delete
+</a>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+
+<!-- Edit Modal -->
+<div id="editDeptModal{{ dept.id }}" class="modal custom-modal fade" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content p-3">
+            <form id="editDeptForm" method="POST" action="{% url 'manage_departments' %}">
+                {% csrf_token %}
+                <input type="hidden" name="edit_department_id" value="{{ dept.id }}">
+                
+                <!-- Modal Header -->
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Department</h5>
+                    <button type="button" class="close close-edit-modal" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label>Department Name <span class="text-danger">*</span></label>
+                        <input class="form-control" type="text" name="name" value="{{ dept.name }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label>Status <span class="text-danger">*</span></label>
+                        <select name="status" class="form-control" required>
+                            <option value="" disabled {% if not dept.status %}selected{% endif %}>Select Status</option>
+                            <option value="Active" {% if dept.status == 'Active' %}selected{% endif %}>Active</option>
+                            <option value="Inactive" {% if dept.status == 'Inactive' %}selected{% endif %}>Inactive</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary px-4 rounded-pill">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+            <!-- Global Reusable Delete Modal -->
+<div class="modal custom-modal fade" id="globalDeleteModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content text-center p-4 rounded-4">
+      <div class="modal-body">
+        <h3 class="mb-2 fw-semibold">Delete Department</h3>
+        <p class="text-muted mb-4" style="font-size: 14px;">Are you sure want to delete?</p>
+        <form method="post" id="deleteDepartmentForm">
+          {% csrf_token %}
+           <div class="modal-btn delete-action mt-4">
+                        <div class="row">
+                            <div class="col-6">
+                                <button type="submit" class="btn btn-outline-primary btn-block continue-btn">Delete</button>
+                            </div>
+                            <div class="col-6">
+                                <button type="button" class="btn btn-outline-secondary btn-block cancel-btn" data-bs-dismiss="modal">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+            {% endfor %}
+            {% else %}
+            <tr><td colspan="4" class="text-center text-muted">No departments found.</td></tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+
+<!-- Add Modal -->
+<div id="add_department" class="modal custom-modal fade" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" action="{% url 'manage_departments' %}">
+                {% csrf_token %}
+                <input type="hidden" name="add_department" value="1">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Department</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label>Department Name <span class="text-danger">*</span></label>
+                        <input class="form-control" type="text" name="name" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Status <span class="text-danger">*</span></label>
+                        <select name="status" class="form-control" required>
+                            <option value="" selected disabled>Select Status</option>
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-primary px-4 rounded-pill">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Pagination -->
+<div class="d-flex justify-content-between align-items-center mt-3">
+  <!-- Entry Info -->
+  <div>
+    Showing {{ departments.start_index }} to {{ departments.end_index }} of {{ departments.paginator.count }} entries
+  </div>
+
+  <!-- Pagination Controls -->
+  <nav>
+    <ul class="pagination pagination-sm mb-0">
+      {% if departments.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?page=1&page_size={{ page_size }}&name={{ search_name }}&status={{ search_status }}&sort={{ request.GET.sort }}">Previous</a>
+        </li>
+        <li class="page-item">
+          <a class="page-link" href="?page={{ departments.previous_page_number }}&page_size={{ page_size }}&name={{ search_name }}&status={{ search_status }}&sort={{ request.GET.sort }}">‹</a>
+        </li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">Previous</span></li>
+      {% endif %}
+
+      {% for num in departments.paginator.page_range %}
+        {% if departments.number == num %}
+          <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+        {% elif num > departments.number|add:'-3' and num < departments.number|add:'3' %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ num }}&page_size={{ page_size }}&name={{ search_name }}&status={{ search_status }}&sort={{ request.GET.sort }}">{{ num }}</a>
+          </li>
+        {% endif %}
+      {% endfor %}
+
+      {% if departments.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ departments.paginator.num_pages }}&page_size={{ page_size }}&name={{ search_name }}&status={{ search_status }}&sort={{ request.GET.sort }}">Next</a>
+        </li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">Next</span></li>
+      {% endif %}
+    </ul>
+  </nav>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const deleteButtons = document.querySelectorAll('.delete-btn');
+    const deleteForm = document.getElementById('deleteDepartmentForm');
+
+    deleteButtons.forEach(button => {
+      button.addEventListener('click', function () {
+        const url = this.getAttribute('data-url');
+        deleteForm.setAttribute('action', url);
+      });
+    });
+  });
+</script>
+
+<script>
+    // Clear Add Department form whenever modal is closed
+    $('#add_department').on('hidden.bs.modal', function () {
+        $(this).find('form')[0].reset();
+    });
+</script>
+<script>
+$('[id^="editDeptModal"]').on('hidden.bs.modal', function () {
+    $(this).find('form')[0].reset();
+});
+
+$(document).on('click', '.close-edit-modal', function () {
+    const modal = $(this).closest('.modal');
+    modal.find('form')[0].reset();
+});
+</script>
+
+<script>
+    $(document).ready(function () {
+        // Disable DataTable features (since we're using Django pagination)
+        $('#departmentTable').DataTable({
+            paging: false,
+            searching: false,
+            ordering: false,
+            info: false
+        });
+    });
+
+  $(document).ready(function () {
+    // Reset Add Department form on modal close
+    $('#add_department').on('hidden.bs.modal', function () {
+      $(this).find('form')[0].reset();
+    });
+
+    // Disable DataTable features
+    $('#departmentTable').DataTable({
+      paging: false,
+      searching: false,
+      ordering: false,
+      info: false
+    });
+  });
+
+</script>
+{% endblock %}
